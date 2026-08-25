@@ -1,10 +1,12 @@
 {
-  "name": "duka-convex-backend",
+  "name": "duuka-sme-finance",
   "version": "1.0.0",
-  "description": "Convex serverless backend for DUKA Uganda SME SaaS",
+  "description": "DUKA - Uganda SME Finance, Stock & POS SaaS (Flutter + Convex)",
   "scripts": {
     "dev": "convex dev",
-    "build": "tsc"
+    "build": "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1; fi && ./flutter/bin/flutter build web --release",
+    "build:web": "flutter build web --release",
+    "build:convex": "tsc"
   },
   "dependencies": {
     "convex": "^1.45.0"
