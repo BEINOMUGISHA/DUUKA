@@ -1,0 +1,55 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+*.iml
+
+# Dart
+.dart_tool/
+pubspec.lock
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/google-services.json
+android/captures/
+android/.idea/
+
+# iOS
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Pods/
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+ios/Runner.xcworkspace/xcshareddata/
+*.xccheckout
+*.moved-out
+*.xcuserstate
+
+# IDE
+.idea/
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# Convex
+node_modules/
+.convex/
+.env.local
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated Drift files
+*.g.dart
+
+# Assets placeholder
+assets/images/.gitkeep
