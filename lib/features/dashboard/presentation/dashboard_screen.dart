@@ -1,7 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
@@ -24,621 +23,592 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final lang = ref.watch(languageProvider);
     final syncEngine = ref.watch(syncEngineProvider);
 
-    const double todaySales = 1850000;
-    const double todayTarget = 2500000;
-    final double targetPercent = (todaySales / todayTarget).clamp(0.0, 1.0);
+    const double totalBalance = 4286500;
+    const double income = 1800000;
+    const double expenses = 620000;
+    const double profit = 1160000;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryDark,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
+      backgroundColor: const Color(0xFFF1F5F9), // surface-1
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await syncEngine?.syncNow();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Container(
               decoration: BoxDecoration(
-                gradient: AppColors.goldGradient,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    session?.businessName ?? ref.tr('app_name'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.emeraldNeon,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Kampala • ${session?.currency ?? "UGX"}',
-                        style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    lang == 'lg' ? '🇺🇬 LG' : lang == 'rn' ? '🇺🇬 RN' : '🇬🇧 EN',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
-                  ),
-                  const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                ],
-              ),
-            ),
-            onSelected: (val) => ref.read(languageProvider.notifier).setLanguage(val),
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'en', child: Text('🇬🇧 English (Default)')),
-              const PopupMenuItem(value: 'lg', child: Text('🇺🇬 Oluganda (Main)')),
-              const PopupMenuItem(value: 'rn', child: Text('🇺🇬 Orunyankore')),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 14, left: 2),
-            child: InkWell(
-              onTap: () {
-                syncEngine?.syncNow();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(ref.tr('sync_now')),
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: (syncEngine?.state.pendingCount ?? 0) > 0
-                      ? AppColors.creditAmber.withOpacity(0.9)
-                      : AppColors.primaryEmerald.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: (syncEngine?.state.pendingCount ?? 0) > 0
-                        ? AppColors.creditAmber
-                        : AppColors.emeraldNeon.withOpacity(0.6),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      (syncEngine?.state.pendingCount ?? 0) > 0 ? Icons.sync_rounded : Icons.check_circle_rounded,
-                      size: 13,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      (syncEngine?.state.pendingCount ?? 0) > 0
-                          ? '${syncEngine?.state.pendingCount} ${ref.tr('pending')}'
-                          : ref.tr('online'),
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await syncEngine?.syncNow();
-        },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: AppColors.heroGradient,
+                color: Colors.white, // surface-2
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryDark.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
               ),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // --- 1. TOP HEADER ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.streakFlame.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.streakFlame.withOpacity(0.4)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('🔥', style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
-                            Text(
-                              '5-Day Sales Streak!',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _hideFigures ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => setState(() => _hideFigures = !_hideFigures),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    ref.tr('todays_sales'),
-                    style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _hideFigures ? 'UGX ••••••••' : CurrencyFormatter.format(todaySales),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Daily Target: ${(targetPercent * 100).toInt()}% Achieved',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
-                            ),
-                            Text(
-                              _hideFigures ? '••••' : 'Goal: ${CurrencyFormatter.formatCompact(todayTarget)}',
-                              style: const TextStyle(color: AppColors.goldLight, fontSize: 11, fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: targetPercent,
-                            minHeight: 6,
-                            backgroundColor: Colors.white12,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emeraldNeon),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.borderLight),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryForest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.storefront_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                ref.tr('credit_balance'),
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.creditAmber.withOpacity(0.12),
-                                  shape: BoxShape.circle,
+                                session?.businessName ?? 'Kampala Ventures',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                child: const Icon(Icons.people_alt_rounded, size: 14, color: AppColors.creditAmber),
+                              ),
+                              Text(
+                                ref.tr('nav_dashboard'),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _hideFigures ? '••••••' : CurrencyFormatter.format(640000),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.creditAmber),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          // Language Switcher
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                lang == 'lg' ? '🇺🇬 LG' : lang == 'rn' ? '🇺🇬 RN' : '🇬🇧 EN',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                            onSelected: (val) => ref.read(languageProvider.notifier).setLanguage(val),
+                            itemBuilder: (ctx) => const [
+                              PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
+                              PopupMenuItem(value: 'lg', child: Text('🇺🇬 Oluganda')),
+                              PopupMenuItem(value: 'rn', child: Text('🇺🇬 Orunyankore')),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '4 ${ref.tr('customers_owing')}',
-                            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                          const SizedBox(width: 8),
+
+                          // Notification Bell with Red Dot
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.notifications_none_rounded,
+                                  size: 19,
+                                  color: Color(0xFF334155),
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
+
+                  const SizedBox(height: 18),
+
+                  // --- 2. TOTAL BALANCE HERO CARD (With SVG Polyline Wave) ---
+                  Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.borderLight),
+                      color: AppColors.primaryForest,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              ref.tr('net_business_profit'),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                        // SVG Polyline Wave at bottom
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 44,
+                          child: Opacity(
+                            opacity: 0.35,
+                            child: CustomPaint(
+                              painter: _PolylineWavePainter(),
                             ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryEmerald.withOpacity(0.12),
-                                shape: BoxShape.circle,
+                          ),
+                        ),
+
+                        // Card Content
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    lang == 'lg' ? 'Ssente Zonna Eziriwo' : 'Total balance',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      _hideFigures ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      size: 17,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () => setState(() => _hideFigures = !_hideFigures),
+                                  ),
+                                ],
                               ),
-                              child: const Icon(Icons.trending_up_rounded, size: 14, color: AppColors.primaryEmerald),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _hideFigures ? '••••••' : CurrencyFormatter.format(480000),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.primaryForest),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '+26% profit margin',
-                          style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w700),
+                              const SizedBox(height: 6),
+                              Text(
+                                _hideFigures ? 'UGX ••••••••' : 'UGX 4,286,500',
+                                style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  _buildStatColumn(
+                                    label: lang == 'lg' ? 'Eziyingidde' : 'Income',
+                                    value: _hideFigures ? '••••' : '↑ 1.8M',
+                                  ),
+                                  const SizedBox(width: 24),
+                                  _buildStatColumn(
+                                    label: lang == 'lg' ? 'Ezafulumye' : 'Expenses',
+                                    value: _hideFigures ? '••••' : '↓ 620K',
+                                  ),
+                                  const SizedBox(width: 24),
+                                  _buildStatColumn(
+                                    label: lang == 'lg' ? 'Amagoba' : 'Profit',
+                                    value: _hideFigures ? '••••' : '1.16M',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+
+                  const SizedBox(height: 18),
+
+                  // --- 3. 4-COLUMN QUICK ACTIONS ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildQuickAction(
+                        icon: Icons.add_rounded,
+                        label: lang == 'lg' ? 'Tunda' : 'New sale',
+                        iconColor: const Color(0xFF0F766E), // text-accent
+                        onTap: () => widget.onNavigateTab(1),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.receipt_long_rounded,
+                        label: lang == 'lg' ? 'Ezafulumye' : 'Expense',
+                        iconColor: const Color(0xFFEF4444), // text-danger
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (ctx) => const ExpensesScreen()),
+                          );
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.inventory_2_outlined,
+                        label: lang == 'lg' ? 'Sttoka' : 'Stock',
+                        iconColor: const Color(0xFF7C3AED), // text-pro
+                        onTap: () => widget.onNavigateTab(3),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.description_outlined,
+                        label: lang == 'lg' ? 'Ebbanja' : 'Invoice',
+                        iconColor: const Color(0xFF10B981), // text-success
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // --- 4. TWO ALERT PILLS (Low stock & Overdue) ---
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => widget.onNavigateTab(3),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7), // bg-warning
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 16,
+                                  color: Color(0xFFD97706),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    lang == 'lg' ? 'Ebyamaguzi 3 bikendedde' : '3 low stock items',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFB45309),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFCCFBF1), // bg-accent
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.access_time_rounded,
+                                  size: 16,
+                                  color: Color(0xFF0D9488),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    lang == 'lg' ? 'Amabanja 2 gayiseeko' : '2 invoices overdue',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF0F766E),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // --- 5. RECENT TRANSACTIONS ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        ref.tr('cash_flow_breakdown'),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                        lang == 'lg' ? 'Ebikolwa ebyakakolebwa' : 'Recent transactions',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
-                      const Icon(Icons.account_balance_wallet_rounded, size: 18, color: AppColors.textLight),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildGatewayPill(
-                        gateway: 'MTN MoMo',
-                        amount: 980000,
-                        color: AppColors.mtnYellow,
-                        textColor: Colors.black,
-                        icon: Icons.phone_android_rounded,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildGatewayPill(
-                        gateway: 'Airtel Money',
-                        amount: 320000,
-                        color: AppColors.airtelRed,
-                        textColor: Colors.white,
-                        icon: Icons.send_to_mobile_rounded,
+                      InkWell(
+                        onTap: () => widget.onNavigateTab(2),
+                        child: Text(
+                          lang == 'lg' ? 'Laba byonna' : 'See all',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF0F766E),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 8),
-                  Row(
+
+                  Column(
                     children: [
-                      _buildGatewayPill(
-                        gateway: ref.tr('pay_cash'),
-                        amount: 450000,
-                        color: AppColors.cashGreen,
-                        textColor: Colors.white,
-                        icon: Icons.payments_rounded,
+                      _buildTransactionItem(
+                        icon: Icons.north_east_rounded,
+                        iconBg: const Color(0xFFDCFCE7),
+                        iconColor: const Color(0xFF16A34A),
+                        title: 'Sale — cooking oil x2',
+                        subtitle: 'MTN MoMo · 10 min ago',
+                        amount: '+45,000',
+                        amountColor: const Color(0xFF16A34A),
+                        hasBorder: true,
                       ),
-                      const SizedBox(width: 8),
-                      _buildGatewayPill(
-                        gateway: ref.tr('pay_bank'),
-                        amount: 100000,
-                        color: AppColors.bankBlue,
-                        textColor: Colors.white,
-                        icon: Icons.account_balance_rounded,
+                      _buildTransactionItem(
+                        icon: Icons.south_east_rounded,
+                        iconBg: const Color(0xFFFEE2E2),
+                        iconColor: const Color(0xFFDC2626),
+                        title: 'Transport expense',
+                        subtitle: 'Cash · 1 hr ago',
+                        amount: '-15,000',
+                        amountColor: const Color(0xFFDC2626),
+                        hasBorder: true,
+                      ),
+                      _buildTransactionItem(
+                        icon: Icons.access_time_rounded,
+                        iconBg: const Color(0xFFF1F5F9),
+                        iconColor: const Color(0xFF64748B),
+                        title: 'Invoice — J. Okello',
+                        subtitle: 'Credit sale · Yesterday',
+                        amount: '120,000',
+                        amountColor: const Color(0xFF334155),
+                        hasBorder: false,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            Text(
-              ref.tr('quick_actions'),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.3),
-            ),
-            const SizedBox(height: 10),
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              children: [
-                _buildActionTile(
-                  title: ref.tr('action_new_sale'),
-                  icon: Icons.point_of_sale_rounded,
-                  color: AppColors.primaryForest,
-                  gradient: AppColors.heroGradient,
-                  onTap: () => widget.onNavigateTab(1),
-                ),
-                _buildActionTile(
-                  title: ref.tr('action_log_expense'),
-                  icon: Icons.money_off_rounded,
-                  color: AppColors.danger,
-                  gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (ctx) => const ExpensesScreen()),
-                    );
-                  },
-                ),
-                _buildActionTile(
-                  title: ref.tr('action_debtor_book'),
-                  icon: Icons.people_alt_rounded,
-                  color: AppColors.creditAmber,
-                  gradient: AppColors.creditGradient,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
-                    );
-                  },
-                ),
-                _buildActionTile(
-                  title: ref.tr('action_stock_levels'),
-                  icon: Icons.inventory_2_rounded,
-                  color: Colors.teal,
-                  gradient: const LinearGradient(colors: [Color(0xFF14B8A6), Color(0xFF0D9488)]),
-                  onTap: () => widget.onNavigateTab(2),
-                ),
-                _buildActionTile(
-                  title: ref.tr('action_reports'),
-                  icon: Icons.bar_chart_rounded,
-                  color: Colors.indigo,
-                  gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)]),
-                  onTap: () => widget.onNavigateTab(3),
-                ),
-                _buildActionTile(
-                  title: ref.tr('action_efris_tax'),
-                  icon: Icons.verified_rounded,
-                  color: AppColors.efrisIndigo,
-                  gradient: const LinearGradient(colors: [Color(0xFF818CF8), Color(0xFF4F46E5)]),
-                  onTap: () => widget.onNavigateTab(3),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.shade300),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentGold.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.warning_amber_rounded, color: AppColors.accentAmber, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '2 ${ref.tr('low_stock_warning')}',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.brown),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Super NPK Fertilizer (4 bags), Longe 5 Maize (2 pkts)',
-                          style: TextStyle(fontSize: 11, color: Colors.brown.shade700),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => widget.onNavigateTab(2),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentAmber,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(ref.tr('restock_btn'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildGatewayPill({
-    required String gateway,
-    required num amount,
-    required Color color,
-    required Color textColor,
-    required IconData icon,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderLight),
+  Widget _buildStatColumn({required String label, required String value}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w400,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 10, color: textColor),
-                      const SizedBox(width: 3),
-                      Text(
-                        gateway,
-                        style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _hideFigures ? '••••••' : CurrencyFormatter.formatCompact(amount),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.textMain),
-            ),
-          ],
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildActionTile({
-    required String title,
+  Widget _buildQuickAction({
     required IconData icon,
-    required Color color,
-    required Gradient gradient,
+    required String label,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(11),
-              decoration: BoxDecoration(
-                gradient: gradient,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: Colors.white, size: 22),
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
             ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMain),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF475569),
+              fontWeight: FontWeight.w500,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  Widget _buildTransactionItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String amount,
+    required Color amountColor,
+    required bool hasBorder,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        border: hasBorder
+            ? const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 0.5))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF0F172A),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: amountColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Sparkline / Polyline Painter matching the SVG polyline in the HTML:
+// points="0,40 30,32 60,38 90,20 120,28 150,10 180,22 210,14 240,18 270,6 300,12"
+class _PolylineWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final points = [
+      Offset(0 * (size.width / 300), 40 * (size.height / 50)),
+      Offset(30 * (size.width / 300), 32 * (size.height / 50)),
+      Offset(60 * (size.width / 300), 38 * (size.height / 50)),
+      Offset(90 * (size.width / 300), 20 * (size.height / 50)),
+      Offset(120 * (size.width / 300), 28 * (size.height / 50)),
+      Offset(150 * (size.width / 300), 10 * (size.height / 50)),
+      Offset(180 * (size.width / 300), 22 * (size.height / 50)),
+      Offset(210 * (size.width / 300), 14 * (size.height / 50)),
+      Offset(240 * (size.width / 300), 18 * (size.height / 50)),
+      Offset(270 * (size.width / 300), 6 * (size.height / 50)),
+      Offset(300 * (size.width / 300), 12 * (size.height / 50)),
+    ];
+
+    final path = Path();
+    path.moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
