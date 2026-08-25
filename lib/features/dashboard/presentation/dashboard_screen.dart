@@ -1,15 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
-import '../../pos/presentation/pos_quick_sale_screen.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
-import '../../inventory/presentation/inventory_screen.dart';
-import '../../reports/presentation/reports_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final Function(int) onNavigateTab;
@@ -22,7 +17,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _hideFigures = false;
-  String _timeFilter = 'Today';
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +40,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               decoration: BoxDecoration(
                 gradient: AppColors.goldGradient,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentGold.withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
             ),
@@ -63,7 +50,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 children: [
                   Text(
                     session?.businessName ?? ref.tr('app_name'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.3),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Row(
@@ -89,7 +76,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
         actions: [
-          // Language Switcher Pill
           PopupMenuButton<String>(
             icon: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -116,8 +102,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const PopupMenuItem(value: 'rn', child: Text('🇺🇬 Orunyankore')),
             ],
           ),
-
-          // Cloud Sync Pill
           Padding(
             padding: const EdgeInsets.only(right: 14, left: 2),
             child: InkWell(
@@ -173,7 +157,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            // HERO FINANCIAL CARD (Glassmorphism & Gradients)
             Container(
               decoration: BoxDecoration(
                 gradient: AppColors.heroGradient,
@@ -186,133 +169,91 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ],
               ),
-              child: Stack(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ambient decorative glow rings
-                  Positioned(
-                    top: -30,
-                    right: -30,
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primaryEmerald.withOpacity(0.12),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -20,
-                    left: -20,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.accentGold.withOpacity(0.08),
-                      ),
-                    ),
-                  ),
-
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top Header with Streak and Privacy Eye
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.streakFlame.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.streakFlame.withOpacity(0.4)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Streak Flame Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.streakFlame.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.streakFlame.withOpacity(0.4)),
-                              ],
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('🔥', style: TextStyle(fontSize: 12)),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '5-Day Sales Streak!',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // Privacy toggle icon
-                            IconButton(
-                              icon: Icon(
-                                _hideFigures ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.white70,
-                                size: 20,
-                              ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () => setState(() => _hideFigures = !_hideFigures),
+                            Text('🔥', style: TextStyle(fontSize: 12)),
+                            SizedBox(width: 4),
+                            Text(
+                              '5-Day Sales Streak!',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-
-                        // Total Sales Label
-                        Text(
-                          ref.tr('todays_sales'),
-                          style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _hideFigures ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          color: Colors.white70,
+                          size: 20,
                         ),
-                        const SizedBox(height: 4),
-
-                        // Big Revenue Text
-                        Text(
-                          _hideFigures ? 'UGX ••••••••' : CurrencyFormatter.format(todaySales),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => setState(() => _hideFigures = !_hideFigures),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    ref.tr('todays_sales'),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _hideFigures ? 'UGX ••••••••' : CurrencyFormatter.format(todaySales),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Daily Target: ${(targetPercent * 100).toInt()}% Achieved',
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                            ),
+                            Text(
+                              _hideFigures ? '••••' : 'Goal: ${CurrencyFormatter.formatCompact(todayTarget)}',
+                              style: const TextStyle(color: AppColors.goldLight, fontSize: 11, fontWeight: FontWeight.w700),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 14),
-
-                        // Daily Target Goal Progress Bar
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white10),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Daily Target: ${(targetPercent * 100).toInt()}% Achieved',
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
-                                  ),
-                                  Text(
-                                    _hideFigures ? '••••' : 'Goal: ${CurrencyFormatter.formatCompact(todayTarget)}',
-                                    style: TextStyle(color: AppColors.goldLight, fontSize: 11, fontWeight: FontWeight.w700),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: targetPercent,
-                                  minHeight: 6,
-                                  backgroundColor: Colors.white12,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emeraldNeon),
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: targetPercent,
+                            minHeight: 6,
+                            backgroundColor: Colors.white12,
+                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emeraldNeon),
                           ),
                         ),
                       ],
@@ -320,11 +261,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
-
+            ),
             const SizedBox(height: 14),
-
-            // DUAL CARDS: Credit / Debtors + Net Cash Flow
             Row(
               children: [
                 Expanded(
@@ -342,13 +280,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: AppColors.borderLight),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,13 +324,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.borderLight),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,23 +361,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 14),
-
-            // UGANDA CASH FLOW SPLIT (MTN MoMo, Airtel, Cash, Bank)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,21 +425,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 18),
-
-            // QUICK ACTIONS (Tactile Colorful Grid)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  ref.tr('quick_actions'),
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.3),
-                ),
-              ],
+            Text(
+              ref.tr('quick_actions'),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.3),
             ),
             const SizedBox(height: 10),
-
             GridView.count(
               crossAxisCount: 3,
               shrinkWrap: true,
@@ -587,10 +492,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 18),
-
-            // LOW STOCK WARNING ALERT BANNER
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -714,13 +616,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -730,13 +625,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               decoration: BoxDecoration(
                 gradient: gradient,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Icon(icon, color: Colors.white, size: 22),
             ),

@@ -260,9 +260,9 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isLowStock ? Colors.red.shade50 : Colors.emerald.shade50,
+                                color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: isLowStock ? Colors.red.shade300 : Colors.emerald.shade200),
+                                border: Border.all(color: isLowStock ? Colors.red.shade300 : Colors.green.shade200),
                               ),
                               child: Text(
                                 '${prod.currentStock.toInt()} ${prod.unit}',
