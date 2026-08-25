@@ -180,6 +180,29 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+
+          const SizedBox(height: 16),
+
+          // Sign Out Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ref.read(authProvider.notifier).logout();
+              },
+              icon: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
+              label: Text(
+                lang == 'lg' ? 'Vaamu (Sign Out)' : 'Sign Out of Business',
+                style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.danger.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -196,7 +219,7 @@ class SettingsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: (badgeColor ?? AppColors.primaryForest).withOpacity(0.12),
+                color: (badgeColor ?? AppColors.primaryForest).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
