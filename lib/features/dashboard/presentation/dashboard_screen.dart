@@ -22,14 +22,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final session = ref.watch(authProvider);
     final lang = ref.watch(languageProvider);
     final syncEngine = ref.watch(syncEngineProvider);
-
-    const double totalBalance = 4286500;
-    const double income = 1800000;
-    const double expenses = 620000;
-    const double profit = 1160000;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // surface-1
+      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9), // surface-1
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -40,9 +36,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white, // surface-2
+                color: isDark ? AppColors.darkSurface : Colors.white, // surface-2
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                  width: 0.5,
+                ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               child: Column(
@@ -73,18 +72,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Text(
                                 session?.businessName ?? 'Kampala Ventures',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
-                                  color: Color(0xFF64748B),
+                                  color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               Text(
                                 ref.tr('nav_dashboard'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0F172A),
+                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
                                 ),
                               ),
                             ],
@@ -93,22 +92,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       Row(
                         children: [
+                          // Theme Mode Quick Toggle
+                          IconButton(
+                            icon: Icon(
+                              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                              size: 20,
+                              color: isDark ? AppColors.accentGold : const Color(0xFF334155),
+                            ),
+                            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+                            tooltip: 'Toggle Color Mode',
+                          ),
+
                           // Language Switcher
                           PopupMenuButton<String>(
                             padding: EdgeInsets.zero,
                             icon: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
+                                color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                border: Border.all(
+                                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                ),
                               ),
                               child: Text(
                                 lang == 'lg' ? '🇺🇬 LG' : lang == 'rn' ? '🇺🇬 RN' : '🇬🇧 EN',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF334155),
+                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
                                 ),
                               ),
                             ),
@@ -126,17 +138,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                width: 0.5,
+                              ),
                             ),
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.notifications_none_rounded,
                                   size: 19,
-                                  color: Color(0xFF334155),
+                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
                                 ),
                                 Positioned(
                                   top: 8,
@@ -160,10 +175,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 18),
 
-                  // --- 2. TOTAL BALANCE HERO CARD (With SVG Polyline Wave) ---
+                  // --- 2. TOTAL BALANCE HERO CARD ---
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primaryForest,
+                      color: isDark ? const Color(0xFF072B1E) : AppColors.primaryForest,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -257,13 +272,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       _buildQuickAction(
                         icon: Icons.add_rounded,
                         label: lang == 'lg' ? 'Tunda' : 'New sale',
-                        iconColor: const Color(0xFF0F766E), // text-accent
-                        onTap: () => widget.onNavigateTab(1),
+                        iconColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
+                        isDark: isDark,
+                        onTap: () => widget.onNavigateTab(2),
                       ),
                       _buildQuickAction(
                         icon: Icons.receipt_long_rounded,
                         label: lang == 'lg' ? 'Ezafulumye' : 'Expense',
-                        iconColor: const Color(0xFFEF4444), // text-danger
+                        iconColor: const Color(0xFFEF4444),
+                        isDark: isDark,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -274,13 +291,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       _buildQuickAction(
                         icon: Icons.inventory_2_outlined,
                         label: lang == 'lg' ? 'Sttoka' : 'Stock',
-                        iconColor: const Color(0xFF7C3AED), // text-pro
+                        iconColor: const Color(0xFFA78BFA),
+                        isDark: isDark,
                         onTap: () => widget.onNavigateTab(3),
                       ),
                       _buildQuickAction(
                         icon: Icons.description_outlined,
                         label: lang == 'lg' ? 'Ebbanja' : 'Invoice',
-                        iconColor: const Color(0xFF10B981), // text-success
+                        iconColor: const Color(0xFF34D399),
+                        isDark: isDark,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -302,8 +321,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7), // bg-warning
+                              color: isDark ? const Color(0xFF2C2005) : const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(16),
+                              border: isDark ? Border.all(color: const Color(0xFF59400B)) : null,
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             child: Row(
@@ -311,16 +331,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const Icon(
                                   Icons.warning_amber_rounded,
                                   size: 16,
-                                  color: Color(0xFFD97706),
+                                  color: Color(0xFFF59E0B),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     lang == 'lg' ? 'Ebyamaguzi 3 bikendedde' : '3 low stock items',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFFB45309),
+                                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -343,8 +363,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFCCFBF1), // bg-accent
+                              color: isDark ? const Color(0xFF042621) : const Color(0xFFCCFBF1),
                               borderRadius: BorderRadius.circular(16),
+                              border: isDark ? Border.all(color: const Color(0xFF0C4D44)) : null,
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             child: Row(
@@ -352,16 +373,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const Icon(
                                   Icons.access_time_rounded,
                                   size: 16,
-                                  color: Color(0xFF0D9488),
+                                  color: Color(0xFF14B8A6),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     lang == 'lg' ? 'Amabanja 2 gayiseeko' : '2 invoices overdue',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF0F766E),
+                                      color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -383,19 +404,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       Text(
                         lang == 'lg' ? 'Ebikolwa ebyakakolebwa' : 'Recent transactions',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
+                          color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
                         ),
                       ),
                       InkWell(
-                        onTap: () => widget.onNavigateTab(2),
+                        onTap: () => widget.onNavigateTab(1),
                         child: Text(
                           lang == 'lg' ? 'Laba byonna' : 'See all',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF0F766E),
+                            color: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -409,33 +430,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       _buildTransactionItem(
                         icon: Icons.north_east_rounded,
-                        iconBg: const Color(0xFFDCFCE7),
-                        iconColor: const Color(0xFF16A34A),
+                        iconBg: isDark ? const Color(0xFF052B1E) : const Color(0xFFDCFCE7),
+                        iconColor: const Color(0xFF22C55E),
                         title: 'Sale — cooking oil x2',
                         subtitle: 'MTN MoMo · 10 min ago',
                         amount: '+45,000',
-                        amountColor: const Color(0xFF16A34A),
+                        amountColor: const Color(0xFF22C55E),
                         hasBorder: true,
+                        isDark: isDark,
                       ),
                       _buildTransactionItem(
                         icon: Icons.south_east_rounded,
-                        iconBg: const Color(0xFFFEE2E2),
-                        iconColor: const Color(0xFFDC2626),
+                        iconBg: isDark ? const Color(0xFF330C0C) : const Color(0xFFFEE2E2),
+                        iconColor: const Color(0xFFEF4444),
                         title: 'Transport expense',
                         subtitle: 'Cash · 1 hr ago',
                         amount: '-15,000',
-                        amountColor: const Color(0xFFDC2626),
+                        amountColor: const Color(0xFFEF4444),
                         hasBorder: true,
+                        isDark: isDark,
                       ),
                       _buildTransactionItem(
                         icon: Icons.access_time_rounded,
-                        iconBg: const Color(0xFFF1F5F9),
-                        iconColor: const Color(0xFF64748B),
+                        iconBg: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
+                        iconColor: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
                         title: 'Invoice — J. Okello',
                         subtitle: 'Credit sale · Yesterday',
                         amount: '120,000',
-                        amountColor: const Color(0xFF334155),
+                        amountColor: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
                         hasBorder: false,
+                        isDark: isDark,
                       ),
                     ],
                   ),
@@ -477,6 +501,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required IconData icon,
     required String label,
     required Color iconColor,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -488,18 +513,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                width: 0.5,
+              ),
             ),
             child: Icon(icon, size: 20, color: iconColor),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF475569),
+              color: isDark ? AppColors.darkTextMuted : const Color(0xFF475569),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -517,12 +545,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String amount,
     required Color amountColor,
     required bool hasBorder,
+    required bool isDark,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         border: hasBorder
-            ? const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 0.5))
+            ? Border(
+                bottom: BorderSide(
+                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                  width: 0.5,
+                ),
+              )
             : null,
       ),
       child: Row(
@@ -543,18 +577,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF0F172A),
+                    color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF64748B),
+                    color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -574,8 +608,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-// Sparkline / Polyline Painter matching the SVG polyline in the HTML:
-// points="0,40 30,32 60,38 90,20 120,28 150,10 180,22 210,14 240,18 270,6 300,12"
+// Polyline Wave Painter matching the HTML polyline
 class _PolylineWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

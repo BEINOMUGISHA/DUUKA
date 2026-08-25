@@ -20,11 +20,15 @@ class DukaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: 'DUKA - Uganda SME Finance & Stock',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      // Authentication is Paramount: Strict gate to AuthScreen if not authenticated
       home: session != null ? const MainNavigationShell() : const AuthScreen(),
     );
   }
@@ -42,6 +46,8 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final List<Widget> screens = [
       DashboardScreen(onNavigateTab: (index) => setState(() => _currentIndex = index)),
       const ReportsScreen(),
@@ -51,16 +57,19 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
           border: Border(
-            top: BorderSide(color: Color(0xFFE2E8F0), width: 0.5),
+            top: BorderSide(
+              color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+              width: 0.5,
+            ),
           ),
         ),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -72,14 +81,14 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
               _buildNavIcon(
                 index: 0,
                 icon: Icons.home_rounded,
-                selectedColor: const Color(0xFF0F766E),
+                selectedColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
               ),
 
               // 2. Chart / Reports
               _buildNavIcon(
                 index: 1,
                 icon: Icons.bar_chart_rounded,
-                selectedColor: const Color(0xFF0F766E),
+                selectedColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
               ),
 
               // 3. Center Elevated Plus (POS / New Sale)
@@ -95,7 +104,7 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryForest.withValues(alpha: 0.3),
+                        color: AppColors.primaryForest.withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -113,14 +122,14 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
               _buildNavIcon(
                 index: 3,
                 icon: Icons.inventory_2_outlined,
-                selectedColor: const Color(0xFF0F766E),
+                selectedColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
               ),
 
               // 5. User / Settings
               _buildNavIcon(
                 index: 4,
                 icon: Icons.person_outline_rounded,
-                selectedColor: const Color(0xFF0F766E),
+                selectedColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
               ),
             ],
           ),
@@ -135,12 +144,14 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     required Color selectedColor,
   }) {
     final isSelected = _currentIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return IconButton(
       onPressed: () => setState(() => _currentIndex = index),
       icon: Icon(
         icon,
         size: 22,
-        color: isSelected ? selectedColor : const Color(0xFF94A3B8),
+        color: isSelected ? selectedColor : (isDark ? AppColors.darkTextMuted : const Color(0xFF94A3B8)),
       ),
     );
   }
