@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/database/app_database.dart';
 import '../../../core/widgets/spinning_wheel_picker.dart';
 import 'receipt_share_screen.dart';
 
@@ -54,18 +56,6 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
   final Map<String, CartItem> _cart = {};
-
-  final List<PosItem> _products = const [
-    PosItem(id: 'p1', name: 'NPK 17:17:17 Fertilizer 50kg', category: 'Agro', icon: '🌾', costPrice: 150000, sellPrice: 185000, currentStock: 24, unit: 'bag'),
-    PosItem(id: 'p2', name: 'DAP Fertilizer 50kg', category: 'Agro', icon: '🌾', costPrice: 170000, sellPrice: 210000, currentStock: 18, unit: 'bag'),
-    PosItem(id: 'p3', name: 'Longe 5 Maize Seeds 2kg', category: 'Seeds', icon: '🌱', costPrice: 12000, sellPrice: 16000, currentStock: 4, unit: 'pkt'),
-    PosItem(id: 'p4', name: 'Bazooka Maize Seeds 2kg', category: 'Seeds', icon: '🌱', costPrice: 14000, sellPrice: 18500, currentStock: 30, unit: 'pkt'),
-    PosItem(id: 'p5', name: 'Roundup Weedkiller 1L', category: 'Chemicals', icon: '🧪', costPrice: 22000, sellPrice: 28000, currentStock: 12, unit: 'bottle'),
-    PosItem(id: 'p6', name: 'Dudu Acelamectin Pesticide 500ml', category: 'Chemicals', icon: '🧪', costPrice: 18000, sellPrice: 24000, currentStock: 15, unit: 'bottle'),
-    PosItem(id: 'p7', name: 'Tororo Cement 32.5R 50kg', category: 'Hardware', icon: '🧱', costPrice: 32000, sellPrice: 36000, currentStock: 80, unit: 'bag'),
-    PosItem(id: 'p8', name: 'Iron Sheets 28 Gauge 3m', category: 'Hardware', icon: '🏠', costPrice: 42000, sellPrice: 48500, currentStock: 60, unit: 'pc'),
-    PosItem(id: 'p9', name: 'Water Pump Knapsack 16L', category: 'Equipment', icon: '⚙️', costPrice: 65000, sellPrice: 85000, currentStock: 8, unit: 'pc'),
-  ];
 
   double get _cartTotal => _cart.values.fold(0, (sum, item) => sum + item.subtotal);
   int get _cartItemCount => _cart.values.fold(0, (sum, item) => sum + item.quantity);
@@ -227,7 +217,29 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredProducts = _products.where((p) {
+    final dbProducts = ref.watch(productsProvider);
+    final posProducts = dbProducts.map((p) {
+      String icon = '📦';
+      if (p.category == 'Agro') icon = '🌾';
+      else if (p.category == 'Seeds') icon = '🌱';
+      else if (p.category == 'Chemicals') icon = '🧪';
+      else if (p.category == 'Hardware') icon = '🧱';
+      else if (p.category == 'Equipment') icon = '⚙️';
+
+      return PosItem(
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        icon: icon,
+        costPrice: p.costPrice,
+        sellPrice: p.sellPrice,
+        currentStock: p.currentStock,
+        unit: p.unit,
+        isTaxable: p.isTaxable,
+      );
+    }).toList();
+
+    final filteredProducts = posProducts.where((p) {
       final matchesCat = _selectedCategory == 'All' || p.category == _selectedCategory;
       final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCat && matchesSearch;
@@ -650,7 +662,55 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       'dueDate': _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
     };
 
-    // Enqueue to offline database
+    // Save to persistent database
+    final localSale = LocalSaleData(
+      id: 'sl_${DateTime.now().millisecondsSinceEpoch}',
+      businessId: session?.businessId ?? 'biz_default',
+      saleNumber: saleNumber,
+      customerId: _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
+      customerName: _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Walk-in Customer',
+      customerPhone: _customerPhoneController.text,
+      itemsJson: jsonEncode(salePayload['items']),
+      subtotalAmount: widget.totalAmount / 1.18,
+      taxAmount: widget.totalAmount - (widget.totalAmount / 1.18),
+      discountAmount: 0.0,
+      totalAmount: widget.totalAmount,
+      paidAmount: paid,
+      dueAmount: due,
+      paymentStatus: due <= 0 ? 'paid' : (paid > 0 ? 'partial' : 'unpaid'),
+      paymentMethod: _isCreditSale ? 'credit' : _paymentMethod,
+      momoReference: _momoRefController.text,
+      isCredit: _isCreditSale || due > 0,
+      dueDate: _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
+      efrisFiscalCode: fiscalCode,
+      deviceId: session?.deviceId ?? 'device-001',
+      localTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    ref.read(salesProvider.notifier).recordSale(localSale);
+
+    // Decrement stock in database
+    for (final ci in widget.cartItems) {
+      ref.read(databaseProvider).updateProductStock(ci.product.id, -ci.quantity.toDouble());
+    }
+
+    // Record credit debtor if credit sale or partial payment
+    if (_isCreditSale || due > 0) {
+      final custName = _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Credit Customer';
+      final custPhone = _customerPhoneController.text.isNotEmpty ? _customerPhoneController.text : '0700000000';
+      final debtor = LocalDebtorData(
+        id: 'd_${DateTime.now().millisecondsSinceEpoch}',
+        businessId: session?.businessId ?? 'biz_default',
+        name: custName,
+        phone: custPhone,
+        balanceOwed: due,
+        creditLimit: 500000,
+        lastSaleDate: DateTime.now().millisecondsSinceEpoch,
+      );
+      ref.read(debtorsProvider.notifier).addDebtor(debtor);
+    }
+
+    // Enqueue to offline sync queue
     syncEngine?.enqueueMutation(
       entityType: 'sale',
       action: 'create',

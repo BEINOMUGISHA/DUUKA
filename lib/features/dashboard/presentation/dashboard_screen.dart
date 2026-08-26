@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
+import '../../sales/presentation/sales_history_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final Function(int) onNavigateTab;
@@ -23,6 +25,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final lang = ref.watch(languageProvider);
     final syncEngine = ref.watch(syncEngineProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final sales = ref.watch(salesProvider);
+    final expenses = ref.watch(expensesProvider);
+    final products = ref.watch(productsProvider);
+    final debtors = ref.watch(debtorsProvider);
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+
+    final totalRevenue = sales.where((s) => !s.isVoided).fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final totalExpenses = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final netBalance = totalRevenue - totalExpenses;
+
+    final todaySales = sales.where((s) => !s.isVoided && s.localTimestamp >= todayStart).fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final todayExpenses = expenses.where((e) => e.date >= todayStart).fold<double>(0, (sum, e) => sum + e.amount);
+    final todayProfit = todaySales - todayExpenses;
+
+    final lowStockCount = products.where((p) => p.currentStock <= p.minStockLevel).length;
+    final overdueCount = debtors.where((d) => d.balanceOwed > 0).length;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9), // surface-1
@@ -82,13 +103,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              Text(
-                                ref.tr('nav_dashboard'),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
-                                ),
+                              const SizedBox(height: 1),
+                              Row(
+                                children: [
+                                  Text(
+                                    session?.fullName ?? 'Business Owner',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.verified_rounded,
+                                    size: 15,
+                                    color: Color(0xFF0F766E),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -137,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                           const SizedBox(width: 8),
 
-                          // Notification Bell with Red Dot
+                          // Notification Bell
                           Container(
                             width: 38,
                             height: 38,
@@ -188,7 +220,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     clipBehavior: Clip.antiAlias,
                     child: Stack(
                       children: [
-                        // SVG Polyline Wave at bottom
                         Positioned(
                           left: 0,
                           right: 0,
@@ -201,8 +232,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                           ),
                         ),
-
-                        // Card Content
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(
@@ -233,10 +262,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                _hideFigures ? 'UGX ••••••••' : 'UGX 4,286,500',
+                                _hideFigures ? 'UGX ••••••••' : CurrencyFormatter.format(netBalance),
                                 style: const TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
                                   color: Colors.white,
                                   letterSpacing: -0.5,
                                 ),
@@ -245,18 +274,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               Row(
                                 children: [
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Eziyingidde' : 'Income',
-                                    value: _hideFigures ? '••••' : '↑ 1.8M',
+                                    label: lang == 'lg' ? 'Eziyingidde (Leero)' : 'Today Income',
+                                    value: _hideFigures ? '••••' : '↑ ${CurrencyFormatter.format(todaySales)}',
                                   ),
-                                  const SizedBox(width: 24),
+                                  const SizedBox(width: 16),
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Ezafulumye' : 'Expenses',
-                                    value: _hideFigures ? '••••' : '↓ 620K',
+                                    label: lang == 'lg' ? 'Ezafulumye' : 'Today Expenses',
+                                    value: _hideFigures ? '••••' : '↓ ${CurrencyFormatter.format(todayExpenses)}',
                                   ),
-                                  const SizedBox(width: 24),
+                                  const SizedBox(width: 16),
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Amagoba' : 'Profit',
-                                    value: _hideFigures ? '••••' : '1.16M',
+                                    label: lang == 'lg' ? 'Amagoba' : 'Today Profit',
+                                    value: _hideFigures ? '••••' : CurrencyFormatter.format(todayProfit),
                                   ),
                                 ],
                               ),
@@ -301,7 +330,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.description_outlined,
-                        label: lang == 'lg' ? 'Ebbanja' : 'Invoice',
+                        label: lang == 'lg' ? 'Ebbanja' : 'Debtors',
                         iconColor: const Color(0xFF34D399),
                         isDark: isDark,
                         onTap: () {
@@ -316,7 +345,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 18),
 
-                  // --- 4. TWO ALERT PILLS (Low stock & Overdue) ---
+                  // --- 4. TWO ALERT PILLS ---
                   Row(
                     children: [
                       Expanded(
@@ -332,15 +361,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  size: 16,
-                                  color: Color(0xFFF59E0B),
-                                ),
+                                const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFF59E0B)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    lang == 'lg' ? 'Ebyamaguzi 3 bikendedde' : '3 low stock items',
+                                    lang == 'lg' ? '$lowStockCount ebiba bikendedde' : '$lowStockCount low stock items',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -374,15 +399,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.access_time_rounded,
-                                  size: 16,
-                                  color: Color(0xFF14B8A6),
-                                ),
+                                const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF14B8A6)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    lang == 'lg' ? 'Amabanja 2 gayiseeko' : '2 invoices overdue',
+                                    lang == 'lg' ? '$overdueCount amabanja' : '$overdueCount overdue debts',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -415,7 +436,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                       InkWell(
-                        onTap: () => widget.onNavigateTab(1),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (ctx) => const SalesHistoryScreen()),
+                          );
+                        },
                         child: Text(
                           lang == 'lg' ? 'Laba byonna' : 'See all',
                           style: TextStyle(
@@ -430,43 +456,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 8),
 
-                  Column(
-                    children: [
-                      _buildTransactionItem(
-                        icon: Icons.north_east_rounded,
-                        iconBg: isDark ? const Color(0xFF052B1E) : const Color(0xFFDCFCE7),
-                        iconColor: const Color(0xFF22C55E),
-                        title: 'Sale — cooking oil x2',
-                        subtitle: 'MTN MoMo · 10 min ago',
-                        amount: '+45,000',
-                        amountColor: const Color(0xFF22C55E),
-                        hasBorder: true,
-                        isDark: isDark,
+                  if (sales.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          const Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.textMuted),
+                          const SizedBox(height: 6),
+                          const Text('No sales recorded yet', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: () => widget.onNavigateTab(2),
+                            icon: const Icon(Icons.point_of_sale_rounded, size: 16),
+                            label: const Text('Make First Sale', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ),
-                      _buildTransactionItem(
-                        icon: Icons.south_east_rounded,
-                        iconBg: isDark ? const Color(0xFF330C0C) : const Color(0xFFFEE2E2),
-                        iconColor: const Color(0xFFEF4444),
-                        title: 'Transport expense',
-                        subtitle: 'Cash · 1 hr ago',
-                        amount: '-15,000',
-                        amountColor: const Color(0xFFEF4444),
-                        hasBorder: true,
-                        isDark: isDark,
-                      ),
-                      _buildTransactionItem(
-                        icon: Icons.access_time_rounded,
-                        iconBg: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
-                        iconColor: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
-                        title: 'Invoice — J. Okello',
-                        subtitle: 'Credit sale · Yesterday',
-                        amount: '120,000',
-                        amountColor: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
-                        hasBorder: false,
-                        isDark: isDark,
-                      ),
-                    ],
-                  ),
+                    )
+                  else
+                    Column(
+                      children: sales.take(5).map((s) {
+                        final isLast = s == sales.take(5).last;
+                        final date = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp);
+                        final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${s.paymentMethod.toUpperCase()}';
+
+                        return _buildTransactionItem(
+                          icon: s.isCredit ? Icons.schedule_rounded : Icons.north_east_rounded,
+                          iconBg: s.isCredit
+                              ? (isDark ? const Color(0xFF332005) : const Color(0xFFFEF3C7))
+                              : (isDark ? const Color(0xFF052B1E) : const Color(0xFFDCFCE7)),
+                          iconColor: s.isCredit ? const Color(0xFFD97706) : const Color(0xFF22C55E),
+                          title: '${s.saleNumber} — ${s.customerName ?? 'Walk-in'}',
+                          subtitle: timeStr,
+                          amount: '+${CurrencyFormatter.format(s.totalAmount)}',
+                          amountColor: s.isCredit ? const Color(0xFFD97706) : const Color(0xFF22C55E),
+                          hasBorder: !isLast,
+                          isDark: isDark,
+                        );
+                      }).toList(),
+                    ),
                 ],
               ),
             ),

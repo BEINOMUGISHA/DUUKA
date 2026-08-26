@@ -1,30 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
-
-class LocalExpense {
-  final String id;
-  final String categoryName;
-  final String icon;
-  final double amount;
-  final String paymentMethod;
-  final String notes;
-  final String timeStr;
-
-  LocalExpense({
-    required this.id,
-    required this.categoryName,
-    required this.icon,
-    required this.amount,
-    required this.paymentMethod,
-    required this.notes,
-    required this.timeStr,
-  });
-}
+import '../../../core/database/app_database.dart';
 
 class ExpensesScreen extends ConsumerStatefulWidget {
   const ExpensesScreen({super.key});
@@ -34,19 +14,14 @@ class ExpensesScreen extends ConsumerStatefulWidget {
 }
 
 class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
-  final List<LocalExpense> _expenses = [
-    LocalExpense(id: 'e1', categoryName: 'Transport (Boda/Taxi/Fuel)', icon: '🛵', amount: 25000, paymentMethod: 'cash', notes: 'Boda for seed delivery to market', timeStr: '11:30 AM'),
-    LocalExpense(id: 'e2', categoryName: 'Staff Meals & Refreshments', icon: '🍲', amount: 15000, paymentMethod: 'mtn_momo', notes: 'Staff lunch (Kiyindi)', timeStr: '01:15 PM'),
-    LocalExpense(id: 'e3', categoryName: 'Airtime & Internet / Data', icon: '📱', amount: 10000, paymentMethod: 'airtel_money', notes: 'Monthly shop WhatsApp bundle', timeStr: '02:45 PM'),
-  ];
-
-  double get _totalExpenses => _expenses.fold(0, (sum, e) => sum + e.amount);
+  String _selectedFilter = 'All';
 
   void _showAddExpenseDialog([UgandaExpenseCategory? preset]) {
     final amountCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     String selectedCategory = preset?.labelEn ?? UgandaPresets.expenseCategories.first.labelEn;
     String paymentMethod = UgandaPresets.paymentCash;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -60,9 +35,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
             right: 20,
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -92,77 +67,89 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                   controller: amountCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: '${ref.tr('amount_spent')} *',
+                    labelText: '${ref.tr('amount_spent')} (UGX) *',
                     hintText: 'e.g. 20000',
-                    prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
+                    prefixIcon: const Icon(Icons.payments_rounded, size: 20),
                   ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: paymentMethod,
-                  decoration: InputDecoration(labelText: '${ref.tr('paid_via')} *'),
-                  items: [
-                    DropdownMenuItem(value: UgandaPresets.paymentCash, child: Text(ref.tr('pay_cash'))),
-                    DropdownMenuItem(value: UgandaPresets.paymentMtnMomo, child: Text(ref.tr('pay_momo'))),
-                    DropdownMenuItem(value: UgandaPresets.paymentAirtelMoney, child: Text(ref.tr('pay_airtel'))),
-                    DropdownMenuItem(value: UgandaPresets.paymentBank, child: Text(ref.tr('pay_bank'))),
-                  ],
-                  onChanged: (val) => setSheetState(() => paymentMethod = val!),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: notesCtrl,
                   decoration: InputDecoration(
-                    labelText: ref.tr('description_optional'),
-                    hintText: 'e.g. Fuel for generator or market receipt',
-                    prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+                    labelText: ref.tr('expense_notes'),
+                    hintText: 'e.g. Boda for deliveries to market',
+                    prefixIcon: const Icon(Icons.note_alt_rounded, size: 20),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+                Text(ref.tr('select_payment_method'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildPayMethodCard(
+                      label: 'Cash',
+                      value: UgandaPresets.paymentCash,
+                      isSelected: paymentMethod == UgandaPresets.paymentCash,
+                      color: AppColors.cashGreen,
+                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentCash),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPayMethodCard(
+                      label: 'MTN MoMo',
+                      value: UgandaPresets.paymentMtnMomo,
+                      isSelected: paymentMethod == UgandaPresets.paymentMtnMomo,
+                      color: AppColors.mtnYellow,
+                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentMtnMomo),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPayMethodCard(
+                      label: 'Airtel',
+                      value: UgandaPresets.paymentAirtelMoney,
+                      isSelected: paymentMethod == UgandaPresets.paymentAirtelMoney,
+                      color: AppColors.airtelRed,
+                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentAirtelMoney),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 48,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      final amt = double.tryParse(amountCtrl.text) ?? 0;
-                      if (amt <= 0) return;
-
-                      setState(() {
-                        _expenses.insert(
-                          0,
-                          LocalExpense(
-                            id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
-                            categoryName: selectedCategory,
-                            icon: '💸',
-                            amount: amt,
-                            paymentMethod: paymentMethod,
-                            notes: notesCtrl.text.isEmpty ? 'Daily expense' : notesCtrl.text,
-                            timeStr: 'Just now',
-                          ),
+                      final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
+                      if (amount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter a valid expense amount')),
                         );
-                      });
+                        return;
+                      }
 
-                      final syncEngine = ref.read(syncEngineProvider);
-                      syncEngine?.enqueueMutation(
-                        entityType: 'transaction',
-                        action: 'create',
-                        payload: {
-                          'type': 'expense',
-                          'category': selectedCategory,
-                          'amount': amt,
-                          'paymentMethod': paymentMethod,
-                          'notes': notesCtrl.text,
-                        },
+                      final catObj = UgandaPresets.expenseCategories.firstWhere(
+                        (c) => c.labelEn == selectedCategory,
+                        orElse: () => UgandaPresets.expenseCategories.first,
                       );
 
+                      final session = ref.read(authProvider);
+                      final newExpense = LocalExpenseData(
+                        id: 'exp_${DateTime.now().millisecondsSinceEpoch}',
+                        businessId: session?.businessId ?? 'biz_default',
+                        categoryName: selectedCategory,
+                        icon: catObj.icon,
+                        amount: amount,
+                        paymentMethod: paymentMethod,
+                        notes: notesCtrl.text.trim(),
+                        date: DateTime.now().millisecondsSinceEpoch,
+                      );
+
+                      ref.read(expensesProvider.notifier).addExpense(newExpense);
                       Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(ref.tr('expense_logged'))),
+                      );
                     },
-                    icon: const Icon(Icons.check_rounded),
-                    label: Text(ref.tr('save_expense'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.danger,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
+                    icon: const Icon(Icons.check_circle_rounded),
+                    label: Text(ref.tr('save_expense'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
                   ),
                 ),
               ],
@@ -173,30 +160,89 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     );
   }
 
+  Widget _buildPayMethodCard({
+    required String label,
+    required String value,
+    required bool isSelected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color : AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: isSelected ? Colors.transparent : AppColors.borderLight),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? (value == UgandaPresets.paymentMtnMomo ? Colors.black : Colors.white) : AppColors.textMain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(languageProvider);
+    final expenses = ref.watch(expensesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final weekStart = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+    final monthStart = DateTime(now.year, now.month, 1).millisecondsSinceEpoch;
+
+    final filtered = expenses.where((e) {
+      switch (_selectedFilter) {
+        case 'Today':
+          return e.date >= todayStart;
+        case 'This Week':
+          return e.date >= weekStart;
+        case 'This Month':
+          return e.date >= monthStart;
+        default:
+          return true;
+      }
+    }).toList();
+
+    final totalSpent = filtered.fold<double>(0, (sum, e) => sum + e.amount);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(ref.tr('expenses_title')),
       ),
       body: Column(
         children: [
-          // Total Expense Header Card
+          // Total Spent Banner
           Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(18),
+            margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFEF2F2), Color(0xFFFEE2E2)],
+                colors: [Color(0xFF881337), Color(0xFFE11D48)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.red.shade200),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -205,147 +251,159 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ref.tr('todays_total_expenses'),
-                      style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.w700, fontSize: 12),
+                      ref.tr('total_expenses'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      CurrencyFormatter.format(_totalExpenses),
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: AppColors.danger, letterSpacing: -0.5),
+                      CurrencyFormatter.format(totalSpent),
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () => _showAddExpenseDialog(),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: Text(ref.tr('log_expense'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${filtered.length} Items',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
                   ),
                 ),
               ],
             ),
-          ).animate().fadeIn(),
-
-          // 1-Tap Preset Chips
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                children: [
-                  const Icon(Icons.flash_on_rounded, size: 16, color: AppColors.accentGold),
-                  const SizedBox(width: 4),
-                  Text(
-                    ref.tr('one_tap_presets'),
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textMain),
-                  ),
-                ],
-              ),
-            ),
           ),
-          const SizedBox(height: 8),
 
-          SizedBox(
-            height: 42,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              scrollDirection: Axis.horizontal,
-              itemCount: UgandaPresets.expenseCategories.length,
-              itemBuilder: (ctx, i) {
-                final cat = UgandaPresets.expenseCategories[i];
-                final label = lang == 'lg' ? cat.labelLg : lang == 'rn' ? cat.labelRn : cat.labelEn;
-
+          // Quick Presets Carousel
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: Row(
+              children: UgandaPresets.expenseCategories.take(4).map((cat) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: AppColors.borderLight),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    avatar: Text(cat.icon, style: const TextStyle(fontSize: 12)),
+                    label: Text(cat.labelEn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     onPressed: () => _showAddExpenseDialog(cat),
                   ),
                 );
-              },
+              }).toList(),
             ),
           ),
 
-          const SizedBox(height: 14),
-
-          // Expense List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _expenses.length,
-              itemBuilder: (ctx, index) {
-                final exp = _expenses[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderLight),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.015),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(exp.icon, style: const TextStyle(fontSize: 18)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(exp.categoryName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                            const SizedBox(height: 2),
-                            Text('${exp.notes} • ${exp.timeStr}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '- ${CurrencyFormatter.format(exp.amount)}',
-                            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.danger, fontSize: 13),
-                          ),
-                          const SizedBox(height: 2),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceMuted,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              exp.paymentMethod.toUpperCase(),
-                              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.textMuted),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          // Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: Row(
+              children: ['All', 'Today', 'This Week', 'This Month'].map((f) {
+                final isSelected = _selectedFilter == f;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    label: Text(f, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600)),
+                    selected: isSelected,
+                    selectedColor: AppColors.primaryForest,
+                    labelStyle: TextStyle(color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain)),
+                    onSelected: (_) => setState(() => _selectedFilter = f),
                   ),
                 );
-              },
+              }).toList(),
             ),
           ),
+
+          const SizedBox(height: 4),
+
+          // Expenses List
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.receipt_outlined, size: 48, color: AppColors.textMuted),
+                        const SizedBox(height: 8),
+                        Text(
+                          expenses.isEmpty ? ref.tr('no_expenses') : 'No expenses in selected period',
+                          style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 80),
+                    itemCount: filtered.length,
+                    itemBuilder: (ctx, index) {
+                      final item = filtered[index];
+                      final date = DateTime.fromMillisecondsSinceEpoch(item.date);
+                      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}';
+
+                      return Dismissible(
+                        key: Key(item.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          color: AppColors.danger,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) {
+                          ref.read(expensesProvider.notifier).deleteExpense(item.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Expense deleted')),
+                          );
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          child: ListTile(
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(item.icon, style: const TextStyle(fontSize: 20)),
+                            ),
+                            title: Text(
+                              item.categoryName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            subtitle: Text(
+                              '${item.notes.isNotEmpty ? '${item.notes} · ' : ''}$timeStr',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Text(
+                              CurrencyFormatter.format(item.amount),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                color: AppColors.danger,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddExpenseDialog(),
+        backgroundColor: const Color(0xFFE11D48),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: Text(
+          ref.tr('log_expense'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }

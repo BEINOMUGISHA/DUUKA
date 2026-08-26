@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -320,3 +321,185 @@ extension TranslationRef on WidgetRef {
     return AppTranslations.tr(key, lang);
   }
 }
+
+// ===========================================================================
+// PERSISTENT DOMAIN PROVIDERS
+// ===========================================================================
+
+// --- PRODUCTS NOTIFIER ---
+class ProductsNotifier extends StateNotifier<List<LocalProductData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  ProductsNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getProducts();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getProducts();
+    });
+  }
+
+  Future<void> addProduct(LocalProductData product) async {
+    await db.insertProduct(product);
+  }
+
+  Future<void> editProduct(LocalProductData product) async {
+    await db.updateProduct(product);
+  }
+
+  Future<void> archiveProduct(String id) async {
+    await db.archiveProduct(id);
+  }
+
+  Future<void> restockProduct({
+    required String productId,
+    required String businessId,
+    required double qtyReceived,
+    required double costPerUnit,
+    String? supplierName,
+    String? notes,
+  }) async {
+    final restock = LocalRestockData(
+      id: 'rst_${DateTime.now().millisecondsSinceEpoch}',
+      productId: productId,
+      businessId: businessId,
+      qtyReceived: qtyReceived,
+      costPerUnit: costPerUnit,
+      supplierName: supplierName,
+      notes: notes,
+      date: DateTime.now().millisecondsSinceEpoch,
+    );
+    await db.insertRestock(restock);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final productsProvider = StateNotifierProvider<ProductsNotifier, List<LocalProductData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return ProductsNotifier(db);
+});
+
+// --- SALES NOTIFIER ---
+class SalesNotifier extends StateNotifier<List<LocalSaleData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  SalesNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getSales();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getSales();
+    });
+  }
+
+  Future<void> recordSale(LocalSaleData sale) async {
+    await db.insertSale(sale);
+  }
+
+  Future<void> voidSale(String saleId) async {
+    await db.voidSale(saleId);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final salesProvider = StateNotifierProvider<SalesNotifier, List<LocalSaleData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return SalesNotifier(db);
+});
+
+// --- EXPENSES NOTIFIER ---
+class ExpensesNotifier extends StateNotifier<List<LocalExpenseData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  ExpensesNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getExpenses();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getExpenses();
+    });
+  }
+
+  Future<void> addExpense(LocalExpenseData expense) async {
+    await db.insertExpense(expense);
+  }
+
+  Future<void> deleteExpense(String id) async {
+    await db.deleteExpense(id);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final expensesProvider = StateNotifierProvider<ExpensesNotifier, List<LocalExpenseData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return ExpensesNotifier(db);
+});
+
+// --- DEBTORS NOTIFIER ---
+class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  DebtorsNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getDebtors();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getDebtors();
+    });
+  }
+
+  Future<void> addDebtor(LocalDebtorData debtor) async {
+    await db.insertDebtor(debtor);
+  }
+
+  Future<void> recordPayment(String debtorId, double amount, String method, String? ref) async {
+    await db.recordDebtorPayment(debtorId, amount, method, ref);
+  }
+
+  Future<void> updateBalance(String debtorId, double newBalance) async {
+    await db.updateDebtorBalance(debtorId, newBalance);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final debtorsProvider = StateNotifierProvider<DebtorsNotifier, List<LocalDebtorData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return DebtorsNotifier(db);
+});
+
