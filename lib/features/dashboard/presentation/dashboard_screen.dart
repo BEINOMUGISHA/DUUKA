@@ -307,7 +307,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         label: lang == 'lg' ? 'Tunda' : 'New sale',
                         iconColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
                         isDark: isDark,
-                        onTap: () => widget.onNavigateTab(2),
+                        onTap: () => widget.onNavigateTab(1),
                       ),
                       _buildQuickAction(
                         icon: Icons.receipt_long_rounded,
@@ -326,7 +326,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         label: lang == 'lg' ? 'Sttoka' : 'Stock',
                         iconColor: const Color(0xFFA78BFA),
                         isDark: isDark,
-                        onTap: () => widget.onNavigateTab(3),
+                        onTap: () => widget.onNavigateTab(2),
                       ),
                       _buildQuickAction(
                         icon: Icons.description_outlined,
@@ -350,7 +350,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () => widget.onNavigateTab(3),
+                          onTap: () => widget.onNavigateTab(2),
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             decoration: BoxDecoration(

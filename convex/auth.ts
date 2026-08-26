@@ -1,8 +1,9 @@
-import { mutation, query } from "./_generated/server";
+﻿import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
-// Helper simple PIN hash (in production, use bcrypt or crypto.subtle HMAC with salt)
-function hashPin(pin: string): string {
+// Helper simple PIN hash
+export function hashPin(pin: string): string {
   let hash = 0;
   for (let i = 0; i < pin.length; i++) {
     const char = pin.charCodeAt(i);
@@ -12,6 +13,36 @@ function hashPin(pin: string): string {
   return "h_" + Math.abs(hash).toString(16) + "_" + pin.length;
 }
 
+// Ugandan phone normalizer: 07XXXXXXXX or +2567XXXXXXXX -> 2567XXXXXXXX
+export function normalizeUgandaPhone(phone: string): string {
+  let cleaned = phone.replace(/[^0-9]/g, "");
+  if (cleaned.startsWith("0") && cleaned.length === 10) {
+    cleaned = "256" + cleaned.substring(1);
+  } else if (cleaned.startsWith("256") && cleaned.length === 12) {
+    // already 2567XXXXXXXX
+  } else if (cleaned.length === 9) {
+    cleaned = "256" + cleaned;
+  }
+  return cleaned;
+}
+
+// Security: Verify user has valid active access to business with required role/permissions
+export async function verifyUserBusinessAccess(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<"users">,
+  businessId: Id<"businesses">,
+  requiredPermission?: string
+) {
+  const user = await ctx.db.get(userId);
+  if (!user || user.businessId !== businessId || !user.isActive) {
+    throw new Error("UNAUTHORIZED: User does not have access to this business.");
+  }
+  if (requiredPermission && user.role !== "owner" && !user.permissions.includes(requiredPermission)) {
+    throw new Error(`FORBIDDEN: Missing required permission: ${requiredPermission}`);
+  }
+  return user;
+}
+
 // Onboard a new business & owner
 export const registerBusinessAndOwner = mutation({
   args: {
@@ -19,33 +50,39 @@ export const registerBusinessAndOwner = mutation({
     ownerName: v.string(),
     phone: v.string(),
     pin: v.string(),
-    currency: v.optional(v.string()),
-    tin: v.optional(v.string()),
+    email: v.optional(v.string()),
     address: v.optional(v.string()),
+    city: v.optional(v.string()),
+    tin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+    const normalizedPhone = normalizeUgandaPhone(args.phone);
+
     // Check if phone already registered
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_phone", (q) => q.eq("phone", args.phone))
+      .withIndex("by_phone", (q) => q.eq("phone", normalizedPhone))
       .first();
-    
+
     if (existingUser) {
-      throw new Error("A user with this phone number already exists.");
+      throw new Error("A user with this phone number is already registered.");
     }
 
     // 1. Create Business
     const businessId = await ctx.db.insert("businesses", {
       name: args.businessName,
       legalName: args.businessName,
-      tin: args.tin,
-      currency: args.currency ?? "UGX",
-      phone: args.phone,
+      phone: normalizedPhone,
+      email: args.email,
       address: args.address,
+      city: args.city ?? "Kampala",
+      country: "Uganda",
+      currency: "UGX",
+      tin: args.tin,
+      smsCredits: 20, // Free 20 SMS credits for starter
       subscriptionTier: "free",
-      subscriptionStatus: "active",
+      status: "active",
       isEfrisEnrolled: !!args.tin,
       createdAt: now,
       updatedAt: now,
@@ -54,7 +91,7 @@ export const registerBusinessAndOwner = mutation({
     // 2. Create Owner User
     const userId = await ctx.db.insert("users", {
       businessId,
-      phone: args.phone,
+      phone: normalizedPhone,
       fullName: args.ownerName,
       role: "owner",
       pinHash: hashPin(args.pin),
@@ -64,12 +101,16 @@ export const registerBusinessAndOwner = mutation({
         "can_view_cost_price",
         "can_void_sale",
         "can_approve_credit",
+        "can_send_sms",
         "can_manage_staff",
       ],
       isActive: true,
       lastLoginAt: now,
       createdAt: now,
     });
+
+    // Set ownerId on business
+    await ctx.db.patch(businessId, { ownerId: userId });
 
     // 3. Log Audit
     await ctx.db.insert("auditLogs", {
@@ -88,9 +129,9 @@ export const registerBusinessAndOwner = mutation({
       businessId,
       userId,
       fullName: args.ownerName,
-      phone: args.phone,
+      phone: normalizedPhone,
       role: "owner",
-      currency: args.currency ?? "UGX",
+      currency: "UGX",
       businessName: args.businessName,
     };
   },
@@ -104,9 +145,11 @@ export const loginWithPhoneAndPin = mutation({
     deviceId: v.string(),
   },
   handler: async (ctx, args) => {
+    const normalizedPhone = normalizeUgandaPhone(args.phone);
+
     const user = await ctx.db
       .query("users")
-      .withIndex("by_phone", (q) => q.eq("phone", args.phone))
+      .withIndex("by_phone", (q) => q.eq("phone", normalizedPhone))
       .first();
 
     if (!user) {
@@ -151,6 +194,7 @@ export const loginWithPhoneAndPin = mutation({
       permissions: user.permissions,
       businessName: business.name,
       currency: business.currency,
+      smsCredits: business.smsCredits,
       subscriptionTier: business.subscriptionTier,
       isEfrisEnrolled: business.isEfrisEnrolled,
     };
@@ -165,18 +209,22 @@ export const addStaffMember = mutation({
     fullName: v.string(),
     phone: v.string(),
     initialPin: v.string(),
-    role: v.union(v.literal("manager"), v.literal("staff")),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("manager"),
+      v.literal("cashier"),
+      v.literal("staff")
+    ),
     permissions: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const caller = await ctx.db.get(args.callerUserId);
-    if (!caller || caller.businessId !== args.businessId || caller.role !== "owner") {
-      throw new Error("Only the business owner can add staff members.");
-    }
+    await verifyUserBusinessAccess(ctx, args.callerUserId, args.businessId, "can_manage_staff");
+
+    const normalizedPhone = normalizeUgandaPhone(args.phone);
 
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_phone", (q) => q.eq("phone", args.phone))
+      .withIndex("by_phone", (q) => q.eq("phone", normalizedPhone))
       .first();
 
     if (existingUser) {
@@ -186,7 +234,7 @@ export const addStaffMember = mutation({
     const now = Date.now();
     const staffId = await ctx.db.insert("users", {
       businessId: args.businessId,
-      phone: args.phone,
+      phone: normalizedPhone,
       fullName: args.fullName,
       role: args.role,
       pinHash: hashPin(args.initialPin),
@@ -203,8 +251,11 @@ export const addStaffMember = mutation({
 export const listStaff = query({
   args: {
     businessId: v.id("businesses"),
+    callerUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    await verifyUserBusinessAccess(ctx, args.callerUserId, args.businessId);
+
     return await ctx.db
       .query("users")
       .withIndex("by_business", (q) => q.eq("businessId", args.businessId))

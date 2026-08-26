@@ -1,34 +1,40 @@
-import { mutation, query } from "./_generated/server";
+﻿import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { verifyUserBusinessAccess } from "./auth";
 
-// List all active products for a business
+// List all active products
 export const listProducts = query({
   args: {
     businessId: v.id("businesses"),
+    userId: v.id("users"),
     category: v.optional(v.string()),
+    search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let productsQuery = ctx.db
-      .query("products")
-      .withIndex("by_business", (q) => q.eq("businessId", args.businessId));
+    await verifyUserBusinessAccess(ctx, args.userId, args.businessId);
 
-    const products = await productsQuery.collect();
-    return products.filter((p) => !p.isArchived && (!args.category || p.category === args.category));
-  },
-});
-
-// Get low stock alert products
-export const getLowStockAlerts = query({
-  args: {
-    businessId: v.id("businesses"),
-  },
-  handler: async (ctx, args) => {
-    const products = await ctx.db
+    let products = await ctx.db
       .query("products")
       .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
       .collect();
 
-    return products.filter((p) => !p.isArchived && p.currentStock <= p.minStockLevel);
+    products = products.filter((p) => !p.isArchived);
+
+    if (args.category && args.category !== "All") {
+      products = products.filter((p) => p.category === args.category);
+    }
+
+    if (args.search && args.search.trim().length > 0) {
+      const q = args.search.toLowerCase().trim();
+      products = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.sku && p.sku.toLowerCase().includes(q)) ||
+          (p.barcode && p.barcode.includes(q))
+      );
+    }
+
+    return products.sort((a, b) => a.name.localeCompare(b.name));
   },
 });
 
@@ -42,31 +48,31 @@ export const createProduct = mutation({
     barcode: v.optional(v.string()),
     category: v.string(),
     costPrice: v.number(),
-    sellPrice: v.number(),
+    sellingPrice: v.number(),
     initialStock: v.number(),
-    minStockLevel: v.number(),
+    lowStockThreshold: v.number(),
     unit: v.string(),
-    isTaxable: v.boolean(),
+    isTaxable: v.optional(v.boolean()),
     taxRate: v.optional(v.number()),
-    imageUrl: v.optional(v.string()),
     deviceId: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyUserBusinessAccess(ctx, args.userId, args.businessId);
+
     const now = Date.now();
     const productId = await ctx.db.insert("products", {
       businessId: args.businessId,
-      name: args.name,
-      sku: args.sku,
-      barcode: args.barcode,
-      category: args.category,
+      name: args.name.trim(),
+      sku: args.sku?.trim(),
+      barcode: args.barcode?.trim(),
+      category: args.category.trim(),
       costPrice: args.costPrice,
-      sellPrice: args.sellPrice,
-      currentStock: args.initialStock,
-      minStockLevel: args.minStockLevel,
-      unit: args.unit,
-      isTaxable: args.isTaxable,
+      sellingPrice: args.sellingPrice,
+      stockQuantity: args.initialStock,
+      lowStockThreshold: args.lowStockThreshold,
+      unit: args.unit.trim(),
+      isTaxable: args.isTaxable ?? true,
       taxRate: args.taxRate ?? 0.18,
-      imageUrl: args.imageUrl,
       isArchived: false,
       createdAt: now,
       updatedAt: now,
@@ -81,127 +87,148 @@ export const createProduct = mutation({
         newStock: args.initialStock,
         reason: "restock",
         deviceId: args.deviceId,
-        localTimestamp: now,
         createdBy: args.userId,
         createdAt: now,
       });
     }
 
+    const user = await ctx.db.get(args.userId);
+    await ctx.db.insert("auditLogs", {
+      businessId: args.businessId,
+      userId: args.userId,
+      userName: user?.fullName ?? "Staff",
+      action: "PRODUCT_CREATED",
+      entityType: "product",
+      entityId: productId,
+      deviceId: args.deviceId,
+      details: `Created product "${args.name}" (Stock: ${args.initialStock} ${args.unit})`,
+      createdAt: now,
+    });
+
     return productId;
   },
 });
 
-// Update Product
+// Update product
 export const updateProduct = mutation({
   args: {
     businessId: v.id("businesses"),
+    userId: v.id("users"),
     productId: v.id("products"),
     name: v.string(),
     sku: v.optional(v.string()),
+    barcode: v.optional(v.string()),
     category: v.string(),
     costPrice: v.number(),
-    sellPrice: v.number(),
-    minStockLevel: v.number(),
+    sellingPrice: v.number(),
+    lowStockThreshold: v.number(),
     unit: v.string(),
-    isTaxable: v.boolean(),
-    taxRate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await verifyUserBusinessAccess(ctx, args.userId, args.businessId);
+
     const product = await ctx.db.get(args.productId);
     if (!product || product.businessId !== args.businessId) {
       throw new Error("Product not found");
     }
 
     await ctx.db.patch(args.productId, {
-      name: args.name,
-      sku: args.sku,
-      category: args.category,
+      name: args.name.trim(),
+      sku: args.sku?.trim(),
+      barcode: args.barcode?.trim(),
+      category: args.category.trim(),
       costPrice: args.costPrice,
-      sellPrice: args.sellPrice,
-      minStockLevel: args.minStockLevel,
-      unit: args.unit,
-      isTaxable: args.isTaxable,
-      taxRate: args.taxRate ?? 0.18,
+      sellingPrice: args.sellingPrice,
+      lowStockThreshold: args.lowStockThreshold,
+      unit: args.unit.trim(),
       updatedAt: Date.now(),
     });
   },
 });
 
-// Apply Delta Stock Movement (Safe for concurrent offline changes)
-export const applyStockMovement = mutation({
+// Restock product (GRN / Goods Received Note)
+export const restockProduct = mutation({
   args: {
     businessId: v.id("businesses"),
+    userId: v.id("users"),
     productId: v.id("products"),
-    deltaQuantity: v.number(), // Positive (restock/return) or Negative (sale/damage/loss)
-    reason: v.union(
-      v.literal("sale"),
-      v.literal("purchase"),
-      v.literal("restock"),
-      v.literal("damage"),
-      v.literal("loss"),
-      v.literal("adjustment"),
-      v.literal("return")
-    ),
-    referenceId: v.optional(v.string()),
-    batchNumber: v.optional(v.string()),
-    expiryDate: v.optional(v.number()),
+    quantityReceived: v.number(),
+    costPerUnit: v.number(),
+    supplierName: v.optional(v.string()),
+    notes: v.optional(v.string()),
     deviceId: v.string(),
-    localTimestamp: v.number(),
-    createdBy: v.id("users"),
   },
   handler: async (ctx, args) => {
+    await verifyUserBusinessAccess(ctx, args.userId, args.businessId);
+
     const product = await ctx.db.get(args.productId);
     if (!product || product.businessId !== args.businessId) {
       throw new Error("Product not found");
     }
 
-    const previousStock = product.currentStock;
-    const newStock = Math.max(0, previousStock + args.deltaQuantity);
+    const prev = product.stockQuantity;
+    const next = prev + args.quantityReceived;
+    const now = Date.now();
 
     await ctx.db.patch(args.productId, {
-      currentStock: newStock,
-      updatedAt: Date.now(),
+      stockQuantity: next,
+      costPrice: args.costPerUnit,
+      updatedAt: now,
     });
 
     const movementId = await ctx.db.insert("stockMovements", {
       businessId: args.businessId,
       productId: args.productId,
-      deltaQuantity: args.deltaQuantity,
-      previousStock,
-      newStock,
-      reason: args.reason,
-      referenceId: args.referenceId,
-      batchNumber: args.batchNumber,
-      expiryDate: args.expiryDate,
+      deltaQuantity: args.quantityReceived,
+      previousStock: prev,
+      newStock: next,
+      reason: "restock",
+      supplierName: args.supplierName,
+      costPerUnit: args.costPerUnit,
+      notes: args.notes,
       deviceId: args.deviceId,
-      localTimestamp: args.localTimestamp,
-      createdBy: args.createdBy,
-      createdAt: Date.now(),
+      createdBy: args.userId,
+      createdAt: now,
     });
 
-    return { movementId, newStock };
+    // Record stock purchase expense in cashbook
+    const totalCost = args.quantityReceived * args.costPerUnit;
+    await ctx.db.insert("transactions", {
+      businessId: args.businessId,
+      type: "expense",
+      category: "stock_purchase",
+      amount: totalCost,
+      paymentMethod: "cash",
+      notes: `Restocked ${args.quantityReceived} ${product.unit} of ${product.name} (Supplier: ${args.supplierName ?? "General"})`,
+      isRecurring: false,
+      date: now,
+      deviceId: args.deviceId,
+      createdBy: args.userId,
+      createdAt: now,
+    });
+
+    return { movementId, newStock: next };
   },
 });
 
-// List Stock Movements for Product
-export const listStockMovements = query({
+// Archive Product
+export const archiveProduct = mutation({
   args: {
     businessId: v.id("businesses"),
-    productId: v.optional(v.id("products")),
+    userId: v.id("users"),
+    productId: v.id("products"),
   },
   handler: async (ctx, args) => {
-    if (args.productId) {
-      return await ctx.db
-        .query("stockMovements")
-        .withIndex("by_product", (q) => q.eq("productId", args.productId!))
-        .order("desc")
-        .take(50);
+    await verifyUserBusinessAccess(ctx, args.userId, args.businessId);
+
+    const product = await ctx.db.get(args.productId);
+    if (!product || product.businessId !== args.businessId) {
+      throw new Error("Product not found");
     }
 
-    return await ctx.db
-      .query("stockMovements")
-      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
-      .order("desc")
-      .take(100);
+    await ctx.db.patch(args.productId, {
+      isArchived: true,
+      updatedAt: Date.now(),
+    });
   },
 });

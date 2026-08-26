@@ -10,6 +10,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/widgets/spinning_wheel_picker.dart';
 import 'receipt_share_screen.dart';
+import '../../payments/presentation/receive_payment_sheet.dart';
 
 class PosItem {
   final String id;
@@ -1054,7 +1055,35 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              if (_paymentMethod == UgandaPresets.paymentMtnMomo || _paymentMethod == UgandaPresets.paymentAirtelMoney)
+              if (_paymentMethod == UgandaPresets.paymentMtnMomo || _paymentMethod == UgandaPresets.paymentAirtelMoney) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => ReceivePaymentSheet(
+                          amount: widget.totalAmount,
+                          initialPhone: _customerPhoneController.text,
+                          customerName: _customerNameController.text,
+                          onPaymentSuccess: (refId, method) {
+                            setState(() {
+                              _momoRefController.text = refId;
+                            });
+                          },
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.send_to_mobile_rounded, size: 18),
+                    label: Text(
+                      'Push ${_paymentMethod == UgandaPresets.paymentMtnMomo ? 'MTN MoMo' : 'Airtel'} PIN Prompt',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: _momoRefController,
                   decoration: InputDecoration(
@@ -1071,6 +1100,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                     ),
                   ),
                 ),
+              ],
               const SizedBox(height: 14),
             ],
 

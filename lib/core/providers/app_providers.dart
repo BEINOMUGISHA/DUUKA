@@ -87,7 +87,7 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 // Convex Client Provider
 final convexClientProvider = Provider<ConvexClient>((ref) {
-  return ConvexClient(deploymentUrl: 'https://energetic-starling-420.convex.cloud');
+  return ConvexClient(deploymentUrl: 'https://content-giraffe-287.convex.cloud');
 });
 
 // --- AUTHENTICATION (PARAMOUNT) ---
@@ -487,10 +487,6 @@ class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
     await db.recordDebtorPayment(debtorId, amount, method, ref);
   }
 
-  Future<void> updateBalance(String debtorId, double newBalance) async {
-    await db.updateDebtorBalance(debtorId, newBalance);
-  }
-
   @override
   void dispose() {
     _sub?.cancel();
@@ -502,4 +498,141 @@ final debtorsProvider = StateNotifierProvider<DebtorsNotifier, List<LocalDebtorD
   final db = ref.watch(databaseProvider);
   return DebtorsNotifier(db);
 });
+
+// --- CUSTOMERS NOTIFIER ---
+class CustomersNotifier extends StateNotifier<List<LocalCustomerData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  CustomersNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getCustomers();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getCustomers();
+    });
+  }
+
+  Future<void> addCustomer(LocalCustomerData customer) async {
+    await db.insertCustomer(customer);
+  }
+
+  Future<void> updateCustomer(LocalCustomerData customer) async {
+    await db.updateCustomer(customer);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final customersProvider = StateNotifierProvider<CustomersNotifier, List<LocalCustomerData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return CustomersNotifier(db);
+});
+
+// --- SMS NOTIFIER ---
+class SmsNotifier extends StateNotifier<List<LocalSmsData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  SmsNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getSmsList();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getSmsList();
+    });
+  }
+
+  Future<void> logSms(LocalSmsData sms) async {
+    await db.insertSms(sms);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final smsProvider = StateNotifierProvider<SmsNotifier, List<LocalSmsData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return SmsNotifier(db);
+});
+
+// --- MOBILE MONEY TRANSACTIONS NOTIFIER ---
+class MobileMoneyNotifier extends StateNotifier<List<LocalMobileMoneyTxData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  MobileMoneyNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getMomoTransactions();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getMomoTransactions();
+    });
+  }
+
+  Future<void> recordTransaction(LocalMobileMoneyTxData tx) async {
+    await db.insertMomoTx(tx);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final mobileMoneyProvider = StateNotifierProvider<MobileMoneyNotifier, List<LocalMobileMoneyTxData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return MobileMoneyNotifier(db);
+});
+
+// --- NOTIFICATIONS NOTIFIER ---
+class NotificationsNotifier extends StateNotifier<List<LocalNotificationData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  NotificationsNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getNotifications();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getNotifications();
+    });
+  }
+
+  Future<void> addNotification(LocalNotificationData n) async {
+    await db.insertNotification(n);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final notificationsProvider = StateNotifierProvider<NotificationsNotifier, List<LocalNotificationData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return NotificationsNotifier(db);
+});
+
 
