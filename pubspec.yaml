@@ -25,8 +25,8 @@ dependencies:
   shared_preferences: ^2.3.1
   fl_chart: ^0.69.0
   url_launcher: ^6.3.0
-  pdf: ^3.11.1
-  printing: ^5.13.2
+  pdf: ^3.10.8
+  printing: 5.13.1
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
