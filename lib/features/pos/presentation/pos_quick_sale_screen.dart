@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/spinning_wheel_picker.dart';
 import 'receipt_share_screen.dart';
 
 class PosItem {
@@ -104,6 +105,122 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
             _cart.clear();
           });
         },
+      ),
+    );
+  }
+
+  /// Opens a 3D spinning wheel to let the user pick an exact quantity (1–50).
+  void _showQtyWheelPicker(PosItem product) {
+    final currentQty = _cart[product.id]?.quantity ?? 1;
+    final items = List.generate(
+      50,
+      (i) => WheelPickerItem<int>(
+        value: i + 1,
+        title: '${i + 1}',
+        subtitle: product.unit,
+        trailing: CurrencyFormatter.format(product.sellPrice * (i + 1)),
+        color: AppColors.primaryForest,
+      ),
+    );
+    int selectedQty = currentQty;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkSurface
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Text(
+                          'Set quantity',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryForest.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '× $selectedQty ${product.unit}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryForest,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SpinningWheelPicker<int>(
+                items: items,
+                initialIndex: currentQty - 1,
+                height: 240,
+                itemExtent: 60,
+                onItemSelected: (index) {
+                  setModalState(() => selectedQty = index + 1);
+                },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (selectedQty <= 0) {
+                        _cart.remove(product.id);
+                      } else {
+                        _cart[product.id] = CartItem(product: product, quantity: selectedQty);
+                      }
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  icon: const Icon(Icons.check_circle_rounded),
+                  label: Text(
+                    'Confirm ${selectedQty}× ${product.unit}  •  ${CurrencyFormatter.format(product.sellPrice * selectedQty)}',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -319,9 +436,19 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                                     child: Icon(Icons.remove_rounded, size: 16, color: Colors.white),
                                   ),
                                 ),
-                                Text(
-                                  '$cartQty',
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.white),
+                                // Long-press to open spinning wheel quantity picker
+                                GestureDetector(
+                                  onLongPress: () => _showQtyWheelPicker(prod),
+                                  child: Tooltip(
+                                    message: 'Hold to set exact quantity',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      child: Text(
+                                        '$cartQty',
+                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                                 InkWell(
                                   onTap: () => _addToCart(prod),
@@ -553,6 +680,124 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
     );
   }
 
+  /// Opens a 3D spinning wheel to pick the payment method.
+  void _showPaymentWheelPicker() {
+    final paymentItems = [
+      WheelPickerItem<String>(
+        value: UgandaPresets.paymentMtnMomo,
+        title: 'MTN MoMo',
+        subtitle: 'Mobile Money · Uganda',
+        icon: Icons.phone_android_rounded,
+        color: AppColors.mtnYellow,
+      ),
+      WheelPickerItem<String>(
+        value: UgandaPresets.paymentAirtelMoney,
+        title: 'Airtel Money',
+        subtitle: 'Mobile Money · Uganda',
+        icon: Icons.send_to_mobile_rounded,
+        color: AppColors.airtelRed,
+      ),
+      WheelPickerItem<String>(
+        value: UgandaPresets.paymentCash,
+        title: 'Cash',
+        subtitle: 'Physical UGX',
+        icon: Icons.payments_rounded,
+        color: AppColors.cashGreen,
+      ),
+      WheelPickerItem<String>(
+        value: UgandaPresets.paymentBank,
+        title: 'Bank Transfer',
+        subtitle: 'EFT / RTGS',
+        icon: Icons.account_balance_rounded,
+        color: AppColors.primaryForest,
+      ),
+    ];
+
+    final currentIndex = paymentItems.indexWhere((item) => item.value == _paymentMethod);
+    int selectedIndex = currentIndex >= 0 ? currentIndex : 0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkSurface
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Choose Payment Method',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Spin to select · tap Confirm to apply',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SpinningWheelPicker<String>(
+                items: paymentItems,
+                initialIndex: selectedIndex,
+                height: 260,
+                itemExtent: 68,
+                onItemSelected: (index) {
+                  setModalState(() => selectedIndex = index);
+                },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _paymentMethod = paymentItems[selectedIndex].value;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  icon: Icon(paymentItems[selectedIndex].icon),
+                  label: Text(
+                    'Pay with ${paymentItems[selectedIndex].title}',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: paymentItems[selectedIndex].color,
+                    foregroundColor: paymentItems[selectedIndex].value == UgandaPresets.paymentMtnMomo
+                        ? Colors.black
+                        : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -713,7 +958,27 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+
+              // Wheel picker shortcut
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _showPaymentWheelPicker,
+                  icon: const Text('🎡', style: TextStyle(fontSize: 14)),
+                  label: const Text(
+                    'Pick via Wheel',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryForest,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    shape: StadiumBorder(
+                      side: BorderSide(color: AppColors.primaryForest.withValues(alpha: 0.3)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
 
               // Quick UGX shortcut chips
               Row(
