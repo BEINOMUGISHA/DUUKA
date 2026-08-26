@@ -199,7 +199,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               Text('${ref.tr('current_stock_qty')}: ${product.currentStock.toInt()} ${product.unit}', style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: reason,
+                initialValue: reason,
                 decoration: InputDecoration(labelText: ref.tr('reason_adjustment')),
                 items: [
                   DropdownMenuItem(value: 'restock', child: Text(ref.tr('adj_restock'))),
@@ -282,18 +282,39 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       ),
       body: Column(
         children: [
-          // Stock Valuation Header Card
+          // Stock Valuation Header Card with Stock Illustration
           if (session?.canViewCostPrice == true)
             Container(
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
+                  Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/inventory_illustration.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

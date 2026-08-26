@@ -108,19 +108,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
-                      gradient: AppColors.goldGradient,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.accentGold.withValues(alpha: 0.4),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 18,
                           offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 36),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/duka_logo.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(

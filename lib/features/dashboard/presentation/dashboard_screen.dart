@@ -57,13 +57,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryForest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.storefront_rounded,
                               color: Colors.white,
-                              size: 20,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                width: 0.5,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/images/duka_logo.jpg',
+                              fit: BoxFit.cover,
                             ),
                           ),
                           const SizedBox(width: 10),

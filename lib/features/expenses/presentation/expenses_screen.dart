@@ -78,7 +78,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 ),
                 const Divider(),
                 DropdownButtonFormField<String>(
-                  value: selectedCategory,
+                  initialValue: selectedCategory,
                   decoration: InputDecoration(labelText: '${ref.tr('expense_category')} *'),
                   items: UgandaPresets.expenseCategories.map((cat) {
                     final lang = ref.read(languageProvider);
@@ -99,7 +99,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: paymentMethod,
+                  initialValue: paymentMethod,
                   decoration: InputDecoration(labelText: '${ref.tr('paid_via')} *'),
                   items: [
                     DropdownMenuItem(value: UgandaPresets.paymentCash, child: Text(ref.tr('pay_cash'))),
@@ -291,7 +291,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                     border: Border.all(color: AppColors.borderLight),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.015),
+                        color: Colors.black.withValues(alpha: 0.015),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),

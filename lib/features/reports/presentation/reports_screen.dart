@@ -74,6 +74,58 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           ),
           const SizedBox(height: 14),
 
+          // Analytics Overview Banner with Reports Illustration
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.borderLight),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 65,
+                  height: 65,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/reports_illustration.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Business Performance & Tax',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Real-time P&L, 18% VAT & Sales analytics for Ugandan SMEs.',
+                        style: TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.3),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
           // Net Profit Luxury Hero Card
           Container(
             padding: const EdgeInsets.all(22),
@@ -82,7 +134,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryForest.withOpacity(0.35),
+                  color: AppColors.primaryForest.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -136,7 +188,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               border: Border.all(color: AppColors.borderLight),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

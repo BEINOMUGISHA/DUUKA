@@ -61,7 +61,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.creditAmber.withOpacity(0.12),
+                    color: AppColors.creditAmber.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -87,7 +87,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: paymentMethod,
+                  initialValue: paymentMethod,
                   decoration: InputDecoration(labelText: ref.tr('paid_via')),
                   items: [
                     DropdownMenuItem(value: UgandaPresets.paymentMtnMomo, child: Text(ref.tr('pay_momo'))),
@@ -184,7 +184,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.creditAmber.withOpacity(0.35),
+                  color: AppColors.creditAmber.withValues(alpha: 0.35),
                   blurRadius: 18,
                   offset: const Offset(0, 6),
                 ),
@@ -203,7 +203,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
@@ -242,7 +242,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     border: Border.all(color: AppColors.borderLight),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),

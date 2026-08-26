@@ -101,7 +101,7 @@ class ReceiptShareScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.emeraldNeon.withOpacity(0.15),
+                color: AppColors.emeraldNeon.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Container(
@@ -129,7 +129,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 25,
                     offset: const Offset(0, 10),
                   ),
@@ -155,9 +155,9 @@ class ReceiptShareScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.efrisIndigo.withOpacity(0.1),
+                        color: AppColors.efrisIndigo.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.efrisIndigo.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.efrisIndigo.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         'URA EFRIS FISCAL RECEIPT: ${fiscalCode ?? "FC-SYNC-PENDING"}',
@@ -185,7 +185,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryForest.withOpacity(0.1),
+                          color: AppColors.primaryForest.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -300,7 +300,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                   icon: const Icon(Icons.done_rounded, size: 18),
                   label: Text(ref.tr('done')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.15),
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

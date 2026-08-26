@@ -219,14 +219,14 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: cartQty > 0 ? AppColors.primaryEmerald.withOpacity(0.6) : AppColors.borderLight,
+                        color: cartQty > 0 ? AppColors.primaryEmerald.withValues(alpha: 0.6) : AppColors.borderLight,
                         width: cartQty > 0 ? 1.5 : 1,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: cartQty > 0
-                              ? AppColors.primaryEmerald.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.02),
+                              ? AppColors.primaryEmerald.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -370,7 +370,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryForest.withOpacity(0.4),
+                    color: AppColors.primaryForest.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -378,6 +378,20 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
               ),
               child: Row(
                 children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/bag_icon.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -566,7 +580,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             ),
             const Divider(),
 
-            // Total banner
+            // Total banner with POS cart illustration
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -574,15 +588,35 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${ref.tr('total_payable')}:',
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/pos_cart_illustration.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  Text(
-                    CurrencyFormatter.format(widget.totalAmount),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${ref.tr('total_payable')}:',
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70, fontSize: 12),
+                        ),
+                        Text(
+                          CurrencyFormatter.format(widget.totalAmount),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -593,7 +627,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: _isCreditSale ? AppColors.creditAmber.withOpacity(0.12) : AppColors.surfaceMuted,
+                color: _isCreditSale ? AppColors.creditAmber.withValues(alpha: 0.12) : AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: _isCreditSale ? AppColors.creditAmber : AppColors.borderLight),
               ),
@@ -601,7 +635,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                 title: Text(ref.tr('sell_on_credit'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                 subtitle: Text(ref.tr('add_to_debtor_book'), style: const TextStyle(fontSize: 12)),
                 value: _isCreditSale,
-                activeColor: AppColors.creditAmber,
+                activeThumbColor: AppColors.creditAmber,
                 contentPadding: EdgeInsets.zero,
                 onChanged: (val) {
                   setState(() {
@@ -781,7 +815,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.35),
+                      color: color.withValues(alpha: 0.35),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),

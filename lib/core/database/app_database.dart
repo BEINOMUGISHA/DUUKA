@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 /// Models for Local Offline Database & Sync Queue
 class SyncQueueItem {
