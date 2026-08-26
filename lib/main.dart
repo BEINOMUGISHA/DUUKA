@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/app_providers.dart';
@@ -8,6 +8,8 @@ import 'features/pos/presentation/pos_quick_sale_screen.dart';
 import 'features/inventory/presentation/inventory_screen.dart';
 import 'features/customers/presentation/customers_screen.dart';
 import 'features/settings/presentation/more_hub_screen.dart';
+
+import 'core/services/app_update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +44,22 @@ class MainNavigationShell extends ConsumerStatefulWidget {
 
 class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Non-blocking background remote update check after launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () async {
+        if (!mounted) return;
+        final convex = ref.read(convexClientProvider);
+        final updateInfo = await AppUpdateService.checkForUpdate(convex);
+        if (updateInfo != null && mounted) {
+          AppUpdateService.showUpdatePrompt(context, updateInfo);
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
