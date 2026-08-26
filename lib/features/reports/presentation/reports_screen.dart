@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/export_service.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -33,24 +33,110 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
   }
 
-  void _exportCSV(double grossRevenue, double cogs, double expenses, double netProfit, double vat) {
+  void _exportCSV(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
     final businessName = session?.businessName ?? 'DUKA';
-    final csv = '''
-DUKA BUSINESS FINANCIAL REPORT
-Business: $businessName
-Period: $_selectedPeriod (${_getFromDate().toString().substring(0, 10)} to ${DateTime.now().toString().substring(0, 10)})
-Generated: ${DateTime.now().toIso8601String()}
+    final fromStr = _getFromDate().toString().substring(0, 10);
+    final toStr = DateTime.now().toString().substring(0, 10);
 
-FINANCIAL SUMMARY (UGX)
-Gross Revenue,${grossRevenue.toInt()}
-Cost of Goods Sold (COGS),${cogs.toInt()}
-Gross Profit,${(grossRevenue - cogs).toInt()}
-Operating Expenses,${expenses.toInt()}
-Net Profit,${netProfit.toInt()}
-URA VAT (18%),${vat.toInt()}
-''';
-    Share.share(csv, subject: '$businessName - P&L Statement ($_selectedPeriod)');
+    final buffer = StringBuffer();
+    buffer.writeln('DUKA BUSINESS FINANCIAL REPORT');
+    buffer.writeln('Business,$businessName');
+    buffer.writeln('Period,$_selectedPeriod ($fromStr to $toStr)');
+    buffer.writeln('Generated,${DateTime.now().toIso8601String()}');
+    buffer.writeln('');
+    buffer.writeln('FINANCIAL SUMMARY (UGX)');
+    buffer.writeln('Gross Revenue,${grossRevenue.toInt()}');
+    buffer.writeln('Cost of Goods Sold (COGS),${cogs.toInt()}');
+    buffer.writeln('Gross Profit,${(grossRevenue - cogs).toInt()}');
+    buffer.writeln('Operating Expenses,${expenses.toInt()}');
+    buffer.writeln('Net Profit,${netProfit.toInt()}');
+    buffer.writeln('URA VAT (18%),${vat.toInt()}');
+    buffer.writeln('');
+    if (expenseMap.isNotEmpty) {
+      buffer.writeln('OPERATING EXPENSES BREAKDOWN');
+      buffer.writeln('Category,Amount (UGX)');
+      expenseMap.forEach((category, amount) {
+        buffer.writeln('$category,${amount.toInt()}');
+      });
+    }
+
+    await ExportService.exportCsv(
+      fileName: 'DUKA_Report_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
+      csvContent: buffer.toString(),
+      subject: '$businessName - P&L Statement ($_selectedPeriod)',
+    );
+  }
+
+  void _exportPdf(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) async {
+    final session = ref.read(authProvider);
+    final businessName = session?.businessName ?? 'DUKA';
+    final fromDate = _getFromDate();
+    final toDate = DateTime.now();
+
+    final bytes = await ExportService.generateFinancialReportPdf(
+      businessName: businessName,
+      period: _selectedPeriod,
+      fromDate: fromDate,
+      toDate: toDate,
+      grossRevenue: grossRevenue,
+      costOfGoodsSold: cogs,
+      grossProfit: grossRevenue - cogs,
+      operatingExpenses: expenses,
+      netProfit: netProfit,
+      vatCollected: vat,
+      expenseBreakdown: expenseMap,
+    );
+
+    final toStr = toDate.toString().substring(0, 10);
+    await ExportService.shareOrPrintPdf(
+      pdfBytes: bytes,
+      fileName: 'DUKA_Statement_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
+    );
+  }
+
+  void _showExportOptions(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Export Financial Statement', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE0F2FE),
+                  child: Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
+                ),
+                title: const Text('Export as PDF Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('Official A4 printable statement with tables & header', style: TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _exportPdf(grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFDCFCE7),
+                  child: Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A)),
+                ),
+                title: const Text('Export as CSV Spreadsheet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('Excel / Google Sheets compatible data file', style: TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _exportCSV(grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -88,9 +174,9 @@ URA VAT (18%),${vat.toInt()}
         title: Text(ref.tr('reports_title')),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_rounded),
-            tooltip: 'Export CSV / Share',
-            onPressed: () => _exportCSV(grossRevenue, costOfGoodsSold, operatingExpenses, netProfit, vatCollected),
+            icon: const Icon(Icons.file_download_rounded),
+            tooltip: 'Export Statement (PDF / CSV)',
+            onPressed: () => _showExportOptions(grossRevenue, costOfGoodsSold, operatingExpenses, netProfit, vatCollected, expenseMap),
           ),
         ],
       ),

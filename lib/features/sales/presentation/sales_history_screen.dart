@@ -1,10 +1,11 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/utils/export_service.dart';
 import '../../pos/presentation/receipt_share_screen.dart';
 import '../../pos/presentation/pos_quick_sale_screen.dart';
 
@@ -18,6 +19,33 @@ class SalesHistoryScreen extends ConsumerStatefulWidget {
 class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
+
+  void _exportSalesCsv(List<LocalSaleData> salesList) async {
+    final session = ref.read(authProvider);
+    final bName = session?.businessName ?? 'DUKA';
+    final nowStr = DateTime.now().toString().substring(0, 10);
+
+    final buffer = StringBuffer();
+    buffer.writeln('DUKA SALES LOG EXPORT');
+    buffer.writeln('Business,$bName');
+    buffer.writeln('Filter,$_selectedFilter');
+    buffer.writeln('Export Date,${DateTime.now().toIso8601String()}');
+    buffer.writeln('');
+    buffer.writeln('Sale Number,Date,Customer,Payment Method,Status,Subtotal,Tax,Discount,Total,Paid,Balance Due');
+
+    for (final s in salesList) {
+      final dateStr = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp).toLocal().toString().substring(0, 16);
+      final cust = (s.customerName ?? 'Walk-in').replaceAll(',', ' ');
+      final status = s.isVoided ? 'VOIDED' : s.paymentStatus.toUpperCase();
+      buffer.writeln('${s.saleNumber},$dateStr,$cust,${s.paymentMethod},$status,${s.subtotalAmount.toInt()},${s.taxAmount.toInt()},${s.discountAmount.toInt()},${s.totalAmount.toInt()},${s.paidAmount.toInt()},${s.dueAmount.toInt()}');
+    }
+
+    await ExportService.exportCsv(
+      fileName: 'DUKA_Sales_${_selectedFilter}_$nowStr',
+      csvContent: buffer.toString(),
+      subject: '$bName - Sales Log ($_selectedFilter)',
+    );
+  }
 
   void _confirmVoidSale(LocalSaleData sale) {
     final session = ref.read(authProvider);
@@ -151,6 +179,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Sales & Audit Log'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_rounded),
+            tooltip: 'Export Sales CSV',
+            onPressed: () => _exportSalesCsv(filtered),
+          ),
+        ],
       ),
       body: Column(
         children: [

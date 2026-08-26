@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/export_service.dart';
 import 'pos_quick_sale_screen.dart';
 
 class ReceiptShareScreen extends ConsumerWidget {
@@ -276,9 +277,46 @@ class ReceiptShareScreen extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
-            // Share & WhatsApp Actions
+            // Print PDF & Share Actions
             Row(
               children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final pdfBytes = await ExportService.generateReceiptPdf(
+                        businessName: businessName,
+                        phone: session?.phone ?? '+256770000000',
+                        saleNumber: saleNumber,
+                        customerName: customerName,
+                        customerPhone: customerPhone,
+                        totalAmount: totalAmount,
+                        paidAmount: paidAmount,
+                        dueAmount: dueAmount,
+                        paymentMethod: paymentMethod,
+                        momoReference: momoReference,
+                        fiscalCode: fiscalCode,
+                        items: items.map((it) => {
+                          'name': it.product.name,
+                          'qty': it.quantity,
+                          'total': it.subtotal,
+                        }).toList(),
+                      );
+                      await ExportService.shareOrPrintPdf(
+                        pdfBytes: pdfBytes,
+                        fileName: 'Receipt_$saleNumber',
+                      );
+                    },
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                    label: const Text('PDF / Print', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
@@ -294,7 +332,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.done_rounded, size: 18),
@@ -302,7 +340,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white.withValues(alpha: 0.15),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
