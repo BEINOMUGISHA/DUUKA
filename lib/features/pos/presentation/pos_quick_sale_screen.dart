@@ -637,7 +637,10 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
     final saleNumber = 'SL-$dateStr-${1000 + (widget.totalAmount.toInt() % 8999)}';
     final fiscalCode = session?.isEfrisEnrolled == true ? 'FC-${const Uuid().v4().substring(0, 8).toUpperCase()}' : null;
 
+    final saleId = 'sl_${DateTime.now().millisecondsSinceEpoch}';
     final salePayload = {
+      'id': saleId,
+      'offlineId': saleId,
       'saleNumber': saleNumber,
       'customerId': _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
       'customerName': _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Walk-in Customer',
@@ -665,7 +668,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
 
     // Save to persistent database
     final localSale = LocalSaleData(
-      id: 'sl_${DateTime.now().millisecondsSinceEpoch}',
+      id: saleId,
       businessId: session?.businessId ?? 'biz_default',
       saleNumber: saleNumber,
       customerId: _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,

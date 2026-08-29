@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
@@ -118,7 +118,7 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       final rawPhone = phoneCtrl.text.trim();
                       final msg = messageCtrl.text.trim();
 
@@ -130,8 +130,9 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                       }
 
                       final normalized = PhoneFormatter.normalize(rawPhone);
+                      final smsId = 'sms_${DateTime.now().millisecondsSinceEpoch}';
                       final sms = LocalSmsData(
-                        id: 'sms_${DateTime.now().millisecondsSinceEpoch}',
+                        id: smsId,
                         businessId: session?.businessId ?? 'biz_default',
                         phone: normalized,
                         message: msg,
@@ -140,12 +141,39 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                         createdAt: DateTime.now().millisecondsSinceEpoch,
                       );
                       ref.read(smsProvider.notifier).logSms(sms);
-
                       Navigator.pop(ctx);
-                      Share.share(msg, subject: 'SMS from $bName');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('SMS dispatched and logged')),
-                      );
+
+                      // Try sending via Convex backend
+                      bool backendSent = false;
+                      try {
+                        final convex = ref.read(convexClientProvider);
+                        if (session != null) {
+                          await convex.mutation('sms:sendCustomerSms', {
+                            'businessId': session.businessId,
+                            'userId': session.userId,
+                            'recipientPhone': normalized,
+                            'message': msg,
+                            'template': selectedTemplate.toLowerCase().replaceAll(' ', '_'),
+                            'idempotencyKey': smsId,
+                          });
+                          backendSent = true;
+                        }
+                      } catch (_) {}
+
+                      if (!backendSent) {
+                        Share.share(msg, subject: 'SMS from $bName');
+                      }
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(backendSent
+                                ? '✅ SMS dispatched via gateway (1 Credit used)'
+                                : 'SMS prepared & shared via SMS/WhatsApp app'),
+                            backgroundColor: backendSent ? AppColors.success : null,
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.send_rounded),
                     label: const Text('Send SMS (1 Credit)', style: TextStyle(fontWeight: FontWeight.w900)),
