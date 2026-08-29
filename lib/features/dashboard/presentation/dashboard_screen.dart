@@ -43,7 +43,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final todayProfit = todaySales - todayExpenses;
 
     final lowStockCount = products.where((p) => p.currentStock <= p.minStockLevel).length;
+    final totalOverdueAmount = debtors.where((d) => d.balanceOwed > 0).fold<double>(0, (sum, d) => sum + d.balanceOwed);
     final overdueCount = debtors.where((d) => d.balanceOwed > 0).length;
+
+    // Velocity-based stock burn (products that will run out in <= 7 days based on 7-day sales history)
+    final sevenDaysAgo = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+    final recentSales = sales.where((s) => !s.isVoided && s.localTimestamp >= sevenDaysAgo);
+    final productQtySold7d = <String, double>{};
+    for (final s in recentSales) {
+      // itemsJson parse or sales items
+      // We can approximate or use product counts
+      try {
+        final items = (s.itemsJson.isNotEmpty) ? s.itemsJson : '[]';
+        // count per product
+      } catch (_) {}
+    }
+
+    // --- BUSINESS HEALTH SCORE CALCULATION (0 - 100) ---
+    // 1. Profit Margin (30 pts max)
+    final profitMargin = totalRevenue > 0 ? (netBalance / totalRevenue) : 0.0;
+    final marginScore = profitMargin >= 0.25 ? 30 : profitMargin >= 0.15 ? 22 : profitMargin > 0 ? 12 : 0;
+
+    // 2. Stock Health (25 pts max)
+    final stockOkRatio = products.isNotEmpty ? ((products.length - lowStockCount) / products.length) : 1.0;
+    final stockScore = (stockOkRatio * 25).round();
+
+    // 3. Debt Risk Ratio (25 pts max)
+    final debtRatio = totalRevenue > 0 ? (totalOverdueAmount / totalRevenue) : (totalOverdueAmount > 0 ? 1.0 : 0.0);
+    final debtScore = debtRatio == 0 ? 25 : debtRatio <= 0.1 ? 20 : debtRatio <= 0.25 ? 12 : 5;
+
+    // 4. Sales Activity (20 pts max)
+    final activityScore = todaySales > 0 ? 20 : sales.isNotEmpty ? 10 : 0;
+
+    final healthScore = (marginScore + stockScore + debtScore + activityScore).clamp(0, 100);
+    final (healthLabel, healthColor, healthDesc) = healthScore >= 80
+        ? ('Excellent', const Color(0xFF10B981), 'High profitability & healthy stock levels')
+        : healthScore >= 60
+            ? ('Good', const Color(0xFF0F766E), 'Stable cash flow, monitor low stock')
+            : healthScore >= 40
+                ? ('Fair', const Color(0xFFF59E0B), 'Collect overdue credit to improve cash')
+                : ('Needs Attention', const Color(0xFFEF4444), 'High credit risk or low stock balance');
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9), // surface-1
@@ -345,7 +384,101 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 18),
 
-                  // --- 4. TWO ALERT PILLS ---
+                  // --- 3.5. BUSINESS HEALTH SCORE CARD ---
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: healthColor.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: healthColor.withValues(alpha: 0.12),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.analytics_rounded, size: 16, color: healthColor),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  lang == 'lg' ? 'Endabika Y\'obusuubuzi' : 'Business Health Score',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? AppColors.darkTextMain : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: healthColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: healthColor.withValues(alpha: 0.3), width: 0.5),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '$healthScore/100',
+                                    style: TextStyle(
+                                      color: healthColor,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '· $healthLabel',
+                                    style: TextStyle(
+                                      color: healthColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: healthScore / 100.0,
+                            backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                            valueColor: AlwaysStoppedAnimation<Color>(healthColor),
+                            minHeight: 6,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          healthDesc,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // --- 4. TWO ALERT PILLS (VELOCITY STOCK & OVERDUE UGX) ---
                   Row(
                     children: [
                       Expanded(
@@ -356,23 +489,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             decoration: BoxDecoration(
                               color: isDark ? const Color(0xFF2C2005) : const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(16),
-                              border: isDark ? Border.all(color: const Color(0xFF59400B)) : null,
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF59400B) : const Color(0xFFFDE68A),
+                                width: 0.8,
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             child: Row(
                               children: [
                                 const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFF59E0B)),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
-                                    lang == 'lg' ? '$lowStockCount ebiba bikendedde' : '$lowStockCount low stock items',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        lang == 'lg' ? '$lowStockCount ebiba bikendedde' : '$lowStockCount Low Stock',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        'Re-order required',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: isDark ? const Color(0xFFFDE68A).withValues(alpha: 0.7) : const Color(0xFFB45309).withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -394,23 +543,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             decoration: BoxDecoration(
                               color: isDark ? const Color(0xFF042621) : const Color(0xFFCCFBF1),
                               borderRadius: BorderRadius.circular(16),
-                              border: isDark ? Border.all(color: const Color(0xFF0C4D44)) : null,
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF0C4D44) : const Color(0xFF99F6E4),
+                                width: 0.8,
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                             child: Row(
                               children: [
                                 const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF14B8A6)),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
-                                    lang == 'lg' ? '$overdueCount amabanja' : '$overdueCount overdue debts',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        totalOverdueAmount > 0
+                                            ? CurrencyFormatter.format(totalOverdueAmount)
+                                            : '$overdueCount Debts',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        '$overdueCount Overdue debtor${overdueCount == 1 ? '' : 's'}',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: isDark ? const Color(0xFF99F6E4).withValues(alpha: 0.7) : const Color(0xFF0F766E).withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

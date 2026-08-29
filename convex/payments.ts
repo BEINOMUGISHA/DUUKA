@@ -1,4 +1,4 @@
-﻿import { action, mutation, query } from "./_generated/server";
+import { action, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { normalizeUgandaPhone, verifyUserBusinessAccess } from "./auth";
 
@@ -9,6 +9,7 @@ export const initiateMobileMoneyPayment = mutation({
     userId: v.id("users"),
     customerId: v.optional(v.id("customers")),
     saleId: v.optional(v.id("sales")),
+    offlineSaleId: v.optional(v.string()), // local offlineId when sale not yet synced
     provider: v.union(v.literal("mtn_momo"), v.literal("airtel_money")),
     phone: v.string(),
     amount: v.number(),
@@ -39,6 +40,7 @@ export const initiateMobileMoneyPayment = mutation({
     const transactionId = await ctx.db.insert("mobileMoneyTransactions", {
       businessId: args.businessId,
       saleId: args.saleId,
+      offlineSaleId: args.offlineSaleId, // stored for later reconciliation
       customerId: args.customerId,
       provider: args.provider,
       phone: normalizedPhone,
@@ -107,14 +109,30 @@ export const checkMobileMoneyStatus = mutation({
         updatedAt: now,
       });
 
-      // Update associated sale if present
-      if (tx.saleId) {
-        const sale = await ctx.db.get(tx.saleId);
+      // Resolve saleId — may be null if sale was created offline and not yet synced.
+      // Try to find the sale by the stored offlineSaleId linkage.
+      let resolvedSaleId = tx.saleId;
+      if (!resolvedSaleId && tx.offlineSaleId) {
+        const syncedSale = await ctx.db
+          .query("sales")
+          .withIndex("by_offline_id", (q) => q.eq("offlineId", tx.offlineSaleId))
+          .first();
+        if (syncedSale) {
+          resolvedSaleId = syncedSale._id;
+          // Backfill the resolved link on the transaction
+          await ctx.db.patch(args.transactionId, { saleId: resolvedSaleId });
+        }
+      }
+
+      // Update associated sale if resolved
+      if (resolvedSaleId) {
+        const sale = await ctx.db.get(resolvedSaleId);
         if (sale) {
-          await ctx.db.patch(tx.saleId, {
-            paidAmount: tx.amount,
+          await ctx.db.patch(resolvedSaleId, {
+            amountPaid: tx.amount,
             balance: Math.max(0, sale.total - tx.amount),
             momoReference: tx.providerTransactionId,
+            status: tx.amount >= sale.total ? "completed" : "pending",
           });
         }
       }
@@ -125,7 +143,7 @@ export const checkMobileMoneyStatus = mutation({
         businessId: args.businessId,
         receiptNumber: `REC-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`,
         entityType: "sale",
-        entityId: tx.saleId ?? args.transactionId,
+        entityId: resolvedSaleId ?? args.transactionId,
         customerId: tx.customerId,
         amount: tx.amount,
         paymentMethod: tx.provider === "mtn_momo" ? "mtn_momo" : "airtel_money",
@@ -133,6 +151,20 @@ export const checkMobileMoneyStatus = mutation({
         notes: `Mobile Money Payment (+${tx.phone})`,
         receivedBy: args.userId,
         deviceId: "momo-gateway",
+        createdAt: now,
+      });
+
+      // Audit log
+      const user = await ctx.db.get(args.userId);
+      await ctx.db.insert("auditLogs", {
+        businessId: args.businessId,
+        userId: args.userId,
+        userName: user?.fullName ?? "Staff",
+        action: "MOMO_CONFIRMED",
+        entityType: "payment",
+        entityId: args.transactionId,
+        deviceId: "momo-gateway",
+        details: `${tx.provider.toUpperCase()} payment of UGX ${tx.amount.toLocaleString()} confirmed from +${tx.phone}`,
         createdAt: now,
       });
 

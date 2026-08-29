@@ -1,9 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/database/app_database.dart';
 
@@ -233,12 +235,253 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
     );
   }
 
-  void _sendReminder(LocalDebtorData debtor) {
+  Future<void> _sendWhatsAppReminder(LocalDebtorData debtor) async {
     final session = ref.read(authProvider);
     final businessName = session?.businessName ?? 'DUKA Shop';
+    final normalizedPhone = PhoneFormatter.normalize(debtor.phone);
     final message =
-        'Hello ${debtor.name},\nThis is a friendly payment reminder from $businessName. Your current balance due is ${CurrencyFormatter.format(debtor.balanceOwed)}.\nPlease pay via MTN MoMo / Airtel Money to 0772123456. Thank you!';
-    Share.share(message, subject: 'Payment Reminder - $businessName');
+        'Hello ${debtor.name},\nThis is a friendly payment reminder from $businessName. Your outstanding balance is ${CurrencyFormatter.format(debtor.balanceOwed)}.\nPlease pay via MTN MoMo / Airtel Money. Thank you!';
+    final whatsappUrl = Uri.parse('https://wa.me/$normalizedPhone?text=${Uri.encodeComponent(message)}');
+
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        await Share.share(message, subject: 'Payment Reminder - $businessName');
+      }
+    } catch (_) {
+      await Share.share(message, subject: 'Payment Reminder - $businessName');
+    }
+  }
+
+  Future<void> _sendSmsReminder(LocalDebtorData debtor) async {
+    final session = ref.read(authProvider);
+    if (session == null) return;
+    final businessName = session.businessName;
+    final message =
+        'Hello ${debtor.name}, friendly reminder from $businessName: your outstanding balance is ${CurrencyFormatter.format(debtor.balanceOwed)}. Please pay via MoMo/Airtel. Thank you!';
+
+    try {
+      final convex = ref.read(convexClientProvider);
+      final res = await convex.mutation('sms:sendCustomerSms', {
+        'businessId': session.businessId,
+        'userId': session.userId,
+        'phone': debtor.phone,
+        'message': message,
+        'type': 'debt_reminder',
+        'idempotencyKey': 'sms-${debtor.id}-${DateTime.now().millisecondsSinceEpoch}',
+      });
+      if (mounted) {
+        final success = res != null && (res['success'] == true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'SMS sent to ${debtor.name}. Remaining credits: ${res['remainingCredits']}'
+                : 'Failed to send SMS: ${res?['error'] ?? 'Unknown error'}'),
+            backgroundColor: success ? AppColors.success : AppColors.danger,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('SMS error: $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    }
+  }
+
+  void _showReminderOptions(LocalDebtorData debtor) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Send Reminder to ${debtor.name}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Amount Due: ${CurrencyFormatter.format(debtor.balanceOwed)}',
+                style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF25D366),
+                  child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 20),
+                ),
+                title: const Text('WhatsApp Message (Free)', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Open WhatsApp directly with prefilled message'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendWhatsAppReminder(debtor);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF4F46E5),
+                  child: Icon(Icons.sms_outlined, color: Colors.white, size: 20),
+                ),
+                title: const Text('Direct SMS (1 Credit)', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Dispatches telecom SMS to their phone'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendSmsReminder(debtor);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF64748B),
+                  child: Icon(Icons.share_outlined, color: Colors.white, size: 20),
+                ),
+                title: const Text('Share via Any App', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Copy or share to Telegram, Email, etc.'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  final session = ref.read(authProvider);
+                  final businessName = session?.businessName ?? 'DUKA Shop';
+                  final message =
+                      'Hello ${debtor.name},\nThis is a payment reminder from $businessName. Outstanding balance: ${CurrencyFormatter.format(debtor.balanceOwed)}.\nPlease pay via MTN MoMo / Airtel Money. Thank you!';
+                  Share.share(message, subject: 'Payment Reminder - $businessName');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showBulkRemindDialog() {
+    final debtors = ref.read(debtorsProvider);
+    final overdueDebtors = debtors.where((d) => d.balanceOwed > 0).toList();
+    String selectedLanguage = 'en';
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.mark_chat_unread_rounded, color: Color(0xFF4F46E5)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text('Bulk SMS Reminder', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Debtors to Remind: ${overdueDebtors.length}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Estimated SMS Cost: ${overdueDebtors.length} Credits',
+                      style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('Select SMS Language:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedLanguage,
+                decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+                items: const [
+                  DropdownMenuItem(value: 'en', child: Text('English')),
+                  DropdownMenuItem(value: 'lg', child: Text('Luganda')),
+                  DropdownMenuItem(value: 'rn', child: Text('Runyankole')),
+                ],
+                onChanged: (val) => setDialogState(() => selectedLanguage = val!),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Each debtor will receive a localized reminder containing their current balance owed.',
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              icon: isSubmitting
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send_rounded, size: 16),
+              label: Text(
+                isSubmitting ? 'Sending...' : 'Send to All (${overdueDebtors.length})',
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              onPressed: (overdueDebtors.isEmpty || isSubmitting)
+                  ? null
+                  : () async {
+                      setDialogState(() => isSubmitting = true);
+                      final session = ref.read(authProvider);
+                      if (session == null) {
+                        Navigator.pop(ctx);
+                        return;
+                      }
+
+                      try {
+                        final convex = ref.read(convexClientProvider);
+                        final res = await convex.mutation('sms:bulkRemindOverdueDebtors', {
+                          'businessId': session.businessId,
+                          'userId': session.userId,
+                          'language': selectedLanguage,
+                          'dryRun': false,
+                        });
+
+                        Navigator.pop(ctx);
+                        if (mounted) {
+                          final sent = res?['sent'] ?? 0;
+                          final failed = res?['failed'] ?? 0;
+                          final credits = res?['remainingCredits'] ?? 0;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Bulk SMS complete! Sent: $sent, Failed: $failed. Credits remaining: $credits'),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Bulk SMS error: $e'), backgroundColor: AppColors.danger),
+                          );
+                        }
+                      }
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -257,6 +500,11 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
       appBar: AppBar(
         title: Text(ref.tr('debtor_book')),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.send_rounded),
+            tooltip: 'Bulk SMS Remind All',
+            onPressed: debtors.any((d) => d.balanceOwed > 0) ? _showBulkRemindDialog : null,
+          ),
           IconButton(
             icon: const Icon(Icons.person_add_rounded),
             tooltip: 'Add Debtor',
@@ -419,8 +667,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       OutlinedButton.icon(
-                                        onPressed: () => _sendReminder(debtor),
-                                        icon: const Icon(Icons.share_rounded, size: 16),
+                                        onPressed: () => _showReminderOptions(debtor),
+                                        icon: const Icon(Icons.send_rounded, size: 15),
                                         label: const Text('Send Reminder', style: TextStyle(fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),

@@ -1,4 +1,4 @@
-﻿import { defineSchema, defineTable } from "convex/server";
+import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
@@ -153,6 +153,8 @@ export default defineSchema({
     // EFRIS / URA Compliance fields
     efrisFiscalCode: v.optional(v.string()),
     efrisQrCodeData: v.optional(v.string()),
+    // Offline-first sync fields
+    offlineId: v.optional(v.string()),   // local UUID from device for dedup
     deviceId: v.string(),
     localTimestamp: v.number(),
     createdBy: v.id("users"),
@@ -161,7 +163,8 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_business_and_created", ["businessId", "createdAt"])
     .index("by_customer", ["customerId"])
-    .index("by_business_and_status", ["businessId", "status"]),
+    .index("by_business_and_status", ["businessId", "status"])
+    .index("by_offline_id", ["offlineId"]),
 
   // 8. Sale Items
   saleItems: defineTable({
@@ -227,6 +230,7 @@ export default defineSchema({
   mobileMoneyTransactions: defineTable({
     businessId: v.id("businesses"),
     saleId: v.optional(v.id("sales")),
+    offlineSaleId: v.optional(v.string()), // local offlineId for reconciliation before sale syncs
     customerId: v.optional(v.id("customers")),
     provider: v.union(v.literal("mtn_momo"), v.literal("airtel_money")),
     phone: v.string(), // Normalized "2567XXXXXXXX"
@@ -248,6 +252,7 @@ export default defineSchema({
   })
     .index("by_business", ["businessId"])
     .index("by_reference", ["externalReference"])
+    .index("by_offline_sale_id", ["offlineSaleId"])
     .index("by_status", ["status"])
     .index("by_business_and_created", ["businessId", "createdAt"]),
 
@@ -267,6 +272,7 @@ export default defineSchema({
     status: v.union(v.literal("pending"), v.literal("sent"), v.literal("delivered"), v.literal("failed")),
     provider: v.string(), // "africas_talking", "twilio", "sandbox_gateway"
     providerMessageId: v.optional(v.string()),
+    idempotencyKey: v.optional(v.string()), // Prevent duplicate sends
     cost: v.number(), // in SMS credits
     createdAt: v.number(),
     sentAt: v.optional(v.number()),
@@ -274,7 +280,8 @@ export default defineSchema({
   })
     .index("by_business", ["businessId"])
     .index("by_customer", ["customerId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_idempotency_key", ["idempotencyKey"]),
 
   // 13. SMS Usage Tracking
   smsUsage: defineTable({
@@ -357,4 +364,64 @@ export default defineSchema({
   })
     .index("by_business", ["businessId"])
     .index("by_business_and_date", ["businessId", "date"]),
+
+  // 18. Suppliers Master
+  suppliers: defineTable({
+    businessId: v.id("businesses"),
+    name: v.string(),
+    contactName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    address: v.optional(v.string()),
+    tin: v.optional(v.string()),            // Supplier TIN for URA compliance
+    totalPurchased: v.number(),             // Cumulative UGX purchased from supplier
+    outstandingPayable: v.number(),         // Accounts payable — what we owe them
+    isActive: v.boolean(),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_business_and_name", ["businessId", "name"]),
+
+  // 19. Purchase Orders (GRN — Goods Received Notes)
+  purchaseOrders: defineTable({
+    businessId: v.id("businesses"),
+    supplierId: v.id("suppliers"),
+    supplierName: v.string(),
+    poNumber: v.string(),                   // e.g. "PO-2026-000001"
+    status: v.union(
+      v.literal("draft"),
+      v.literal("ordered"),
+      v.literal("received"),
+      v.literal("partially_received"),
+      v.literal("cancelled")
+    ),
+    items: v.array(v.object({
+      productId: v.string(),
+      productName: v.string(),
+      quantityOrdered: v.number(),
+      quantityReceived: v.number(),
+      costPerUnit: v.number(),
+      total: v.number(),
+    })),
+    subtotal: v.number(),
+    taxAmount: v.number(),
+    totalAmount: v.number(),
+    amountPaid: v.number(),
+    balance: v.number(),                    // Outstanding AP balance on this PO
+    paymentMethod: v.optional(v.union(v.literal("cash"), v.literal("mtn_momo"), v.literal("airtel_money"), v.literal("bank"))),
+    notes: v.optional(v.string()),
+    orderedAt: v.optional(v.number()),
+    receivedAt: v.optional(v.number()),
+    deviceId: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_supplier", ["supplierId"])
+    .index("by_business_and_status", ["businessId", "status"])
+    .index("by_business_and_created", ["businessId", "createdAt"]),
 });
+

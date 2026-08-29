@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
@@ -8,6 +8,7 @@ import '../../reports/presentation/reports_screen.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../sms/presentation/sms_screen.dart';
 import '../../sales/presentation/sales_history_screen.dart';
+import '../../suppliers/presentation/suppliers_screen.dart';
 import 'settings_screen.dart';
 
 class MoreHubScreen extends ConsumerWidget {
@@ -60,6 +61,13 @@ class MoreHubScreen extends ConsumerWidget {
         'icon': Icons.history_rounded,
         'color': const Color(0xFF0D9488),
         'screen': const SalesHistoryScreen(),
+      },
+      {
+        'title': 'Suppliers & Purchases (GRN)',
+        'subtitle': 'Supplier master, purchase orders & AP',
+        'icon': Icons.local_shipping_rounded,
+        'color': const Color(0xFF8B5CF6),
+        'screen': const SuppliersScreen(),
       },
       {
         'title': 'Business Profile & Settings',

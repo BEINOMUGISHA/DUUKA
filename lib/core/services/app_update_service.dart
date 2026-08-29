@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../network/convex_client.dart';
 import '../theme/app_theme.dart';
@@ -40,8 +41,27 @@ class AppUpdateService {
   static const String currentAppVersion = '1.0.0';
   static const int currentBuildNumber = 1;
 
-  /// Check remote version from backend
+  /// Quick connectivity probe — tries DNS lookup to check if online.
+  static Future<bool> _isOnline() async {
+    try {
+      final result = await InternetAddress.lookup('convex.cloud')
+          .timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check remote version from backend.
+  /// Returns null when:
+  ///   - device is offline (safe — never blocks mandatory update when unreachable)
+  ///   - backend query fails
+  ///   - app is already on latest version
   static Future<AppUpdateInfo?> checkForUpdate(ConvexClient client) async {
+    // Do not enforce mandatory update when offline — degrade gracefully
+    final online = await _isOnline();
+    if (!online) return null;
+
     try {
       final res = await client.query('system:getLatestAppVersion', {});
       if (res != null) {

@@ -39,7 +39,14 @@ export const processBatchOfflineSync = mutation({
           const dateStr = new Date(item.localTimestamp).toISOString().slice(0, 10).replace(/-/g, "");
           const randomSuffix = Math.floor(1000 + Math.random() * 9000);
           const saleNumber = `SL-${dateStr}-${randomSuffix}`;
-          const dueAmount = Math.max(0, parsed.totalAmount - (parsed.paidAmount ?? 0));
+
+          // Field names MUST match schema.ts exactly:
+          // subtotal, discount, tax, total, amountPaid, balance, status
+          const subtotal = parsed.subtotalAmount ?? parsed.subtotal ?? parsed.totalAmount ?? 0;
+          const total = parsed.totalAmount ?? parsed.total ?? subtotal;
+          const amountPaid = parsed.paidAmount ?? parsed.amountPaid ?? 0;
+          const balance = Math.max(0, total - amountPaid);
+          const saleStatus = balance === 0 ? "completed" : "pending";
 
           const saleId = await ctx.db.insert("sales", {
             businessId: args.businessId,
@@ -47,42 +54,48 @@ export const processBatchOfflineSync = mutation({
             customerId: parsed.customerId,
             customerName: parsed.customerName,
             customerPhone: parsed.customerPhone,
-            items: parsed.items,
-            subtotalAmount: parsed.subtotalAmount,
-            taxAmount: parsed.taxAmount ?? 0,
-            discountAmount: parsed.discountAmount ?? 0,
-            totalAmount: parsed.totalAmount,
-            paidAmount: parsed.paidAmount ?? 0,
-            dueAmount,
-            paymentStatus: dueAmount === 0 ? "paid" : (parsed.paidAmount ?? 0) > 0 ? "partial" : "unpaid",
+            subtotal,
+            discount: parsed.discountAmount ?? parsed.discount ?? 0,
+            tax: parsed.taxAmount ?? parsed.tax ?? 0,
+            total,
+            amountPaid,
+            balance,
+            status: saleStatus,
             paymentMethod: parsed.paymentMethod ?? "cash",
             momoReference: parsed.momoReference,
-            isCredit: dueAmount > 0,
             dueDate: parsed.dueDate,
             offlineId: item.queueId,
             deviceId: args.deviceId,
             localTimestamp: item.localTimestamp,
             createdBy: args.userId,
             createdAt: item.localTimestamp,
-            syncedAt: Date.now(),
           });
 
+          // Reconcile any pending MoMo transaction that referenced this sale by offlineId
+          const pendingMomo = await ctx.db
+            .query("mobileMoneyTransactions")
+            .withIndex("by_offline_sale_id", (q) => q.eq("offlineSaleId", item.queueId))
+            .first();
+          if (pendingMomo) {
+            await ctx.db.patch(pendingMomo._id, { saleId, updatedAt: Date.now() });
+          }
+
           // Stock delta deduction
-          for (const it of parsed.items) {
+          const items = parsed.items ?? parsed.cartItems ?? [];
+          for (const it of items) {
             const prod = await ctx.db.get(it.productId);
             if (prod) {
-              const newStock = Math.max(0, prod.currentStock - it.quantity);
-              await ctx.db.patch(it.productId, { currentStock: newStock, updatedAt: Date.now() });
+              const newStock = Math.max(0, prod.stockQuantity - it.quantity);
+              await ctx.db.patch(it.productId, { stockQuantity: newStock, updatedAt: Date.now() });
               await ctx.db.insert("stockMovements", {
                 businessId: args.businessId,
                 productId: it.productId,
                 deltaQuantity: -it.quantity,
-                previousStock: prod.currentStock,
+                previousStock: prod.stockQuantity,
                 newStock,
                 reason: "sale",
                 referenceId: saleId,
                 deviceId: args.deviceId,
-                localTimestamp: item.localTimestamp,
                 createdBy: args.userId,
                 createdAt: Date.now(),
               });
