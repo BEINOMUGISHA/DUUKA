@@ -1,6 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
@@ -274,51 +276,93 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             // Dynamic State Display
             if (_state == PaymentState.requesting || _state == PaymentState.waitingForPin) ...[
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.amber.shade300),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFFD97706)),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Sonar radar wave 1
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.amber.withValues(alpha: 0.2),
+                          ),
+                        ).animate(onPlay: (c) => c.repeat()).scale(begin: const Offset(1, 1), end: const Offset(1.6, 1.6), duration: 1200.ms).fadeOut(duration: 1200.ms),
+
+                        // Center Icon
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _selectedProvider == UgandaPresets.paymentMtnMomo ? AppColors.mtnYellow : AppColors.airtelRed,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.phonelink_ring_rounded,
+                            color: _selectedProvider == UgandaPresets.paymentMtnMomo ? Colors.black : Colors.white,
+                            size: 22,
+                          ),
+                        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.95, 0.95), end: const Offset(1.05, 1.05), duration: 800.ms),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _statusMessage,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                      ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _statusMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Awaiting customer PIN entry on mobile phone...',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: Color(0xFFB45309)),
                     ),
                   ],
                 ),
-              ),
+              ).animate().fadeIn(duration: 300.ms),
               const SizedBox(height: 16),
             ] else if (_state == PaymentState.successful) ...[
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.green.shade400, width: 1.5),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _statusMessage,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.success),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.check_rounded, color: Colors.white, size: 30),
+                    ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+                    const SizedBox(height: 10),
+                    Text(
+                      _statusMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.success),
                     ),
                   ],
                 ),
-              ),
+              ).animate().fadeIn(duration: 250.ms),
               const SizedBox(height: 16),
             ] else if (_state == PaymentState.failed) ...[
               Container(

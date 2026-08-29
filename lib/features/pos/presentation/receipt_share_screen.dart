@@ -273,7 +273,7 @@ class ReceiptShareScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ).animate().slideY(begin: 0.1, end: 0, duration: 300.ms).fadeIn(),
+            ).animate().slideY(begin: -0.15, end: 0, duration: 550.ms, curve: Curves.easeOutBack).fadeIn(duration: 400.ms),
 
             const SizedBox(height: 20),
 

@@ -62,6 +62,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
   int get _cartItemCount => _cart.values.fold(0, (sum, item) => sum + item.quantity);
 
   void _addToCart(PosItem product) {
+    HapticFeedback.lightImpact();
     setState(() {
       if (_cart.containsKey(product.id)) {
         _cart[product.id]!.quantity++;
@@ -72,6 +73,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
   }
 
   void _decrementCart(PosItem product) {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_cart.containsKey(product.id)) {
         if (_cart[product.id]!.quantity > 1) {
@@ -542,7 +544,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       '$_cartItemCount',
                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black),
                     ),
-                  ),
+                  ).animate(key: ValueKey(_cartItemCount)).scale(duration: 200.ms, curve: Curves.easeOutBack),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

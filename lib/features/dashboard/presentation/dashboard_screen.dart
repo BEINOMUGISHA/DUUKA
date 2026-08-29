@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/animated_counter.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
 import '../../sales/presentation/sales_history_screen.dart';
@@ -134,13 +136,64 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                session?.businessName ?? 'Kampala Ventures',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    session?.businessName ?? 'Kampala Ventures',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  // Live Cloud Sync Status Pill
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (syncEngine?.isSyncing == true)
+                                          ? Colors.amber.withValues(alpha: 0.15)
+                                          : (syncEngine?.pendingCount ?? 0) > 0
+                                              ? Colors.orange.withValues(alpha: 0.15)
+                                              : Colors.green.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: (syncEngine?.isSyncing == true)
+                                                ? Colors.amber.shade700
+                                                : (syncEngine?.pendingCount ?? 0) > 0
+                                                    ? Colors.orange.shade700
+                                                    : const Color(0xFF10B981),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(duration: 800.ms),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          (syncEngine?.isSyncing == true)
+                                              ? 'Syncing'
+                                              : (syncEngine?.pendingCount ?? 0) > 0
+                                                  ? '${syncEngine!.pendingCount} Pending'
+                                                  : 'Cloud Synced',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                            color: (syncEngine?.isSyncing == true)
+                                                ? Colors.amber.shade800
+                                                : (syncEngine?.pendingCount ?? 0) > 0
+                                                    ? Colors.orange.shade800
+                                                    : const Color(0xFF10B981),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 1),
                               Row(
@@ -300,15 +353,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                _hideFigures ? 'UGX ••••••••' : CurrencyFormatter.format(netBalance),
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
+                              _hideFigures
+                                  ? const Text(
+                                      'UGX ••••••••',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    )
+                                  : AnimatedCounter(
+                                      value: netBalance,
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
@@ -455,13 +518,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: healthScore / 100.0,
-                            backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                            valueColor: AlwaysStoppedAnimation<Color>(healthColor),
-                            minHeight: 6,
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.0, end: healthScore / 100.0),
+                          duration: const Duration(milliseconds: 900),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, val, _) => ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: val,
+                              backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                              valueColor: AlwaysStoppedAnimation<Color>(healthColor),
+                              minHeight: 7,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),

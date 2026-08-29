@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/phone_formatter.dart';
@@ -398,119 +401,178 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       final tagPreset = CustomerFavoriteColors.getByColorValue(customer.tagColor);
                       final tagColor = Color(customer.tagColor);
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: customer.isFavorite
-                                ? AppColors.accentGold.withValues(alpha: 0.6)
-                                : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
-                            width: customer.isFavorite ? 1.5 : 0.5,
+                      return Dismissible(
+                        key: ValueKey(customer.id),
+                        direction: DismissDirection.horizontal,
+                        confirmDismiss: (direction) async {
+                          HapticFeedback.mediumImpact();
+                          if (direction == DismissDirection.startToEnd) {
+                            // Swipe Right -> Call
+                            final uri = Uri.parse('tel:${customer.phone}');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          } else if (direction == DismissDirection.endToStart) {
+                            // Swipe Left -> WhatsApp
+                            final normalized = PhoneFormatter.normalize(customer.phone);
+                            final msg = hasDebt
+                                ? 'Hello ${customer.name}, this is a friendly reminder regarding your outstanding balance of ${CurrencyFormatter.format(customer.currentDebt)} with us. Thank you!'
+                                : 'Hello ${customer.name}, thank you for being a valued customer!';
+                            final waUrl = 'https://wa.me/$normalized?text=${Uri.encodeComponent(msg)}';
+                            final uri = Uri.parse(waUrl);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          }
+                          return false; // Don't delete customer, just fire action
+                        },
+                        background: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A), // Green
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          alignment: Alignment.centerLeft,
+                          child: const Row(
+                            children: [
+                              Icon(Icons.phone_rounded, color: Colors.white, size: 22),
+                              SizedBox(width: 8),
+                              Text('Call Customer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                            ],
                           ),
                         ),
-                        child: ListTile(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (ctx) => CustomerDetailScreen(customer: customer),
-                              ),
-                            );
-                          },
-                          leading: Stack(
-                            clipBehavior: Clip.none,
+                        secondaryBackground: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488), // Teal/WhatsApp
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          alignment: Alignment.centerRight,
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              CircleAvatar(
-                                backgroundColor: tagColor.withValues(alpha: 0.18),
-                                child: Text(
-                                  customer.name.isNotEmpty ? customer.name.substring(0, 1).toUpperCase() : 'C',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                    color: tagColor,
-                                  ),
-                                ),
-                              ),
-                              if (customer.isFavorite)
-                                Positioned(
-                                  top: -3,
-                                  right: -3,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.accentGold,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.star_rounded, size: 10, color: Colors.white),
-                                  ),
-                                ),
+                              Text('WhatsApp Reminder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                              SizedBox(width: 8),
+                              Icon(Icons.chat_rounded, color: Colors.white, size: 22),
                             ],
                           ),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  customer.name,
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                        ),
+                        child: Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: customer.isFavorite
+                                  ? AppColors.accentGold.withValues(alpha: 0.6)
+                                  : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                              width: customer.isFavorite ? 1.5 : 0.5,
+                            ),
+                          ),
+                          child: ListTile(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (ctx) => CustomerDetailScreen(customer: customer),
                                 ),
-                              ),
-                              if (customer.isFavorite) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentGold.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(6),
+                              );
+                            },
+                            leading: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: tagColor.withValues(alpha: 0.18),
+                                  child: Text(
+                                    customer.name.isNotEmpty ? customer.name.substring(0, 1).toUpperCase() : 'C',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                      color: tagColor,
+                                    ),
                                   ),
-                                  child: const Text('VIP', style: TextStyle(fontSize: 9, color: AppColors.accentAmber, fontWeight: FontWeight.bold)),
+                                ),
+                                if (customer.isFavorite)
+                                  Positioned(
+                                    top: -3,
+                                    right: -3,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.accentGold,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.star_rounded, size: 10, color: Colors.white),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    customer.name,
+                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (customer.isFavorite) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accentGold.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text('VIP', style: TextStyle(fontSize: 9, color: AppColors.accentAmber, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Row(
+                              children: [
+                                Text(
+                                  PhoneFormatter.formatDisplay(customer.phone),
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(color: tagColor, shape: BoxShape.circle),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  tagPreset.label,
+                                  style: TextStyle(fontSize: 10, color: tagColor, fontWeight: FontWeight.w600),
                                 ),
                               ],
-                            ],
-                          ),
-                          subtitle: Row(
-                            children: [
-                              Text(
-                                PhoneFormatter.formatDisplay(customer.phone),
-                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: BoxDecoration(color: tagColor, shape: BoxShape.circle),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                tagPreset.label,
-                                style: TextStyle(fontSize: 10, color: tagColor, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                hasDebt ? CurrencyFormatter.format(customer.currentDebt) : 'UGX 0',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13,
-                                  color: hasDebt ? AppColors.danger : AppColors.success,
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  hasDebt ? CurrencyFormatter.format(customer.currentDebt) : 'UGX 0',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                    color: hasDebt ? AppColors.danger : AppColors.success,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                hasDebt ? 'Balance Due' : 'Cleared',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: hasDebt ? AppColors.danger : AppColors.success,
+                                const SizedBox(height: 2),
+                                Text(
+                                  hasDebt ? 'Balance Due' : 'Cleared',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: hasDebt ? AppColors.danger : AppColors.success,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );
