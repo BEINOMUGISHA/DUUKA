@@ -23,12 +23,13 @@ class DukaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final customColor = ref.watch(customThemeColorProvider);
 
     return MaterialApp(
       title: 'DUKA - Uganda SME OS',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.buildTheme(customColor, isDark: false),
+      darkTheme: AppTheme.buildTheme(customColor, isDark: true),
       themeMode: themeMode,
       home: session != null ? const MainNavigationShell() : const AuthScreen(),
     );

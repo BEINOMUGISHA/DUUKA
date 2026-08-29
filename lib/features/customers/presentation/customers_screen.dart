@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -25,131 +25,235 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     final addressCtrl = TextEditingController(text: existing?.address ?? '');
     final limitCtrl = TextEditingController(text: existing != null ? existing.creditLimit.toInt().toString() : '300000');
     final debtCtrl = TextEditingController(text: existing != null ? existing.currentDebt.toInt().toString() : '0');
+    int selectedTagColor = existing?.tagColor ?? CustomerFavoriteColors.presets[0].color.value;
+    bool isFavorite = existing?.isFavorite ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.only(
-          top: 20,
-          left: 20,
-          right: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isEditing ? 'Edit Customer' : 'Add New Customer',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                  ),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
-                ],
-              ),
-              const Divider(),
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Customer Full Name *', prefixIcon: Icon(Icons.person)),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number (e.g. 0772123456) *',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: addressCtrl,
-                decoration: const InputDecoration(labelText: 'Location / Market Stall', prefixIcon: Icon(Icons.location_on)),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: limitCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Credit Limit (UGX)'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isEditing ? 'Edit Customer' : 'Add New Customer',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     ),
+                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                const Divider(),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Customer Full Name *', prefixIcon: Icon(Icons.person)),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number (e.g. 0772123456) *',
+                    prefixIcon: Icon(Icons.phone),
                   ),
-                  if (!isEditing) const SizedBox(width: 10),
-                  if (!isEditing)
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: addressCtrl,
+                  decoration: const InputDecoration(labelText: 'Location / Market Stall', prefixIcon: Icon(Icons.location_on)),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
                     Expanded(
                       child: TextField(
-                        controller: debtCtrl,
+                        controller: limitCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Initial Debt (UGX)'),
+                        decoration: const InputDecoration(labelText: 'Credit Limit (UGX)'),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final name = nameCtrl.text.trim();
-                    final rawPhone = phoneCtrl.text.trim();
-                    final limit = double.tryParse(limitCtrl.text.trim()) ?? 300000;
-                    final initialDebt = double.tryParse(debtCtrl.text.trim()) ?? 0;
-                    final session = ref.read(authProvider);
-
-                    if (name.isEmpty || rawPhone.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter customer name and valid phone number')),
-                      );
-                      return;
-                    }
-
-                    final normalizedPhone = PhoneFormatter.normalize(rawPhone);
-
-                    if (isEditing) {
-                      final updated = existing.copyWith(
-                        name: name,
-                        phone: normalizedPhone,
-                        address: addressCtrl.text.trim(),
-                        creditLimit: limit,
-                      );
-                      ref.read(customersProvider.notifier).updateCustomer(updated);
-                    } else {
-                      final newCust = LocalCustomerData(
-                        id: 'c_${DateTime.now().millisecondsSinceEpoch}',
-                        businessId: session?.businessId ?? 'biz_default',
-                        name: name,
-                        phone: normalizedPhone,
-                        address: addressCtrl.text.trim(),
-                        creditLimit: limit,
-                        currentDebt: initialDebt,
-                        createdAt: DateTime.now().millisecondsSinceEpoch,
-                        updatedAt: DateTime.now().millisecondsSinceEpoch,
-                      );
-                      ref.read(customersProvider.notifier).addCustomer(newCust);
-                    }
-
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isEditing ? 'Customer updated' : 'Customer added successfully')),
-                    );
-                  },
-                  child: Text(isEditing ? 'Save Changes' : 'Save Customer', style: const TextStyle(fontWeight: FontWeight.w900)),
+                    if (!isEditing) const SizedBox(width: 10),
+                    if (!isEditing)
+                      Expanded(
+                        child: TextField(
+                          controller: debtCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Initial Debt (UGX)'),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 14),
+
+                // --- CUSTOMER FAVORITE COLOR PALETTE ---
+                const Row(
+                  children: [
+                    Icon(Icons.palette_outlined, size: 16, color: AppColors.accentGold),
+                    SizedBox(width: 6),
+                    Text(
+                      'Favorite / VIP Tag Color',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: CustomerFavoriteColors.presets.map((preset) {
+                    final isSelected = (selectedTagColor & 0xFFFFFF) == (preset.color.value & 0xFFFFFF);
+                    return InkWell(
+                      onTap: () => setModalState(() => selectedTagColor = preset.color.value),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? preset.color.withValues(alpha: 0.18) : (isDark ? AppColors.darkCard : const Color(0xFFF1F5F9)),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? preset.color : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: preset.color,
+                                shape: BoxShape.circle,
+                              ),
+                              child: isSelected ? const Icon(Icons.check, size: 9, color: Colors.white) : null,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              preset.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected ? preset.color : (isDark ? AppColors.darkTextMain : const Color(0xFF334155)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                // VIP / Favorite Switch
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isFavorite ? AppColors.accentGold.withValues(alpha: 0.1) : (isDark ? AppColors.darkCard : const Color(0xFFF8FAFC)),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isFavorite ? AppColors.accentGold.withValues(alpha: 0.4) : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.star_rounded, color: AppColors.accentGold, size: 20),
+                          SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('VIP / Favorite Customer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Highlight in lists and receipt shares', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Switch(
+                        value: isFavorite,
+                        activeColor: AppColors.accentGold,
+                        onChanged: (val) => setModalState(() => isFavorite = val),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final name = nameCtrl.text.trim();
+                      final rawPhone = phoneCtrl.text.trim();
+                      final limit = double.tryParse(limitCtrl.text.trim()) ?? 300000;
+                      final initialDebt = double.tryParse(debtCtrl.text.trim()) ?? 0;
+                      final session = ref.read(authProvider);
+
+                      if (name.isEmpty || rawPhone.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter customer name and valid phone number')),
+                        );
+                        return;
+                      }
+
+                      final normalizedPhone = PhoneFormatter.normalize(rawPhone);
+
+                      if (isEditing) {
+                        final updated = existing.copyWith(
+                          name: name,
+                          phone: normalizedPhone,
+                          address: addressCtrl.text.trim(),
+                          creditLimit: limit,
+                          tagColor: selectedTagColor,
+                          isFavorite: isFavorite,
+                        );
+                        ref.read(customersProvider.notifier).updateCustomer(updated);
+                      } else {
+                        final newCust = LocalCustomerData(
+                          id: 'c_${DateTime.now().millisecondsSinceEpoch}',
+                          businessId: session?.businessId ?? 'biz_default',
+                          name: name,
+                          phone: normalizedPhone,
+                          address: addressCtrl.text.trim(),
+                          creditLimit: limit,
+                          currentDebt: initialDebt,
+                          tagColor: selectedTagColor,
+                          isFavorite: isFavorite,
+                          createdAt: DateTime.now().millisecondsSinceEpoch,
+                          updatedAt: DateTime.now().millisecondsSinceEpoch,
+                        );
+                        ref.read(customersProvider.notifier).addCustomer(newCust);
+                      }
+
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(isEditing ? 'Customer updated' : 'Customer added successfully')),
+                      );
+                    },
+                    child: Text(isEditing ? 'Save Changes' : 'Save Customer', style: const TextStyle(fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -168,6 +272,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       if (!matchesSearch) return false;
 
       if (_selectedFilter == 'Debtors') return c.currentDebt > 0;
+      if (_selectedFilter == '⭐ VIP Favorites') return c.isFavorite;
       return true;
     }).toList();
 
@@ -246,20 +351,23 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           // Filter Chips
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: Row(
-              children: ['All', 'Debtors'].map((f) {
-                final isSelected = _selectedFilter == f;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(f, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600)),
-                    selected: isSelected,
-                    selectedColor: AppColors.primaryForest,
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain)),
-                    onSelected: (_) => setState(() => _selectedFilter = f),
-                  ),
-                );
-              }).toList(),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: ['All', '⭐ VIP Favorites', 'Debtors'].map((f) {
+                  final isSelected = _selectedFilter == f;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(f, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600)),
+                      selected: isSelected,
+                      selectedColor: AppColors.primaryForest,
+                      labelStyle: TextStyle(color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain)),
+                      onSelected: (_) => setState(() => _selectedFilter = f),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
 
@@ -287,10 +395,20 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                     itemBuilder: (ctx, index) {
                       final customer = filtered[index];
                       final hasDebt = customer.currentDebt > 0;
+                      final tagPreset = CustomerFavoriteColors.getByColorValue(customer.tagColor);
+                      final tagColor = Color(customer.tagColor);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: customer.isFavorite
+                                ? AppColors.accentGold.withValues(alpha: 0.6)
+                                : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                            width: customer.isFavorite ? 1.5 : 0.5,
+                          ),
+                        ),
                         child: ListTile(
                           onTap: () {
                             Navigator.push(
@@ -300,20 +418,76 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                               ),
                             );
                           },
-                          leading: CircleAvatar(
-                            backgroundColor: hasDebt ? Colors.amber.shade50 : AppColors.surfaceMuted,
-                            child: Icon(
-                              hasDebt ? Icons.account_balance_wallet_rounded : Icons.person_rounded,
-                              color: hasDebt ? AppColors.creditAmber : AppColors.primaryForest,
-                            ),
+                          leading: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: tagColor.withValues(alpha: 0.18),
+                                child: Text(
+                                  customer.name.isNotEmpty ? customer.name.substring(0, 1).toUpperCase() : 'C',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                    color: tagColor,
+                                  ),
+                                ),
+                              ),
+                              if (customer.isFavorite)
+                                Positioned(
+                                  top: -3,
+                                  right: -3,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.accentGold,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.star_rounded, size: 10, color: Colors.white),
+                                  ),
+                                ),
+                            ],
                           ),
-                          title: Text(
-                            customer.name,
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  customer.name,
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (customer.isFavorite) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentGold.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text('VIP', style: TextStyle(fontSize: 9, color: AppColors.accentAmber, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ],
                           ),
-                          subtitle: Text(
-                            PhoneFormatter.formatDisplay(customer.phone),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                          subtitle: Row(
+                            children: [
+                              Text(
+                                PhoneFormatter.formatDisplay(customer.phone),
+                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(color: tagColor, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                tagPreset.label,
+                                style: TextStyle(fontSize: 10, color: tagColor, fontWeight: FontWeight.w600),
+                              ),
+                            ],
                           ),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,

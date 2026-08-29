@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -422,6 +422,153 @@ class LocalExpenseData {
 }
 
 // ---------------------------------------------------------------------------
+// CUSTOMER (with Custom Favorite Color support)
+// ---------------------------------------------------------------------------
+class LocalCustomerData {
+  final String id;
+  final String? serverId;
+  final String businessId;
+  final String name;
+  final String phone;
+  final String? email;
+  final String? address;
+  final double creditLimit;
+  final double currentDebt;
+  final int tagColor; // Hex ARGB e.g. 0xFF0B4F37, 0xFFF59E0B, 0xFF7C3AED
+  final bool isFavorite; // Favorite / VIP tag
+  final String? notes;
+  final int createdAt;
+  final int updatedAt;
+
+  LocalCustomerData({
+    required this.id,
+    this.serverId,
+    required this.businessId,
+    required this.name,
+    required this.phone,
+    this.email,
+    this.address,
+    this.creditLimit = 300000,
+    this.currentDebt = 0,
+    this.tagColor = 0xFF0B4F37,
+    this.isFavorite = false,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'serverId': serverId,
+        'businessId': businessId,
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'address': address,
+        'creditLimit': creditLimit,
+        'currentDebt': currentDebt,
+        'tagColor': tagColor,
+        'isFavorite': isFavorite,
+        'notes': notes,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
+      };
+
+  factory LocalCustomerData.fromJson(Map<String, dynamic> m) => LocalCustomerData(
+        id: m['id'] as String,
+        serverId: m['serverId'] as String?,
+        businessId: m['businessId'] as String,
+        name: m['name'] as String,
+        phone: m['phone'] as String,
+        email: m['email'] as String?,
+        address: m['address'] as String?,
+        creditLimit: (m['creditLimit'] as num?)?.toDouble() ?? 300000,
+        currentDebt: (m['currentDebt'] as num?)?.toDouble() ?? 0,
+        tagColor: (m['tagColor'] as num?)?.toInt() ?? 0xFF0B4F37,
+        isFavorite: m['isFavorite'] as bool? ?? false,
+        notes: m['notes'] as String?,
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        updatedAt: (m['updatedAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+
+  LocalCustomerData copyWith({
+    String? name,
+    String? phone,
+    String? email,
+    String? address,
+    double? creditLimit,
+    double? currentDebt,
+    int? tagColor,
+    bool? isFavorite,
+    String? notes,
+    int? updatedAt,
+  }) =>
+      LocalCustomerData(
+        id: id,
+        serverId: serverId,
+        businessId: businessId,
+        name: name ?? this.name,
+        phone: phone ?? this.phone,
+        email: email ?? this.email,
+        address: address ?? this.address,
+        creditLimit: creditLimit ?? this.creditLimit,
+        currentDebt: currentDebt ?? this.currentDebt,
+        tagColor: tagColor ?? this.tagColor,
+        isFavorite: isFavorite ?? this.isFavorite,
+        notes: notes ?? this.notes,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// SMS MESSAGE
+// ---------------------------------------------------------------------------
+class LocalSmsData {
+  final String id;
+  final String businessId;
+  final String? customerId;
+  final String phone;
+  final String message;
+  final String type;
+  final String status;
+  final int createdAt;
+
+  LocalSmsData({
+    required this.id,
+    required this.businessId,
+    this.customerId,
+    required this.phone,
+    required this.message,
+    required this.type,
+    required this.status,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'customerId': customerId,
+        'phone': phone,
+        'message': message,
+        'type': type,
+        'status': status,
+        'createdAt': createdAt,
+      };
+
+  factory LocalSmsData.fromJson(Map<String, dynamic> m) => LocalSmsData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        customerId: m['customerId'] as String?,
+        phone: m['phone'] as String,
+        message: m['message'] as String,
+        type: m['type'] as String? ?? 'custom',
+        status: m['status'] as String? ?? 'sent',
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
 // DEBTOR
 // ---------------------------------------------------------------------------
 class LocalDebtorData {
@@ -545,6 +692,8 @@ class AppDatabase {
   static const _kExpenses = 'duka_expenses_v2';
   static const _kDebtors = 'duka_debtors_v2';
   static const _kRestocks = 'duka_restocks_v2';
+  static const _kCustomers = 'duka_customers_v2';
+  static const _kSms = 'duka_sms_v2';
   static const _kQueue = 'duka_queue_v2';
 
   SharedPreferences? _prefs;
@@ -556,6 +705,8 @@ class AppDatabase {
   final Map<String, LocalExpenseData> _expenses = {};
   final Map<String, LocalDebtorData> _debtors = {};
   final Map<String, LocalRestockData> _restocks = {};
+  final Map<String, LocalCustomerData> _customers = {};
+  final Map<String, LocalSmsData> _sms = {};
   final List<SyncQueueItem> _queue = [];
 
   final _changeController = StreamController<void>.broadcast();
@@ -569,6 +720,7 @@ class AppDatabase {
     _loadAll();
     if (_products.isEmpty) _seedDefaultProducts();
     if (_debtors.isEmpty) _seedDefaultDebtors();
+    if (_customers.isEmpty) _seedDefaultCustomers();
     _initialized = true;
   }
 
@@ -579,6 +731,8 @@ class AppDatabase {
     _loadMap<LocalExpenseData>(_kExpenses, _expenses, LocalExpenseData.fromJson);
     _loadMap<LocalDebtorData>(_kDebtors, _debtors, LocalDebtorData.fromJson);
     _loadMap<LocalRestockData>(_kRestocks, _restocks, LocalRestockData.fromJson);
+    _loadMap<LocalCustomerData>(_kCustomers, _customers, LocalCustomerData.fromJson);
+    _loadMap<LocalSmsData>(_kSms, _sms, LocalSmsData.fromJson);
     final raw = _prefs?.getString(_kQueue);
     if (raw != null) {
       try {
@@ -637,6 +791,72 @@ class AppDatabase {
       _debtors[d.id] = d;
     }
     _persist(_kDebtors, _debtors, (d) => d.toJson());
+  }
+
+  void _seedDefaultCustomers() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final seed = [
+      LocalCustomerData(
+        id: 'c1',
+        businessId: 'biz_default',
+        name: 'Mugisha Patrick (Farm)',
+        phone: '256772889900',
+        address: 'Gayaza Road, Block 4',
+        creditLimit: 500000,
+        currentDebt: 250000,
+        tagColor: 0xFFF59E0B, // VIP Gold
+        isFavorite: true,
+        notes: 'Top wholesale farmer buyer',
+        createdAt: now - 518400000,
+        updatedAt: now,
+      ),
+      LocalCustomerData(
+        id: 'c2',
+        businessId: 'biz_default',
+        name: 'Mama Sarah General Store',
+        phone: '256754112233',
+        address: 'Kalerwe Market, Stall 12',
+        creditLimit: 300000,
+        currentDebt: 180000,
+        tagColor: 0xFF10B981, // Loyal Emerald
+        isFavorite: true,
+        notes: 'Regular retail re-stocker',
+        createdAt: now - 345600000,
+        updatedAt: now,
+      ),
+      LocalCustomerData(
+        id: 'c3',
+        businessId: 'biz_default',
+        name: 'Kato Denis (Builder)',
+        phone: '256701998877',
+        address: 'Bwaise Hardware Zone',
+        creditLimit: 200000,
+        currentDebt: 140000,
+        tagColor: 0xFF7C3AED, // Royal Purple
+        isFavorite: false,
+        notes: 'Contractor client',
+        createdAt: now - 950400000,
+        updatedAt: now,
+      ),
+      LocalCustomerData(
+        id: 'c4',
+        businessId: 'biz_default',
+        name: 'Namubiru Grace',
+        phone: '256788334455',
+        address: 'Ntinda Complex',
+        creditLimit: 100000,
+        currentDebt: 70000,
+        tagColor: 0xFF0284C7, // Ocean Blue
+        isFavorite: false,
+        notes: 'Prompt payer',
+        createdAt: now - 172800000,
+        updatedAt: now,
+      ),
+    ];
+    for (final c in seed) {
+      _customers[c.id] = c;
+    }
+    _persist(_kCustomers, _customers, (c) => c.toJson());
   }
 
   // ---- Queue ----------------------------------------------------------------
@@ -804,6 +1024,38 @@ class AppDatabase {
     _restocks[restock.id] = restock;
     await _persist(_kRestocks, _restocks, (r) => r.toJson());
     await updateProductStock(restock.productId, restock.qtyReceived);
+    _notify();
+  }
+
+  // ---- Customers (with Custom Favorite Colors) ------------------------------
+  Future<List<LocalCustomerData>> getCustomers() async =>
+      (_customers.values.toList()..sort((a, b) => a.name.compareTo(b.name)));
+
+  Future<void> insertCustomer(LocalCustomerData customer) async {
+    _customers[customer.id] = customer;
+    await _persist(_kCustomers, _customers, (c) => c.toJson());
+    _notify();
+  }
+
+  Future<void> updateCustomer(LocalCustomerData customer) async {
+    _customers[customer.id] = customer.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
+    await _persist(_kCustomers, _customers, (c) => c.toJson());
+    _notify();
+  }
+
+  Future<void> deleteCustomer(String id) async {
+    _customers.remove(id);
+    await _persist(_kCustomers, _customers, (c) => c.toJson());
+    _notify();
+  }
+
+  // ---- SMS Messages ---------------------------------------------------------
+  Future<List<LocalSmsData>> getSms() async =>
+      (_sms.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+
+  Future<void> insertSms(LocalSmsData sms) async {
+    _sms[sms.id] = sms;
+    await _persist(_kSms, _sms, (s) => s.toJson());
     _notify();
   }
 

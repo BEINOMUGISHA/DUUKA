@@ -223,6 +223,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 18),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  const Row(
+                    children: [
+                      Icon(Icons.palette_rounded, size: 17, color: AppColors.accentGold),
+                      SizedBox(width: 8),
+                      Text(
+                        'Favorite App & Brand Color',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Select your signature business theme color across the app.',
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final currentBrandColor = ref.watch(customThemeColorProvider);
+                      return Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: CustomerFavoriteColors.presets.map((preset) {
+                          final isSelected = currentBrandColor.value == preset.color.value;
+                          return InkWell(
+                            onTap: () => ref.read(customThemeColorProvider.notifier).setColor(preset.color),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isSelected ? preset.color.withValues(alpha: 0.15) : (isDark ? AppColors.darkCard : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? preset.color : (isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 16,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: preset.color,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: isSelected ? const Icon(Icons.check, size: 11, color: Colors.white) : null,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    preset.label,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? preset.color : (isDark ? AppColors.darkTextMain : const Color(0xFF334155)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

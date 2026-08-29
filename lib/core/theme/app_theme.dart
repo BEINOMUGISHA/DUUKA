@@ -84,15 +84,181 @@ class AppColors {
   );
 }
 
+// ─── Custom Customer Favorite & Tag Colors Palette ──────────────────────────
+class CustomerFavoriteColorPreset {
+  final String name;
+  final String label;
+  final Color color;
+  final Color lightBg;
+  final IconData icon;
+
+  const CustomerFavoriteColorPreset({
+    required this.name,
+    required this.label,
+    required this.color,
+    required this.lightBg,
+    required this.icon,
+  });
+
+  int get value => color.value;
+}
+
+class CustomerFavoriteColors {
+  static const List<CustomerFavoriteColorPreset> presets = [
+    CustomerFavoriteColorPreset(
+      name: 'emerald',
+      label: 'Loyal Emerald',
+      color: Color(0xFF0B4F37),
+      lightBg: Color(0xFFE6F4EA),
+      icon: Icons.eco_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'gold',
+      label: 'VIP Gold',
+      color: Color(0xFFD97706),
+      lightBg: Color(0xFFFEF3C7),
+      icon: Icons.star_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'purple',
+      label: 'Wholesale Purple',
+      color: Color(0xFF7C3AED),
+      lightBg: Color(0xFFF3E8FF),
+      icon: Icons.workspace_premium_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'blue',
+      label: 'Nile Blue',
+      color: Color(0xFF0284C7),
+      lightBg: Color(0xFFE0F2FE),
+      icon: Icons.verified_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'rose',
+      label: 'Crimson Rose',
+      color: Color(0xFFE11D48),
+      lightBg: Color(0xFFFFE4E6),
+      icon: Icons.favorite_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'teal',
+      label: 'Teal Oasis',
+      color: Color(0xFF0D9488),
+      lightBg: Color(0xFFCCFBF1),
+      icon: Icons.diamond_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'sunset',
+      label: 'Sunset Amber',
+      color: Color(0xFFEA580C),
+      lightBg: Color(0xFFFFEDD5),
+      icon: Icons.local_fire_department_rounded,
+    ),
+    CustomerFavoriteColorPreset(
+      name: 'slate',
+      label: 'Classic Slate',
+      color: Color(0xFF475569),
+      lightBg: Color(0xFFF1F5F9),
+      icon: Icons.person_rounded,
+    ),
+  ];
+
+  static CustomerFavoriteColorPreset getByColorValue(int value) {
+    for (final p in presets) {
+      if (p.color.value == value || (p.color.value & 0xFFFFFF) == (value & 0xFFFFFF)) {
+        return p;
+      }
+    }
+    return presets[0];
+  }
+}
+
 class AppTheme {
-  static ThemeData get lightTheme {
+  static ThemeData get lightTheme => buildTheme(AppColors.primaryForest, isDark: false);
+  static ThemeData get darkTheme => buildTheme(AppColors.primaryForest, isDark: true);
+
+  static ThemeData buildTheme(Color primaryColor, {required bool isDark}) {
+    if (isDark) {
+      return ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+          brightness: Brightness.dark,
+          primary: primaryColor == AppColors.primaryForest ? AppColors.emeraldNeon : primaryColor,
+          secondary: AppColors.accentGold,
+          surface: AppColors.darkSurface,
+        ),
+        scaffoldBackgroundColor: AppColors.darkBackground,
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).copyWith(
+          displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, color: AppColors.darkTextMain, letterSpacing: -0.5),
+          headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.darkTextMain, letterSpacing: -0.5),
+          headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.darkTextMain),
+          titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.darkTextMain),
+          titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.darkTextMain),
+          bodyLarge: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMain, fontSize: 15, fontWeight: FontWeight.w500),
+          bodyMedium: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMuted, fontSize: 13),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.darkSurface,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+            letterSpacing: -0.3,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor == AppColors.primaryForest ? AppColors.primaryEmerald : primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            shadowColor: primaryColor.withValues(alpha: 0.35),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+            textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.darkCard,
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: AppColors.darkBorder, width: 1),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.darkCard,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+          hintStyle: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMuted, fontSize: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.darkBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.darkBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: primaryColor, width: 2),
+          ),
+        ),
+      );
+    }
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryForest,
+        seedColor: primaryColor,
         brightness: Brightness.light,
-        primary: AppColors.primaryForest,
+        primary: primaryColor,
         secondary: AppColors.accentGold,
         surface: AppColors.surfaceCard,
       ),
@@ -107,7 +273,7 @@ class AppTheme {
         bodyMedium: GoogleFonts.plusJakartaSans(color: AppColors.textMuted, fontSize: 13),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: primaryColor == AppColors.primaryForest ? AppColors.primaryDark : primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
@@ -120,10 +286,10 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryForest,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           elevation: 2,
-          shadowColor: AppColors.primaryForest.withValues(alpha: 0.35),
+          shadowColor: primaryColor.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
           textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
@@ -153,81 +319,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryForest, width: 2),
-        ),
-      ),
-    );
-  }
-
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryEmerald,
-        brightness: Brightness.dark,
-        primary: AppColors.emeraldNeon,
-        secondary: AppColors.accentGold,
-        surface: AppColors.darkSurface,
-      ),
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w900, color: AppColors.darkTextMain, letterSpacing: -0.5),
-        headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.darkTextMain, letterSpacing: -0.5),
-        headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: AppColors.darkTextMain),
-        titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.darkTextMain),
-        titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.darkTextMain),
-        bodyLarge: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMain, fontSize: 15, fontWeight: FontWeight.w500),
-        bodyMedium: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMuted, fontSize: 13),
-      ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.darkSurface,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          letterSpacing: -0.3,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryEmerald,
-          foregroundColor: const Color(0xFF041811),
-          elevation: 2,
-          shadowColor: AppColors.primaryEmerald.withValues(alpha: 0.35),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-          textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.darkCard,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.darkBorder, width: 1),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.darkCard,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-        hintStyle: GoogleFonts.plusJakartaSans(color: AppColors.darkTextMuted, fontSize: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.emeraldNeon, width: 2),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/app_database.dart';
 import '../network/convex_client.dart';
 import '../sync/sync_engine.dart';
@@ -279,6 +280,34 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier();
+});
+
+// --- CUSTOM BRAND / FAVORITE THEME COLOR PROVIDER ---
+class CustomThemeColorNotifier extends StateNotifier<Color> {
+  static const _kPrefKey = 'duka_custom_brand_color';
+  SharedPreferences? _prefs;
+
+  CustomThemeColorNotifier() : super(const Color(0xFF0B4F37)) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
+    final saved = _prefs?.getInt(_kPrefKey);
+    if (saved != null) {
+      state = Color(saved);
+    }
+  }
+
+  Future<void> setColor(Color color) async {
+    state = color;
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs?.setInt(_kPrefKey, color.value);
+  }
+}
+
+final customThemeColorProvider = StateNotifierProvider<CustomThemeColorNotifier, Color>((ref) {
+  return CustomThemeColorNotifier();
 });
 
 // --- SYNC ENGINE PROVIDER ---
