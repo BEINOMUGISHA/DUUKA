@@ -30,6 +30,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     final debtCtrl = TextEditingController(text: existing != null ? existing.currentDebt.toInt().toString() : '0');
     int selectedTagColor = existing?.tagColor ?? CustomerFavoriteColors.presets[0].color.value;
     bool isFavorite = existing?.isFavorite ?? false;
+    String selectedTier = existing?.tier ?? 'regular';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -81,6 +82,19 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 TextField(
                   controller: addressCtrl,
                   decoration: const InputDecoration(labelText: 'Location / Market Stall', prefixIcon: Icon(Icons.location_on)),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedTier,
+                  decoration: const InputDecoration(labelText: 'Pricing / Customer Tier *', prefixIcon: Icon(Icons.stars_rounded)),
+                  items: const [
+                    DropdownMenuItem(value: 'regular', child: Text('Regular (Standard Retail)')),
+                    DropdownMenuItem(value: 'wholesale', child: Text('Wholesale (Bulk Discounts)')),
+                    DropdownMenuItem(value: 'vip', child: Text('VIP / Special Buyer')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedTier = val);
+                  },
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -228,6 +242,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                           creditLimit: limit,
                           tagColor: selectedTagColor,
                           isFavorite: isFavorite,
+                          tier: selectedTier,
                         );
                         ref.read(customersProvider.notifier).updateCustomer(updated);
                       } else {
@@ -241,6 +256,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                           currentDebt: initialDebt,
                           tagColor: selectedTagColor,
                           isFavorite: isFavorite,
+                          tier: selectedTier,
                           createdAt: DateTime.now().millisecondsSinceEpoch,
                           updatedAt: DateTime.now().millisecondsSinceEpoch,
                         );
@@ -275,7 +291,8 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       if (!matchesSearch) return false;
 
       if (_selectedFilter == 'Debtors') return c.currentDebt > 0;
-      if (_selectedFilter == '⭐ VIP Favorites') return c.isFavorite;
+      if (_selectedFilter == 'Wholesale') return c.tier == 'wholesale';
+      if (_selectedFilter == '⭐ VIP Favorites') return c.isFavorite || c.tier == 'vip';
       return true;
     }).toList();
 
@@ -357,7 +374,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['All', '⭐ VIP Favorites', 'Debtors'].map((f) {
+                children: ['All', 'Wholesale', '⭐ VIP Favorites', 'Debtors'].map((f) {
                   final isSelected = _selectedFilter == f;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),

@@ -8,6 +8,9 @@ import '../../../core/widgets/animated_counter.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
 import '../../sales/presentation/sales_history_screen.dart';
+import '../../production/presentation/production_screen.dart';
+import '../../branches/presentation/branches_screen.dart';
+import '../../reports/presentation/eod_summary_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final Function(int) onNavigateTab;
@@ -400,12 +403,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 18),
 
-                  // --- 3. 4-COLUMN QUICK ACTIONS ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // --- 3. 6-ITEM UGA-POS QUICK ACTIONS ---
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.spaceBetween,
                     children: [
                       _buildQuickAction(
-                        icon: Icons.add_rounded,
+                        icon: Icons.add_shopping_cart_rounded,
                         label: lang == 'lg' ? 'Tunda' : 'New sale',
                         iconColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
                         isDark: isDark,
@@ -431,14 +436,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onTap: () => widget.onNavigateTab(2),
                       ),
                       _buildQuickAction(
-                        icon: Icons.description_outlined,
-                        label: lang == 'lg' ? 'Ebbanja' : 'Debtors',
-                        iconColor: const Color(0xFF34D399),
+                        icon: Icons.precision_manufacturing_rounded,
+                        label: 'Production',
+                        iconColor: const Color(0xFFF59E0B),
                         isDark: isDark,
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
+                            MaterialPageRoute(builder: (ctx) => const ProductionScreen()),
+                          );
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.domain_rounded,
+                        label: 'Branches',
+                        iconColor: const Color(0xFF0284C7),
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (ctx) => const BranchesScreen()),
+                          );
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.assessment_rounded,
+                        label: 'Close Day',
+                        iconColor: const Color(0xFF10B981),
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (ctx) => const EodSummaryScreen()),
                           );
                         },
                       ),
@@ -656,6 +685,54 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
 
+                  const SizedBox(height: 18),
+
+                  // --- 4.5. TOP SELLING PRODUCTS MINI-SECTION (UgaPOS feature) ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Top Selling Products',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => widget.onNavigateTab(2),
+                        child: Text(
+                          'View all',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildTopItemRow('1', 'NPK 17:17:17 Fertilizer 50kg', '24 bags sold', 'UGX 4,440,000', isDark),
+                        const Divider(height: 16),
+                        _buildTopItemRow('2', 'Tororo Cement 32.5R 50kg', '18 bags sold', 'UGX 648,000', isDark),
+                        const Divider(height: 16),
+                        _buildTopItemRow('3', 'Bazooka Maize Seeds 2kg', '14 pkts sold', 'UGX 259,000', isDark),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 20),
 
                   // --- 5. RECENT TRANSACTIONS ---
@@ -702,7 +779,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           const Text('No sales recorded yet', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                           const SizedBox(height: 10),
                           ElevatedButton.icon(
-                            onPressed: () => widget.onNavigateTab(2),
+                            onPressed: () => widget.onNavigateTab(1),
                             icon: const Icon(Icons.point_of_sale_rounded, size: 16),
                             label: const Text('Make First Sale', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
@@ -731,6 +808,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         );
                       }).toList(),
                     ),
+
                 ],
               ),
             ),
@@ -874,7 +952,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+
+  Widget _buildTopItemRow(String rank, String name, String qtySold, String revenue, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: rank == '1' ? AppColors.accentGold : (isDark ? AppColors.darkSurface : const Color(0xFFE2E8F0)),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            rank,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: rank == '1' ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                qtySold,
+                style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          revenue,
+          style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryForest, fontSize: 12),
+        ),
+      ],
+    );
+  }
 }
+
 
 // Polyline Wave Painter matching the HTML polyline
 class _PolylineWavePainter extends CustomPainter {

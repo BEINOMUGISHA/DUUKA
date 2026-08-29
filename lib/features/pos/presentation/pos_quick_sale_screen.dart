@@ -19,6 +19,7 @@ class PosItem {
   final String icon;
   final double costPrice;
   final double sellPrice;
+  final double? wholesalePrice;
   final double currentStock;
   final String unit;
   final bool isTaxable;
@@ -30,6 +31,7 @@ class PosItem {
     required this.icon,
     required this.costPrice,
     required this.sellPrice,
+    this.wholesalePrice,
     required this.currentStock,
     required this.unit,
     this.isTaxable = true,
@@ -39,11 +41,13 @@ class PosItem {
 class CartItem {
   final PosItem product;
   int quantity;
+  bool isWholesale;
 
-  CartItem({required this.product, this.quantity = 1});
+  CartItem({required this.product, this.quantity = 1, this.isWholesale = false});
 
-  double get subtotal => product.sellPrice * quantity;
-  double get taxAmount => product.isTaxable ? subtotal * (0.18 / 1.18) : 0.0;
+  double get unitPrice => (isWholesale && product.wholesalePrice != null) ? product.wholesalePrice! : product.sellPrice;
+  double get subtotal => unitPrice * quantity;
+  double get taxAmount => product.isTaxable ? (subtotal - (subtotal / 1.18)) : 0.0;
 }
 
 class PosQuickSaleScreen extends ConsumerStatefulWidget {
@@ -56,6 +60,7 @@ class PosQuickSaleScreen extends ConsumerStatefulWidget {
 class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
+  bool _isWholesaleMode = false;
   final Map<String, CartItem> _cart = {};
 
   double get _cartTotal => _cart.values.fold(0, (sum, item) => sum + item.subtotal);
@@ -67,7 +72,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
       if (_cart.containsKey(product.id)) {
         _cart[product.id]!.quantity++;
       } else {
-        _cart[product.id] = CartItem(product: product, quantity: 1);
+        _cart[product.id] = CartItem(product: product, quantity: 1, isWholesale: _isWholesaleMode);
       }
     });
   }
@@ -236,6 +241,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
         icon: icon,
         costPrice: p.costPrice,
         sellPrice: p.sellPrice,
+        wholesalePrice: p.wholesalePrice,
         currentStock: p.currentStock,
         unit: p.unit,
         isTaxable: p.isTaxable,
@@ -262,6 +268,41 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
       appBar: AppBar(
         title: Text(ref.tr('pos_title')),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: ActionChip(
+              avatar: Icon(
+                _isWholesaleMode ? Icons.store_rounded : Icons.person_rounded,
+                size: 14,
+                color: _isWholesaleMode ? Colors.white : AppColors.primaryForest,
+              ),
+              label: Text(
+                _isWholesaleMode ? 'Wholesale' : 'Retail',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: _isWholesaleMode ? Colors.white : AppColors.primaryForest,
+                ),
+              ),
+              backgroundColor: _isWholesaleMode ? const Color(0xFF0284C7) : const Color(0xFFE0F2FE),
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              onPressed: () {
+                setState(() {
+                  _isWholesaleMode = !_isWholesaleMode;
+                  for (final item in _cart.values) {
+                    item.isWholesale = _isWholesaleMode;
+                  }
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: const Duration(seconds: 1),
+                    content: Text(_isWholesaleMode ? 'Switched to Wholesale Bulk Pricing' : 'Switched to Standard Retail Pricing'),
+                  ),
+                );
+              },
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded),
             tooltip: ref.tr('scan_barcode'),
@@ -666,6 +707,8 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       'momoReference': _momoRefController.text,
       'isCredit': _isCreditSale || due > 0,
       'dueDate': _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
+      'cashierName': session?.fullName ?? 'Main Cashier',
+      'branchId': ref.read(selectedBranchIdProvider) ?? 'br_main',
     };
 
     // Save to persistent database
@@ -690,6 +733,8 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       dueDate: _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
       efrisFiscalCode: fiscalCode,
       deviceId: session?.deviceId ?? 'device-001',
+      cashierName: session?.fullName ?? 'Main Cashier',
+      branchId: ref.read(selectedBranchIdProvider) ?? 'br_main',
       localTimestamp: DateTime.now().millisecondsSinceEpoch,
     );
 

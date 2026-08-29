@@ -664,4 +664,211 @@ final notificationsProvider = StateNotifierProvider<NotificationsNotifier, List<
   return NotificationsNotifier(db);
 });
 
+// --- RAW MATERIALS NOTIFIER (Production) ---
+class RawMaterialsNotifier extends StateNotifier<List<LocalRawMaterialData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  RawMaterialsNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getRawMaterials();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getRawMaterials();
+    });
+  }
+
+  Future<void> addRawMaterial(LocalRawMaterialData rm) async {
+    await db.insertRawMaterial(rm);
+  }
+
+  Future<void> updateRawMaterial(LocalRawMaterialData rm) async {
+    await db.updateRawMaterial(rm);
+  }
+
+  Future<void> adjustStock(String id, double delta) async {
+    await db.updateRawMaterialStock(id, delta);
+  }
+
+  Future<void> deleteRawMaterial(String id) async {
+    await db.deleteRawMaterial(id);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final rawMaterialsProvider = StateNotifierProvider<RawMaterialsNotifier, List<LocalRawMaterialData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return RawMaterialsNotifier(db);
+});
+
+// --- RECIPES NOTIFIER (Production) ---
+class RecipesNotifier extends StateNotifier<List<LocalRecipeData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  RecipesNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getRecipes();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getRecipes();
+    });
+  }
+
+  Future<void> addRecipe(LocalRecipeData recipe) async {
+    await db.insertRecipe(recipe);
+  }
+
+  Future<void> deleteRecipe(String id) async {
+    await db.deleteRecipe(id);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final recipesProvider = StateNotifierProvider<RecipesNotifier, List<LocalRecipeData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return RecipesNotifier(db);
+});
+
+// --- PRODUCTION BATCHES NOTIFIER ---
+class ProductionBatchesNotifier extends StateNotifier<List<LocalProductionBatchData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  ProductionBatchesNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getProductionBatches();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getProductionBatches();
+    });
+  }
+
+  Future<void> recordBatch({
+    required String recipeId,
+    required double batchesCount,
+    String? notes,
+  }) async {
+    await db.recordProductionBatch(recipeId: recipeId, batchesCount: batchesCount, notes: notes);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final productionBatchesProvider = StateNotifierProvider<ProductionBatchesNotifier, List<LocalProductionBatchData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return ProductionBatchesNotifier(db);
+});
+
+// --- BRANCHES NOTIFIER (Multi-Branch) ---
+class BranchesNotifier extends StateNotifier<List<LocalBranchData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  BranchesNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getBranches();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getBranches();
+    });
+  }
+
+  Future<void> addBranch(LocalBranchData branch) async {
+    await db.insertBranch(branch);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final branchesProvider = StateNotifierProvider<BranchesNotifier, List<LocalBranchData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return BranchesNotifier(db);
+});
+
+// --- STOCK TRANSFERS NOTIFIER ---
+class StockTransfersNotifier extends StateNotifier<List<LocalStockTransferData>> {
+  final AppDatabase db;
+  StreamSubscription<void>? _sub;
+
+  StockTransfersNotifier(this.db) : super([]) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await db.init();
+    state = await db.getStockTransfers();
+    _sub = db.onChange.listen((_) async {
+      state = await db.getStockTransfers();
+    });
+  }
+
+  Future<void> transferStock({
+    required String fromBranchId,
+    required String fromBranchName,
+    required String toBranchId,
+    required String toBranchName,
+    required String productId,
+    required String productName,
+    required double quantity,
+    String? notes,
+  }) async {
+    await db.executeStockTransfer(
+      fromBranchId: fromBranchId,
+      fromBranchName: fromBranchName,
+      toBranchId: toBranchId,
+      toBranchName: toBranchName,
+      productId: productId,
+      productName: productName,
+      quantity: quantity,
+      notes: notes,
+    );
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final stockTransfersProvider = StateNotifierProvider<StockTransfersNotifier, List<LocalStockTransferData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return StockTransfersNotifier(db);
+});
+
+// Current active branch filter
+final selectedBranchIdProvider = StateProvider<String?>((ref) => null);
+
+
 

@@ -50,7 +50,7 @@ class SyncQueueItem {
 }
 
 // ---------------------------------------------------------------------------
-// PRODUCT
+// PRODUCT (with Wholesale Price & Branch support)
 // ---------------------------------------------------------------------------
 class LocalProductData {
   final String id;
@@ -61,6 +61,7 @@ class LocalProductData {
   final String category;
   final double costPrice;
   final double sellPrice;
+  final double? wholesalePrice;
   final double currentStock;
   final double minStockLevel;
   final String unit;
@@ -68,6 +69,7 @@ class LocalProductData {
   final double taxRate;
   final bool isArchived;
   final bool isSynced;
+  final String? branchId;
   final int updatedAt;
 
   LocalProductData({
@@ -79,6 +81,7 @@ class LocalProductData {
     required this.category,
     required this.costPrice,
     required this.sellPrice,
+    this.wholesalePrice,
     required this.currentStock,
     required this.minStockLevel,
     this.unit = 'pcs',
@@ -86,6 +89,7 @@ class LocalProductData {
     this.taxRate = 0.18,
     this.isArchived = false,
     this.isSynced = false,
+    this.branchId,
     required this.updatedAt,
   });
 
@@ -98,6 +102,7 @@ class LocalProductData {
         'category': category,
         'costPrice': costPrice,
         'sellPrice': sellPrice,
+        'wholesalePrice': wholesalePrice,
         'currentStock': currentStock,
         'minStockLevel': minStockLevel,
         'unit': unit,
@@ -105,6 +110,7 @@ class LocalProductData {
         'taxRate': taxRate,
         'isArchived': isArchived,
         'isSynced': isSynced,
+        'branchId': branchId,
         'updatedAt': updatedAt,
       };
 
@@ -117,6 +123,7 @@ class LocalProductData {
         category: m['category'] as String,
         costPrice: (m['costPrice'] as num).toDouble(),
         sellPrice: (m['sellPrice'] as num).toDouble(),
+        wholesalePrice: (m['wholesalePrice'] as num?)?.toDouble(),
         currentStock: (m['currentStock'] as num).toDouble(),
         minStockLevel: (m['minStockLevel'] as num).toDouble(),
         unit: m['unit'] as String? ?? 'pcs',
@@ -124,6 +131,7 @@ class LocalProductData {
         taxRate: (m['taxRate'] as num?)?.toDouble() ?? 0.18,
         isArchived: m['isArchived'] as bool? ?? false,
         isSynced: m['isSynced'] as bool? ?? false,
+        branchId: m['branchId'] as String?,
         updatedAt: m['updatedAt'] as int,
       );
 
@@ -133,6 +141,7 @@ class LocalProductData {
     String? category,
     double? costPrice,
     double? sellPrice,
+    double? wholesalePrice,
     double? currentStock,
     double? minStockLevel,
     String? unit,
@@ -140,6 +149,7 @@ class LocalProductData {
     double? taxRate,
     bool? isArchived,
     bool? isSynced,
+    String? branchId,
     int? updatedAt,
   }) =>
       LocalProductData(
@@ -151,6 +161,7 @@ class LocalProductData {
         category: category ?? this.category,
         costPrice: costPrice ?? this.costPrice,
         sellPrice: sellPrice ?? this.sellPrice,
+        wholesalePrice: wholesalePrice ?? this.wholesalePrice,
         currentStock: currentStock ?? this.currentStock,
         minStockLevel: minStockLevel ?? this.minStockLevel,
         unit: unit ?? this.unit,
@@ -158,12 +169,13 @@ class LocalProductData {
         taxRate: taxRate ?? this.taxRate,
         isArchived: isArchived ?? this.isArchived,
         isSynced: isSynced ?? this.isSynced,
+        branchId: branchId ?? this.branchId,
         updatedAt: updatedAt ?? this.updatedAt,
       );
 }
 
 // ---------------------------------------------------------------------------
-// SALE
+// SALE (with Cashier Name & Branch support)
 // ---------------------------------------------------------------------------
 class LocalSaleData {
   final String id;
@@ -188,6 +200,8 @@ class LocalSaleData {
   final String? efrisFiscalCode;
   final String? efrisQrCodeData;
   final String deviceId;
+  final String? cashierName;
+  final String? branchId;
   final int localTimestamp;
   final bool isSynced;
   final bool isVoided;
@@ -215,6 +229,8 @@ class LocalSaleData {
     this.efrisFiscalCode,
     this.efrisQrCodeData,
     required this.deviceId,
+    this.cashierName,
+    this.branchId,
     required this.localTimestamp,
     this.isSynced = false,
     this.isVoided = false,
@@ -243,6 +259,8 @@ class LocalSaleData {
         'efrisFiscalCode': efrisFiscalCode,
         'efrisQrCodeData': efrisQrCodeData,
         'deviceId': deviceId,
+        'cashierName': cashierName,
+        'branchId': branchId,
         'localTimestamp': localTimestamp,
         'isSynced': isSynced,
         'isVoided': isVoided,
@@ -271,12 +289,20 @@ class LocalSaleData {
         efrisFiscalCode: m['efrisFiscalCode'] as String?,
         efrisQrCodeData: m['efrisQrCodeData'] as String?,
         deviceId: m['deviceId'] as String,
+        cashierName: m['cashierName'] as String?,
+        branchId: m['branchId'] as String?,
         localTimestamp: m['localTimestamp'] as int,
         isSynced: m['isSynced'] as bool? ?? false,
         isVoided: m['isVoided'] as bool? ?? false,
       );
 
-  LocalSaleData copyWith({bool? isVoided, bool? isSynced, String? serverId}) =>
+  LocalSaleData copyWith({
+    bool? isVoided,
+    bool? isSynced,
+    String? serverId,
+    String? cashierName,
+    String? branchId,
+  }) =>
       LocalSaleData(
         id: id,
         serverId: serverId ?? this.serverId,
@@ -300,6 +326,8 @@ class LocalSaleData {
         efrisFiscalCode: efrisFiscalCode,
         efrisQrCodeData: efrisQrCodeData,
         deviceId: deviceId,
+        cashierName: cashierName ?? this.cashierName,
+        branchId: branchId ?? this.branchId,
         localTimestamp: localTimestamp,
         isSynced: isSynced ?? this.isSynced,
         isVoided: isVoided ?? this.isVoided,
@@ -422,7 +450,7 @@ class LocalExpenseData {
 }
 
 // ---------------------------------------------------------------------------
-// CUSTOMER (with Custom Favorite Color support)
+// CUSTOMER (with Tier & Favorite Colors)
 // ---------------------------------------------------------------------------
 class LocalCustomerData {
   final String id;
@@ -434,8 +462,9 @@ class LocalCustomerData {
   final String? address;
   final double creditLimit;
   final double currentDebt;
-  final int tagColor; // Hex ARGB e.g. 0xFF0B4F37, 0xFFF59E0B, 0xFF7C3AED
-  final bool isFavorite; // Favorite / VIP tag
+  final int tagColor;
+  final bool isFavorite;
+  final String tier; // 'regular', 'wholesale', 'vip'
   final String? notes;
   final int createdAt;
   final int updatedAt;
@@ -452,6 +481,7 @@ class LocalCustomerData {
     this.currentDebt = 0,
     this.tagColor = 0xFF0B4F37,
     this.isFavorite = false,
+    this.tier = 'regular',
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -469,6 +499,7 @@ class LocalCustomerData {
         'currentDebt': currentDebt,
         'tagColor': tagColor,
         'isFavorite': isFavorite,
+        'tier': tier,
         'notes': notes,
         'createdAt': createdAt,
         'updatedAt': updatedAt,
@@ -486,6 +517,7 @@ class LocalCustomerData {
         currentDebt: (m['currentDebt'] as num?)?.toDouble() ?? 0,
         tagColor: (m['tagColor'] as num?)?.toInt() ?? 0xFF0B4F37,
         isFavorite: m['isFavorite'] as bool? ?? false,
+        tier: m['tier'] as String? ?? 'regular',
         notes: m['notes'] as String?,
         createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         updatedAt: (m['updatedAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
@@ -500,6 +532,7 @@ class LocalCustomerData {
     double? currentDebt,
     int? tagColor,
     bool? isFavorite,
+    String? tier,
     String? notes,
     int? updatedAt,
   }) =>
@@ -515,6 +548,7 @@ class LocalCustomerData {
         currentDebt: currentDebt ?? this.currentDebt,
         tagColor: tagColor ?? this.tagColor,
         isFavorite: isFavorite ?? this.isFavorite,
+        tier: tier ?? this.tier,
         notes: notes ?? this.notes,
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -683,6 +717,395 @@ class LocalRestockData {
 }
 
 // ---------------------------------------------------------------------------
+// RAW MATERIAL (for Production Module)
+// ---------------------------------------------------------------------------
+class LocalRawMaterialData {
+  final String id;
+  final String businessId;
+  final String name;
+  final String unit; // 'kg', 'ltr', 'bags', 'g', 'pcs'
+  final double currentStock;
+  final double minStockLevel;
+  final double unitCost;
+  final int updatedAt;
+
+  LocalRawMaterialData({
+    required this.id,
+    required this.businessId,
+    required this.name,
+    this.unit = 'kg',
+    required this.currentStock,
+    required this.minStockLevel,
+    required this.unitCost,
+    required this.updatedAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'name': name,
+        'unit': unit,
+        'currentStock': currentStock,
+        'minStockLevel': minStockLevel,
+        'unitCost': unitCost,
+        'updatedAt': updatedAt,
+      };
+
+  factory LocalRawMaterialData.fromJson(Map<String, dynamic> m) =>
+      LocalRawMaterialData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        name: m['name'] as String,
+        unit: m['unit'] as String? ?? 'kg',
+        currentStock: (m['currentStock'] as num).toDouble(),
+        minStockLevel: (m['minStockLevel'] as num).toDouble(),
+        unitCost: (m['unitCost'] as num).toDouble(),
+        updatedAt: m['updatedAt'] as int,
+      );
+
+  LocalRawMaterialData copyWith({
+    String? name,
+    String? unit,
+    double? currentStock,
+    double? minStockLevel,
+    double? unitCost,
+    int? updatedAt,
+  }) =>
+      LocalRawMaterialData(
+        id: id,
+        businessId: businessId,
+        name: name ?? this.name,
+        unit: unit ?? this.unit,
+        currentStock: currentStock ?? this.currentStock,
+        minStockLevel: minStockLevel ?? this.minStockLevel,
+        unitCost: unitCost ?? this.unitCost,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// PRODUCTION RECIPE / FORMULA (for Production Module)
+// ---------------------------------------------------------------------------
+class LocalRecipeData {
+  final String id;
+  final String businessId;
+  final String name;
+  final String outputProductId;
+  final String outputProductName;
+  final double outputQuantity;
+  final String ingredientsJson; // List of {rawMaterialId, rawMaterialName, quantity, unit}
+  final double laborCost;
+  final String? notes;
+  final int createdAt;
+
+  LocalRecipeData({
+    required this.id,
+    required this.businessId,
+    required this.name,
+    required this.outputProductId,
+    required this.outputProductName,
+    required this.outputQuantity,
+    required this.ingredientsJson,
+    this.laborCost = 0,
+    this.notes,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'name': name,
+        'outputProductId': outputProductId,
+        'outputProductName': outputProductName,
+        'outputQuantity': outputQuantity,
+        'ingredientsJson': ingredientsJson,
+        'laborCost': laborCost,
+        'notes': notes,
+        'createdAt': createdAt,
+      };
+
+  factory LocalRecipeData.fromJson(Map<String, dynamic> m) => LocalRecipeData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        name: m['name'] as String,
+        outputProductId: m['outputProductId'] as String,
+        outputProductName: m['outputProductName'] as String? ?? '',
+        outputQuantity: (m['outputQuantity'] as num).toDouble(),
+        ingredientsJson: m['ingredientsJson'] as String,
+        laborCost: (m['laborCost'] as num?)?.toDouble() ?? 0,
+        notes: m['notes'] as String?,
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// PRODUCTION BATCH (for Production Module Log)
+// ---------------------------------------------------------------------------
+class LocalProductionBatchData {
+  final String id;
+  final String businessId;
+  final String recipeId;
+  final String recipeName;
+  final String outputProductId;
+  final String outputProductName;
+  final double quantityProduced;
+  final double totalCost;
+  final double unitCost;
+  final int batchDate;
+  final String? notes;
+
+  LocalProductionBatchData({
+    required this.id,
+    required this.businessId,
+    required this.recipeId,
+    required this.recipeName,
+    required this.outputProductId,
+    required this.outputProductName,
+    required this.quantityProduced,
+    required this.totalCost,
+    required this.unitCost,
+    required this.batchDate,
+    this.notes,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'recipeId': recipeId,
+        'recipeName': recipeName,
+        'outputProductId': outputProductId,
+        'outputProductName': outputProductName,
+        'quantityProduced': quantityProduced,
+        'totalCost': totalCost,
+        'unitCost': unitCost,
+        'batchDate': batchDate,
+        'notes': notes,
+      };
+
+  factory LocalProductionBatchData.fromJson(Map<String, dynamic> m) =>
+      LocalProductionBatchData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        recipeId: m['recipeId'] as String,
+        recipeName: m['recipeName'] as String,
+        outputProductId: m['outputProductId'] as String,
+        outputProductName: m['outputProductName'] as String,
+        quantityProduced: (m['quantityProduced'] as num).toDouble(),
+        totalCost: (m['totalCost'] as num).toDouble(),
+        unitCost: (m['unitCost'] as num).toDouble(),
+        batchDate: m['batchDate'] as int,
+        notes: m['notes'] as String?,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// BRANCH (for Multi-Branch Support)
+// ---------------------------------------------------------------------------
+class LocalBranchData {
+  final String id;
+  final String businessId;
+  final String name;
+  final String location;
+  final String managerName;
+  final String phone;
+  final bool isHeadquarters;
+  final int createdAt;
+
+  LocalBranchData({
+    required this.id,
+    required this.businessId,
+    required this.name,
+    required this.location,
+    required this.managerName,
+    required this.phone,
+    this.isHeadquarters = false,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'name': name,
+        'location': location,
+        'managerName': managerName,
+        'phone': phone,
+        'isHeadquarters': isHeadquarters,
+        'createdAt': createdAt,
+      };
+
+  factory LocalBranchData.fromJson(Map<String, dynamic> m) => LocalBranchData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        name: m['name'] as String,
+        location: m['location'] as String,
+        managerName: m['managerName'] as String,
+        phone: m['phone'] as String,
+        isHeadquarters: m['isHeadquarters'] as bool? ?? false,
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// STOCK TRANSFER (Inter-Branch Transfer)
+// ---------------------------------------------------------------------------
+class LocalStockTransferData {
+  final String id;
+  final String businessId;
+  final String fromBranchId;
+  final String fromBranchName;
+  final String toBranchId;
+  final String toBranchName;
+  final String productId;
+  final String productName;
+  final double quantity;
+  final String status; // 'pending', 'completed', 'cancelled'
+  final String? notes;
+  final int transferDate;
+
+  LocalStockTransferData({
+    required this.id,
+    required this.businessId,
+    required this.fromBranchId,
+    required this.fromBranchName,
+    required this.toBranchId,
+    required this.toBranchName,
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    this.status = 'completed',
+    this.notes,
+    required this.transferDate,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'fromBranchId': fromBranchId,
+        'fromBranchName': fromBranchName,
+        'toBranchId': toBranchId,
+        'toBranchName': toBranchName,
+        'productId': productId,
+        'productName': productName,
+        'quantity': quantity,
+        'status': status,
+        'notes': notes,
+        'transferDate': transferDate,
+      };
+
+  factory LocalStockTransferData.fromJson(Map<String, dynamic> m) =>
+      LocalStockTransferData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        fromBranchId: m['fromBranchId'] as String,
+        fromBranchName: m['fromBranchName'] as String,
+        toBranchId: m['toBranchId'] as String,
+        toBranchName: m['toBranchName'] as String,
+        productId: m['productId'] as String,
+        productName: m['productName'] as String,
+        quantity: (m['quantity'] as num).toDouble(),
+        status: m['status'] as String? ?? 'completed',
+        notes: m['notes'] as String?,
+        transferDate: m['transferDate'] as int,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// MOBILE MONEY TRANSACTION
+// ---------------------------------------------------------------------------
+class LocalMobileMoneyTxData {
+  final String id;
+  final String businessId;
+  final String provider; // 'mtn', 'airtel'
+  final String phone;
+  final double amount;
+  final String reference;
+  final String status; // 'completed', 'pending', 'failed'
+  final String type; // 'collection', 'payout'
+  final int createdAt;
+
+  LocalMobileMoneyTxData({
+    required this.id,
+    required this.businessId,
+    required this.provider,
+    required this.phone,
+    required this.amount,
+    required this.reference,
+    required this.status,
+    required this.type,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'provider': provider,
+        'phone': phone,
+        'amount': amount,
+        'reference': reference,
+        'status': status,
+        'type': type,
+        'createdAt': createdAt,
+      };
+
+  factory LocalMobileMoneyTxData.fromJson(Map<String, dynamic> m) =>
+      LocalMobileMoneyTxData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        provider: m['provider'] as String,
+        phone: m['phone'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        reference: m['reference'] as String,
+        status: m['status'] as String? ?? 'completed',
+        type: m['type'] as String? ?? 'collection',
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// NOTIFICATION
+// ---------------------------------------------------------------------------
+class LocalNotificationData {
+  final String id;
+  final String businessId;
+  final String title;
+  final String body;
+  final String type;
+  final bool isRead;
+  final int createdAt;
+
+  LocalNotificationData({
+    required this.id,
+    required this.businessId,
+    required this.title,
+    required this.body,
+    required this.type,
+    this.isRead = false,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'title': title,
+        'body': body,
+        'type': type,
+        'isRead': isRead,
+        'createdAt': createdAt,
+      };
+
+  factory LocalNotificationData.fromJson(Map<String, dynamic> m) =>
+      LocalNotificationData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String,
+        title: m['title'] as String,
+        body: m['body'] as String,
+        type: m['type'] as String? ?? 'info',
+        isRead: m['isRead'] as bool? ?? false,
+        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
 // APP DATABASE
 // ---------------------------------------------------------------------------
 class AppDatabase {
@@ -694,6 +1117,13 @@ class AppDatabase {
   static const _kRestocks = 'duka_restocks_v2';
   static const _kCustomers = 'duka_customers_v2';
   static const _kSms = 'duka_sms_v2';
+  static const _kRawMaterials = 'duka_raw_materials_v2';
+  static const _kRecipes = 'duka_recipes_v2';
+  static const _kBatches = 'duka_batches_v2';
+  static const _kBranches = 'duka_branches_v2';
+  static const _kTransfers = 'duka_transfers_v2';
+  static const _kMomo = 'duka_momo_v2';
+  static const _kNotifications = 'duka_notifs_v2';
   static const _kQueue = 'duka_queue_v2';
 
   SharedPreferences? _prefs;
@@ -707,6 +1137,13 @@ class AppDatabase {
   final Map<String, LocalRestockData> _restocks = {};
   final Map<String, LocalCustomerData> _customers = {};
   final Map<String, LocalSmsData> _sms = {};
+  final Map<String, LocalRawMaterialData> _rawMaterials = {};
+  final Map<String, LocalRecipeData> _recipes = {};
+  final Map<String, LocalProductionBatchData> _batches = {};
+  final Map<String, LocalBranchData> _branches = {};
+  final Map<String, LocalStockTransferData> _transfers = {};
+  final Map<String, LocalMobileMoneyTxData> _momo = {};
+  final Map<String, LocalNotificationData> _notifications = {};
   final List<SyncQueueItem> _queue = [];
 
   final _changeController = StreamController<void>.broadcast();
@@ -721,6 +1158,9 @@ class AppDatabase {
     if (_products.isEmpty) _seedDefaultProducts();
     if (_debtors.isEmpty) _seedDefaultDebtors();
     if (_customers.isEmpty) _seedDefaultCustomers();
+    if (_rawMaterials.isEmpty) _seedDefaultRawMaterials();
+    if (_recipes.isEmpty) _seedDefaultRecipes();
+    if (_branches.isEmpty) _seedDefaultBranches();
     _initialized = true;
   }
 
@@ -733,6 +1173,14 @@ class AppDatabase {
     _loadMap<LocalRestockData>(_kRestocks, _restocks, LocalRestockData.fromJson);
     _loadMap<LocalCustomerData>(_kCustomers, _customers, LocalCustomerData.fromJson);
     _loadMap<LocalSmsData>(_kSms, _sms, LocalSmsData.fromJson);
+    _loadMap<LocalRawMaterialData>(_kRawMaterials, _rawMaterials, LocalRawMaterialData.fromJson);
+    _loadMap<LocalRecipeData>(_kRecipes, _recipes, LocalRecipeData.fromJson);
+    _loadMap<LocalProductionBatchData>(_kBatches, _batches, LocalProductionBatchData.fromJson);
+    _loadMap<LocalBranchData>(_kBranches, _branches, LocalBranchData.fromJson);
+    _loadMap<LocalStockTransferData>(_kTransfers, _transfers, LocalStockTransferData.fromJson);
+    _loadMap<LocalMobileMoneyTxData>(_kMomo, _momo, LocalMobileMoneyTxData.fromJson);
+    _loadMap<LocalNotificationData>(_kNotifications, _notifications, LocalNotificationData.fromJson);
+
     final raw = _prefs?.getString(_kQueue);
     if (raw != null) {
       try {
@@ -763,15 +1211,15 @@ class AppDatabase {
   void _seedDefaultProducts() {
     final now = DateTime.now().millisecondsSinceEpoch;
     final seed = [
-      LocalProductData(id: 'p1', businessId: 'biz_default', name: 'NPK 17:17:17 Fertilizer 50kg', category: 'Agro', costPrice: 150000, sellPrice: 185000, currentStock: 24, minStockLevel: 10, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p2', businessId: 'biz_default', name: 'DAP Fertilizer 50kg', category: 'Agro', costPrice: 170000, sellPrice: 210000, currentStock: 18, minStockLevel: 10, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p3', businessId: 'biz_default', name: 'Longe 5 Maize Seeds 2kg', category: 'Seeds', costPrice: 12000, sellPrice: 16000, currentStock: 4, minStockLevel: 15, unit: 'pkt', updatedAt: now),
-      LocalProductData(id: 'p4', businessId: 'biz_default', name: 'Bazooka Maize Seeds 2kg', category: 'Seeds', costPrice: 14000, sellPrice: 18500, currentStock: 30, minStockLevel: 10, unit: 'pkt', updatedAt: now),
-      LocalProductData(id: 'p5', businessId: 'biz_default', name: 'Roundup Weedkiller 1L', category: 'Chemicals', costPrice: 22000, sellPrice: 28000, currentStock: 3, minStockLevel: 10, unit: 'bottle', updatedAt: now),
-      LocalProductData(id: 'p6', businessId: 'biz_default', name: 'Dudu Acelamectin 500ml', category: 'Chemicals', costPrice: 18000, sellPrice: 24000, currentStock: 15, minStockLevel: 5, unit: 'bottle', updatedAt: now),
-      LocalProductData(id: 'p7', businessId: 'biz_default', name: 'Tororo Cement 32.5R 50kg', category: 'Hardware', costPrice: 32000, sellPrice: 36000, currentStock: 80, minStockLevel: 20, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p8', businessId: 'biz_default', name: 'Iron Sheets 28 Gauge 3m', category: 'Hardware', costPrice: 42000, sellPrice: 48500, currentStock: 60, minStockLevel: 15, unit: 'pc', updatedAt: now),
-      LocalProductData(id: 'p9', businessId: 'biz_default', name: 'Water Pump Knapsack 16L', category: 'Equipment', costPrice: 65000, sellPrice: 85000, currentStock: 8, minStockLevel: 5, unit: 'pc', updatedAt: now),
+      LocalProductData(id: 'p1', businessId: 'biz_default', name: 'NPK 17:17:17 Fertilizer 50kg', category: 'Agro', costPrice: 150000, sellPrice: 185000, wholesalePrice: 172000, currentStock: 24, minStockLevel: 10, unit: 'bag', updatedAt: now),
+      LocalProductData(id: 'p2', businessId: 'biz_default', name: 'DAP Fertilizer 50kg', category: 'Agro', costPrice: 170000, sellPrice: 210000, wholesalePrice: 195000, currentStock: 18, minStockLevel: 10, unit: 'bag', updatedAt: now),
+      LocalProductData(id: 'p3', businessId: 'biz_default', name: 'Longe 5 Maize Seeds 2kg', category: 'Seeds', costPrice: 12000, sellPrice: 16000, wholesalePrice: 14500, currentStock: 4, minStockLevel: 15, unit: 'pkt', updatedAt: now),
+      LocalProductData(id: 'p4', businessId: 'biz_default', name: 'Bazooka Maize Seeds 2kg', category: 'Seeds', costPrice: 14000, sellPrice: 18500, wholesalePrice: 16500, currentStock: 30, minStockLevel: 10, unit: 'pkt', updatedAt: now),
+      LocalProductData(id: 'p5', businessId: 'biz_default', name: 'Roundup Weedkiller 1L', category: 'Chemicals', costPrice: 22000, sellPrice: 28000, wholesalePrice: 25000, currentStock: 3, minStockLevel: 10, unit: 'bottle', updatedAt: now),
+      LocalProductData(id: 'p6', businessId: 'biz_default', name: 'Dudu Acelamectin 500ml', category: 'Chemicals', costPrice: 18000, sellPrice: 24000, wholesalePrice: 21500, currentStock: 15, minStockLevel: 5, unit: 'bottle', updatedAt: now),
+      LocalProductData(id: 'p7', businessId: 'biz_default', name: 'Tororo Cement 32.5R 50kg', category: 'Hardware', costPrice: 32000, sellPrice: 36000, wholesalePrice: 34000, currentStock: 80, minStockLevel: 20, unit: 'bag', updatedAt: now),
+      LocalProductData(id: 'p8', businessId: 'biz_default', name: 'Iron Sheets 28 Gauge 3m', category: 'Hardware', costPrice: 42000, sellPrice: 48500, wholesalePrice: 45000, currentStock: 60, minStockLevel: 15, unit: 'pc', updatedAt: now),
+      LocalProductData(id: 'p9', businessId: 'biz_default', name: 'Water Pump Knapsack 16L', category: 'Equipment', costPrice: 65000, sellPrice: 85000, wholesalePrice: 75000, currentStock: 8, minStockLevel: 5, unit: 'pc', updatedAt: now),
     ];
     for (final p in seed) {
       _products[p.id] = p;
@@ -806,6 +1254,7 @@ class AppDatabase {
         currentDebt: 250000,
         tagColor: 0xFFF59E0B, // VIP Gold
         isFavorite: true,
+        tier: 'wholesale',
         notes: 'Top wholesale farmer buyer',
         createdAt: now - 518400000,
         updatedAt: now,
@@ -820,6 +1269,7 @@ class AppDatabase {
         currentDebt: 180000,
         tagColor: 0xFF10B981, // Loyal Emerald
         isFavorite: true,
+        tier: 'wholesale',
         notes: 'Regular retail re-stocker',
         createdAt: now - 345600000,
         updatedAt: now,
@@ -834,6 +1284,7 @@ class AppDatabase {
         currentDebt: 140000,
         tagColor: 0xFF7C3AED, // Royal Purple
         isFavorite: false,
+        tier: 'regular',
         notes: 'Contractor client',
         createdAt: now - 950400000,
         updatedAt: now,
@@ -848,6 +1299,7 @@ class AppDatabase {
         currentDebt: 70000,
         tagColor: 0xFF0284C7, // Ocean Blue
         isFavorite: false,
+        tier: 'vip',
         notes: 'Prompt payer',
         createdAt: now - 172800000,
         updatedAt: now,
@@ -857,6 +1309,101 @@ class AppDatabase {
       _customers[c.id] = c;
     }
     _persist(_kCustomers, _customers, (c) => c.toJson());
+  }
+
+  void _seedDefaultRawMaterials() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final seed = [
+      LocalRawMaterialData(id: 'rm1', businessId: 'biz_default', name: 'Raw Maize Grain Grade A', unit: 'kg', currentStock: 850, minStockLevel: 200, unitCost: 1100, updatedAt: now),
+      LocalRawMaterialData(id: 'rm2', businessId: 'biz_default', name: 'Nitrogen Premix Powder', unit: 'kg', currentStock: 120, minStockLevel: 30, unitCost: 4500, updatedAt: now),
+      LocalRawMaterialData(id: 'rm3', businessId: 'biz_default', name: 'Packaging Bags 50kg Heavy', unit: 'pcs', currentStock: 450, minStockLevel: 100, unitCost: 1200, updatedAt: now),
+      LocalRawMaterialData(id: 'rm4', businessId: 'biz_default', name: 'Chemical Surfactant Liquid', unit: 'ltr', currentStock: 45, minStockLevel: 15, unitCost: 8500, updatedAt: now),
+      LocalRawMaterialData(id: 'rm5', businessId: 'biz_default', name: 'Plastic Bottles 1L With Caps', unit: 'pcs', currentStock: 300, minStockLevel: 80, unitCost: 650, updatedAt: now),
+    ];
+    for (final rm in seed) {
+      _rawMaterials[rm.id] = rm;
+    }
+    _persist(_kRawMaterials, _rawMaterials, (rm) => rm.toJson());
+  }
+
+  void _seedDefaultRecipes() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final seed = [
+      LocalRecipeData(
+        id: 'rec1',
+        businessId: 'biz_default',
+        name: 'Custom NPK 17:17:17 Blend 50kg',
+        outputProductId: 'p1',
+        outputProductName: 'NPK 17:17:17 Fertilizer 50kg',
+        outputQuantity: 1,
+        ingredientsJson: jsonEncode([
+          {'rawMaterialId': 'rm2', 'rawMaterialName': 'Nitrogen Premix Powder', 'quantity': 15.0, 'unit': 'kg'},
+          {'rawMaterialId': 'rm3', 'rawMaterialName': 'Packaging Bags 50kg Heavy', 'quantity': 1.0, 'unit': 'pcs'},
+        ]),
+        laborCost: 15000,
+        notes: 'Blend in machine for 20 mins before sealing',
+        createdAt: now,
+      ),
+      LocalRecipeData(
+        id: 'rec2',
+        businessId: 'biz_default',
+        name: 'Weedkiller 1L Re-bottling',
+        outputProductId: 'p5',
+        outputProductName: 'Roundup Weedkiller 1L',
+        outputQuantity: 1,
+        ingredientsJson: jsonEncode([
+          {'rawMaterialId': 'rm4', 'rawMaterialName': 'Chemical Surfactant Liquid', 'quantity': 1.0, 'unit': 'ltr'},
+          {'rawMaterialId': 'rm5', 'rawMaterialName': 'Plastic Bottles 1L With Caps', 'quantity': 1.0, 'unit': 'pcs'},
+        ]),
+        laborCost: 2000,
+        notes: 'Wear protective gloves during bottling',
+        createdAt: now,
+      ),
+    ];
+    for (final r in seed) {
+      _recipes[r.id] = r;
+    }
+    _persist(_kRecipes, _recipes, (r) => r.toJson());
+  }
+
+  void _seedDefaultBranches() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final seed = [
+      LocalBranchData(
+        id: 'br_main',
+        businessId: 'biz_default',
+        name: 'Kampala Main Branch',
+        location: 'Plot 14 Luwum Street, Kampala',
+        managerName: 'Beinomugisha Innocent',
+        phone: '256772123456',
+        isHeadquarters: true,
+        createdAt: now,
+      ),
+      LocalBranchData(
+        id: 'br_kalerwe',
+        businessId: 'biz_default',
+        name: 'Kalerwe Market Branch',
+        location: 'Kalerwe Agro Hub, Block C',
+        managerName: 'Patrick Mugisha',
+        phone: '256754987654',
+        isHeadquarters: false,
+        createdAt: now,
+      ),
+      LocalBranchData(
+        id: 'br_mbarara',
+        businessId: 'biz_default',
+        name: 'Mbarara Western Depot',
+        location: 'High Street, Mbarara City',
+        managerName: 'Kato Denis',
+        phone: '256701889900',
+        isHeadquarters: false,
+        createdAt: now,
+      ),
+    ];
+    for (final b in seed) {
+      _branches[b.id] = b;
+    }
+    _persist(_kBranches, _branches, (b) => b.toJson());
   }
 
   // ---- Queue ----------------------------------------------------------------
@@ -1027,7 +1574,7 @@ class AppDatabase {
     _notify();
   }
 
-  // ---- Customers (with Custom Favorite Colors) ------------------------------
+  // ---- Customers ------------------------------------------------------------
   Future<List<LocalCustomerData>> getCustomers() async =>
       (_customers.values.toList()..sort((a, b) => a.name.compareTo(b.name)));
 
@@ -1053,17 +1600,191 @@ class AppDatabase {
   Future<List<LocalSmsData>> getSms() async =>
       (_sms.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
+  Future<List<LocalSmsData>> getSmsList() async => getSms();
+
   Future<void> insertSms(LocalSmsData sms) async {
     _sms[sms.id] = sms;
     await _persist(_kSms, _sms, (s) => s.toJson());
     _notify();
   }
 
-  // ---- Analytics ------------------------------------------------------------
-  double revenueInRange(DateTime from, DateTime to) {
+  // ---- RAW MATERIALS (Production) -------------------------------------------
+  Future<List<LocalRawMaterialData>> getRawMaterials() async =>
+      (_rawMaterials.values.toList()..sort((a, b) => a.name.compareTo(b.name)));
+
+  Future<void> insertRawMaterial(LocalRawMaterialData rm) async {
+    _rawMaterials[rm.id] = rm;
+    await _persist(_kRawMaterials, _rawMaterials, (m) => m.toJson());
+    _notify();
+  }
+
+  Future<void> updateRawMaterial(LocalRawMaterialData rm) async {
+    _rawMaterials[rm.id] = rm.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
+    await _persist(_kRawMaterials, _rawMaterials, (m) => m.toJson());
+    _notify();
+  }
+
+  Future<void> updateRawMaterialStock(String id, double delta) async {
+    final rm = _rawMaterials[id];
+    if (rm != null) {
+      _rawMaterials[id] = rm.copyWith(
+        currentStock: (rm.currentStock + delta).clamp(0.0, 9999999.0),
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      await _persist(_kRawMaterials, _rawMaterials, (m) => m.toJson());
+      _notify();
+    }
+  }
+
+  Future<void> deleteRawMaterial(String id) async {
+    _rawMaterials.remove(id);
+    await _persist(_kRawMaterials, _rawMaterials, (m) => m.toJson());
+    _notify();
+  }
+
+  // ---- RECIPES (Production) -------------------------------------------------
+  Future<List<LocalRecipeData>> getRecipes() async =>
+      (_recipes.values.toList()..sort((a, b) => a.name.compareTo(b.name)));
+
+  Future<void> insertRecipe(LocalRecipeData recipe) async {
+    _recipes[recipe.id] = recipe;
+    await _persist(_kRecipes, _recipes, (r) => r.toJson());
+    _notify();
+  }
+
+  Future<void> deleteRecipe(String id) async {
+    _recipes.remove(id);
+    await _persist(_kRecipes, _recipes, (r) => r.toJson());
+    _notify();
+  }
+
+  // ---- PRODUCTION BATCHES ---------------------------------------------------
+  Future<List<LocalProductionBatchData>> getProductionBatches() async =>
+      (_batches.values.toList()..sort((a, b) => b.batchDate.compareTo(a.batchDate)));
+
+  Future<void> recordProductionBatch({
+    required String recipeId,
+    required double batchesCount,
+    String? notes,
+  }) async {
+    final recipe = _recipes[recipeId];
+    if (recipe == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    double rawMaterialsCost = 0.0;
+
+    // Deduct raw materials based on formula
+    try {
+      final ingredients = jsonDecode(recipe.ingredientsJson) as List<dynamic>;
+      for (final ing in ingredients) {
+        final rmId = ing['rawMaterialId'] as String;
+        final qtyPerBatch = (ing['quantity'] as num).toDouble();
+        final totalQtyToDeduct = qtyPerBatch * batchesCount;
+        final rm = _rawMaterials[rmId];
+        if (rm != null) {
+          rawMaterialsCost += (rm.unitCost * totalQtyToDeduct);
+          await updateRawMaterialStock(rmId, -totalQtyToDeduct);
+        }
+      }
+    } catch (_) {}
+
+    final totalBatchLabor = recipe.laborCost * batchesCount;
+    final totalCost = rawMaterialsCost + totalBatchLabor;
+    final totalFinishedUnits = recipe.outputQuantity * batchesCount;
+    final unitCost = totalFinishedUnits > 0 ? (totalCost / totalFinishedUnits) : 0.0;
+
+    // Increase stock of finished product in main inventory!
+    await updateProductStock(recipe.outputProductId, totalFinishedUnits);
+
+    final batch = LocalProductionBatchData(
+      id: 'batch_$now',
+      businessId: recipe.businessId,
+      recipeId: recipe.id,
+      recipeName: recipe.name,
+      outputProductId: recipe.outputProductId,
+      outputProductName: recipe.outputProductName,
+      quantityProduced: totalFinishedUnits,
+      totalCost: totalCost,
+      unitCost: unitCost,
+      batchDate: now,
+      notes: notes,
+    );
+
+    _batches[batch.id] = batch;
+    await _persist(_kBatches, _batches, (b) => b.toJson());
+    _notify();
+  }
+
+  // ---- BRANCHES (Multi-Branch) ----------------------------------------------
+  Future<List<LocalBranchData>> getBranches() async =>
+      (_branches.values.toList()..sort((a, b) => (b.isHeadquarters ? 1 : 0).compareTo(a.isHeadquarters ? 1 : 0)));
+
+  Future<void> insertBranch(LocalBranchData branch) async {
+    _branches[branch.id] = branch;
+    await _persist(_kBranches, _branches, (b) => b.toJson());
+    _notify();
+  }
+
+  // ---- STOCK TRANSFERS (Inter-Branch) ----------------------------------------
+  Future<List<LocalStockTransferData>> getStockTransfers() async =>
+      (_transfers.values.toList()..sort((a, b) => b.transferDate.compareTo(a.transferDate)));
+
+  Future<void> executeStockTransfer({
+    required String fromBranchId,
+    required String fromBranchName,
+    required String toBranchId,
+    required String toBranchName,
+    required String productId,
+    required String productName,
+    required double quantity,
+    String? notes,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final transfer = LocalStockTransferData(
+      id: 'trf_$now',
+      businessId: 'biz_default',
+      fromBranchId: fromBranchId,
+      fromBranchName: fromBranchName,
+      toBranchId: toBranchId,
+      toBranchName: toBranchName,
+      productId: productId,
+      productName: productName,
+      quantity: quantity,
+      status: 'completed',
+      notes: notes,
+      transferDate: now,
+    );
+
+    _transfers[transfer.id] = transfer;
+    await _persist(_kTransfers, _transfers, (t) => t.toJson());
+    _notify();
+  }
+
+  // ---- MOBILE MONEY ---------------------------------------------------------
+  Future<List<LocalMobileMoneyTxData>> getMomoTransactions() async =>
+      (_momo.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+
+  Future<void> insertMomoTx(LocalMobileMoneyTxData tx) async {
+    _momo[tx.id] = tx;
+    await _persist(_kMomo, _momo, (m) => m.toJson());
+    _notify();
+  }
+
+  // ---- NOTIFICATIONS --------------------------------------------------------
+  Future<List<LocalNotificationData>> getNotifications() async =>
+      (_notifications.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+
+  Future<void> insertNotification(LocalNotificationData n) async {
+    _notifications[n.id] = n;
+    await _persist(_kNotifications, _notifications, (notif) => notif.toJson());
+    _notify();
+  }
+
+  // ---- ANALYTICS & UGA-POS REPORTING HELPERS --------------------------------
+  double revenueInRange(DateTime from, DateTime to, {String? branchId}) {
     final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
     return _sales.values
-        .where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)
+        .where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t && (branchId == null || s.branchId == branchId))
         .fold(0.0, (sum, s) => sum + s.totalAmount);
   }
 
@@ -1110,6 +1831,47 @@ class AppDatabase {
       result[e.categoryName] = (result[e.categoryName] ?? 0) + e.amount;
     }
     return result;
+  }
+
+  // Staff Performance (Cashier Sales Breakdown)
+  Map<String, Map<String, dynamic>> salesByCashierInRange(DateTime from, DateTime to) {
+    final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
+    final result = <String, Map<String, dynamic>>{};
+
+    for (final s in _sales.values.where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)) {
+      final cashier = (s.cashierName != null && s.cashierName!.isNotEmpty) ? s.cashierName! : 'Main Cashier';
+      final current = result[cashier] ?? {'name': cashier, 'totalSales': 0.0, 'count': 0, 'voids': 0};
+      current['totalSales'] = (current['totalSales'] as double) + s.totalAmount;
+      current['count'] = (current['count'] as int) + 1;
+      result[cashier] = current;
+    }
+    return result;
+  }
+
+  // Top Selling Products (Units & Revenue)
+  List<Map<String, dynamic>> getTopSellingProducts({int limit = 5}) {
+    final productMap = <String, Map<String, dynamic>>{};
+
+    for (final s in _sales.values.where((s) => !s.isVoided)) {
+      try {
+        final items = jsonDecode(s.itemsJson) as List<dynamic>;
+        for (final it in items) {
+          final name = it['name'] as String? ?? 'Item';
+          final qty = (it['quantity'] as num?)?.toDouble() ?? 1.0;
+          final price = (it['price'] as num?)?.toDouble() ?? 0.0;
+          final total = (it['subtotal'] as num?)?.toDouble() ?? (qty * price);
+
+          final existing = productMap[name] ?? {'name': name, 'quantity': 0.0, 'revenue': 0.0};
+          existing['quantity'] = (existing['quantity'] as double) + qty;
+          existing['revenue'] = (existing['revenue'] as double) + total;
+          productMap[name] = existing;
+        }
+      } catch (_) {}
+    }
+
+    final list = productMap.values.toList()
+      ..sort((a, b) => (b['revenue'] as double).compareTo(a['revenue'] as double));
+    return list.take(limit).toList();
   }
 
   void close() => _changeController.close();

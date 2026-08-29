@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -22,6 +22,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final catCtrl = TextEditingController(text: existing?.category ?? 'Agro');
     final costCtrl = TextEditingController(text: existing != null ? existing.costPrice.toInt().toString() : '');
     final sellCtrl = TextEditingController(text: existing != null ? existing.sellPrice.toInt().toString() : '');
+    final wholesaleCtrl = TextEditingController(text: existing?.wholesalePrice != null ? existing!.wholesalePrice!.toInt().toString() : '');
     final stockCtrl = TextEditingController(text: existing != null ? existing.currentStock.toInt().toString() : '');
     final minStockCtrl = TextEditingController(text: existing != null ? existing.minStockLevel.toInt().toString() : '5');
     final unitCtrl = TextEditingController(text: existing?.unit ?? 'pcs');
@@ -67,7 +68,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: ['Agro', 'Seeds', 'Chemicals', 'Hardware', 'Equipment', 'General'].contains(catCtrl.text)
+                      value: ['Agro', 'Seeds', 'Chemicals', 'Hardware', 'Equipment', 'General'].contains(catCtrl.text)
                           ? catCtrl.text
                           : 'Agro',
                       decoration: InputDecoration(labelText: '${ref.tr('category')} *'),
@@ -82,7 +83,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: ['pcs', 'bag', 'pkt', 'bottle', 'kg', 'tin'].contains(unitCtrl.text)
+                      value: ['pcs', 'bag', 'pkt', 'bottle', 'kg', 'tin'].contains(unitCtrl.text)
                           ? unitCtrl.text
                           : 'pcs',
                       decoration: InputDecoration(labelText: '${ref.tr('unit')} *'),
@@ -117,22 +118,30 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 ],
               ),
               const SizedBox(height: 10),
+              TextField(
+                controller: wholesaleCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Wholesale / Bulk Price (UGX) [Optional]',
+                  prefixIcon: Icon(Icons.storefront_rounded),
+                ),
+              ),
+              const SizedBox(height: 10),
               Row(
                 children: [
-                  if (!isEditing)
-                    Expanded(
-                      child: TextField(
-                        controller: stockCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: '${ref.tr('initial_stock')} *'),
-                      ),
+                  Expanded(
+                    child: TextField(
+                      controller: stockCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(labelText: '${ref.tr('current_stock')} *'),
                     ),
-                  if (!isEditing) const SizedBox(width: 10),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
                       controller: minStockCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: '${ref.tr('min_stock')} *'),
+                      decoration: InputDecoration(labelText: '${ref.tr('min_stock_alert')} *'),
                     ),
                   ),
                 ],
@@ -144,14 +153,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     final name = nameCtrl.text.trim();
+                    final cat = catCtrl.text.trim();
                     final cost = double.tryParse(costCtrl.text.trim()) ?? 0;
                     final sell = double.tryParse(sellCtrl.text.trim()) ?? 0;
+                    final wholesale = double.tryParse(wholesaleCtrl.text.trim());
+                    final stock = double.tryParse(stockCtrl.text.trim()) ?? 0;
                     final minStock = double.tryParse(minStockCtrl.text.trim()) ?? 5;
+                    final unit = unitCtrl.text.trim();
                     final session = ref.read(authProvider);
 
                     if (name.isEmpty || sell <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter valid product name and selling price')),
+                        const SnackBar(content: Text('Please enter a valid product name and selling price')),
                       );
                       return;
                     }
@@ -159,38 +172,40 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                     if (isEditing) {
                       final updated = existing.copyWith(
                         name: name,
-                        category: catCtrl.text,
+                        category: cat,
                         costPrice: cost,
                         sellPrice: sell,
+                        wholesalePrice: wholesale,
+                        currentStock: stock,
                         minStockLevel: minStock,
-                        unit: unitCtrl.text,
+                        unit: unit,
                       );
                       ref.read(productsProvider.notifier).editProduct(updated);
                     } else {
-                      final initialStock = double.tryParse(stockCtrl.text.trim()) ?? 0;
-                      final newProduct = LocalProductData(
+                      final newProd = LocalProductData(
                         id: 'p_${DateTime.now().millisecondsSinceEpoch}',
                         businessId: session?.businessId ?? 'biz_default',
                         name: name,
-                        category: catCtrl.text,
+                        category: cat,
                         costPrice: cost,
                         sellPrice: sell,
-                        currentStock: initialStock,
+                        wholesalePrice: wholesale,
+                        currentStock: stock,
                         minStockLevel: minStock,
-                        unit: unitCtrl.text,
+                        unit: unit,
                         updatedAt: DateTime.now().millisecondsSinceEpoch,
                       );
-                      ref.read(productsProvider.notifier).addProduct(newProduct);
+                      ref.read(productsProvider.notifier).addProduct(newProd);
                     }
 
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isEditing ? 'Product updated successfully' : ref.tr('product_added'))),
+                      SnackBar(content: Text(isEditing ? 'Product updated' : 'Product added successfully')),
                     );
                   },
                   child: Text(
-                    isEditing ? 'Save Changes' : ref.tr('save_product'),
-                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    isEditing ? ref.tr('update_product') : ref.tr('save_product'),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
                   ),
                 ),
               ),
@@ -583,6 +598,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                               fontSize: 12,
                                             ),
                                           ),
+                                          if (product.wholesalePrice != null) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFE0F2FE),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'WS: ${CurrencyFormatter.format(product.wholesalePrice!)}',
+                                                style: const TextStyle(fontSize: 10, color: Color(0xFF0369A1), fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
                                           if (session?.canViewCostPrice == true) ...[
                                             const SizedBox(width: 8),
                                             Text(
@@ -599,21 +628,46 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: isLowStock ? Colors.red.shade300 : Colors.green.shade300),
-                                      ),
-                                      child: Text(
-                                        '${product.currentStock.toInt()} ${product.unit}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 12,
-                                          color: isLowStock ? AppColors.danger : AppColors.success,
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.remove_circle_outline, size: 18, color: AppColors.danger),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () {
+                                            if (product.currentStock > 0) {
+                                              ref.read(databaseProvider).updateProductStock(product.id, -1);
+                                            }
+                                          },
                                         ),
-                                      ),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: isLowStock ? Colors.red.shade300 : Colors.green.shade300),
+                                          ),
+                                          child: Text(
+                                            '${product.currentStock.toInt()} ${product.unit}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 12,
+                                              color: isLowStock ? AppColors.danger : AppColors.success,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        IconButton(
+                                          icon: const Icon(Icons.add_circle_outline, size: 18, color: AppColors.primaryForest),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () {
+                                            ref.read(databaseProvider).updateProductStock(product.id, 1);
+                                          },
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 6),
                                     Row(

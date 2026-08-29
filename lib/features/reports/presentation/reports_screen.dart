@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/export_service.dart';
+import 'eod_summary_screen.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -523,6 +524,125 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // --- STAFF PERFORMANCE TRACKING (UgaPOS feature) ---
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.badge_rounded, color: Color(0xFF0284C7), size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Staff Performance Tracking',
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      _selectedPeriod,
+                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                ...() {
+                  final staffMap = db.salesByCashierInRange(fromDate, toDate);
+                  if (staffMap.isEmpty) {
+                    return [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No cashier transactions recorded in this period.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      )
+                    ];
+                  }
+                  return staffMap.values.map((staff) {
+                    final name = staff['name'] as String;
+                    final total = staff['totalSales'] as double;
+                    final count = staff['count'] as int;
+                    final avgTicket = count > 0 ? (total / count) : 0.0;
+                    final share = grossRevenue > 0 ? (total / grossRevenue) * 100 : 0.0;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(
+                                CurrencyFormatter.format(total),
+                                style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryForest, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('$count transactions · Avg ticket: ${CurrencyFormatter.format(avgTicket)}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                              Text('${share.toStringAsFixed(1)}% of revenue', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: (share / 100).clamp(0.0, 1.0),
+                              backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0284C7)),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList();
+                }(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // EOD Button Card
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryForest,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.assessment_rounded, color: Colors.white),
+              label: const Text('Open Daily EOD Close-Day Summary', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => const EodSummaryScreen()),
+                );
+              },
             ),
           ),
         ],

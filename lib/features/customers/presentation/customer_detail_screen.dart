@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -37,7 +38,6 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
     final message =
         'Hello ${customer.name}, this is a friendly reminder from $businessName that your current balance is ${CurrencyFormatter.format(customer.currentDebt)}. Please pay via MTN MoMo or Airtel Money. Thank you!';
 
-    // Log SMS in local database
     final sms = LocalSmsData(
       id: 'sms_${DateTime.now().millisecondsSinceEpoch}',
       businessId: customer.businessId,
@@ -51,6 +51,42 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
     ref.read(smsProvider.notifier).logSms(sms);
 
     Share.share(message, subject: 'Payment Reminder - $businessName');
+  }
+
+  void _sendWhatsAppReceipt(LocalCustomerData customer, LocalSaleData sale) async {
+    final session = ref.read(authProvider);
+    final businessName = session?.businessName ?? 'DUKA Shop';
+    final date = DateTime.fromMillisecondsSinceEpoch(sale.localTimestamp);
+    final dateStr = '${date.day}/${date.month}/${date.year}';
+
+    String itemsText = '';
+    try {
+      final items = jsonDecode(sale.itemsJson) as List<dynamic>;
+      for (final it in items) {
+        itemsText += '• ${it['quantity']}x ${it['name']} - ${CurrencyFormatter.format((it['subtotal'] as num).toDouble())}\n';
+      }
+    } catch (_) {}
+
+    final text = '''
+🧾 *RECEIPT: ${sale.saleNumber}*
+🏪 *$businessName*
+📅 Date: $dateStr
+👤 Customer: ${customer.name}
+
+*Items Purchased:*
+$itemsText
+*Total Amount:* ${CurrencyFormatter.format(sale.totalAmount)}
+*Payment Method:* ${sale.paymentMethod.toUpperCase()}
+${sale.isCredit ? '⏳ Payment Status: Credit / Pending' : '✅ Payment Status: Paid in Full'}
+
+Thank you for your business! 🙏
+''';
+
+    final normalized = PhoneFormatter.normalize(customer.phone);
+    final uri = Uri.parse('https://wa.me/$normalized?text=${Uri.encodeComponent(text)}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _showRecordPaymentDialog(LocalCustomerData customer) {
@@ -106,13 +142,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
                   return;
                 }
 
-                // Update customer debt
                 final updatedDebt = (customer.currentDebt - amount).clamp(0.0, double.infinity);
                 ref.read(customersProvider.notifier).updateCustomer(
                       customer.copyWith(currentDebt: updatedDebt),
                     );
 
-                // Also update debtor book
                 ref.read(debtorsProvider.notifier).recordPayment(
                       'd_${customer.id}',
                       amount,
@@ -138,8 +172,27 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
   Widget build(BuildContext context) {
     final customers = ref.watch(customersProvider);
     final currentCustomer = customers.firstWhere((c) => c.id == widget.customer.id, orElse: () => widget.customer);
-    final sales = ref.watch(salesProvider).where((s) => s.customerId == currentCustomer.id).toList();
+    final sales = ref.watch(salesProvider).where((s) => s.customerId == currentCustomer.id || s.customerPhone == currentCustomer.phone).toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Calculate customer analytics
+    final totalSpent = sales.fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final orderCount = sales.length;
+    final aov = orderCount > 0 ? (totalSpent / orderCount) : 0.0;
+
+    // Top purchased products by this customer
+    final productCounts = <String, double>{};
+    for (final s in sales) {
+      try {
+        final items = jsonDecode(s.itemsJson) as List<dynamic>;
+        for (final it in items) {
+          final n = it['name'] as String? ?? 'Item';
+          final q = (it['quantity'] as num?)?.toDouble() ?? 1.0;
+          productCounts[n] = (productCounts[n] ?? 0) + q;
+        }
+      } catch (_) {}
+    }
+    final topPurchased = productCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
@@ -189,7 +242,17 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (currentCustomer.isFavorite) ...[
+                              if (currentCustomer.tier == 'wholesale') ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0284C7),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text('WHOLESALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
+                                ),
+                              ] else if (currentCustomer.isFavorite || currentCustomer.tier == 'vip') ...[
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -230,18 +293,6 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white24,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            PhoneFormatter.getCarrier(currentCustomer.phone),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -279,7 +330,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Action Buttons
           Row(
@@ -301,11 +352,80 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+
+          // Customer Spending Insights (UgaPOS feature)
+          const Text('Customer Spending Patterns', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricBox(
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: 'Lifetime Spend',
+                  value: CurrencyFormatter.format(totalSpent),
+                  color: AppColors.primaryForest,
+                  isDark: isDark,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildMetricBox(
+                  icon: Icons.shopping_basket_rounded,
+                  label: 'Total Orders',
+                  value: '$orderCount Visits',
+                  color: const Color(0xFF0284C7),
+                  isDark: isDark,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildMetricBox(
+                  icon: Icons.pie_chart_outline_rounded,
+                  label: 'Avg Order',
+                  value: CurrencyFormatter.format(aov),
+                  color: const Color(0xFFF59E0B),
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Top Purchased Products by this Customer
+          if (topPurchased.isNotEmpty) ...[
+            const Text('Favorite / Most Purchased Products', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: topPurchased.take(4).map((e) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    '${e.key} (${e.value.toInt()}x)',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 18),
+          ],
 
           // Sales History
-          const Text('Customer Sales History', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Purchase & Receipt History', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              Text('${sales.length} orders', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ],
+          ),
+          const SizedBox(height: 8),
 
           if (sales.isEmpty)
             Container(
@@ -316,25 +436,106 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
           else
             ...sales.map((s) {
               final date = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp);
-              final timeStr = '${date.day}/${date.month}/${date.year} · ${s.paymentMethod.toUpperCase()}';
+              final timeStr = '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: AppColors.surfaceMuted,
-                    child: Icon(Icons.receipt_rounded, color: AppColors.primaryForest, size: 18),
-                  ),
-                  title: Text(s.saleNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  subtitle: Text(timeStr, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                  trailing: Text(
-                    CurrencyFormatter.format(s.totalAmount),
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primaryForest),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: s.isCredit ? const Color(0xFFFEF3C7) : const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          s.isCredit ? Icons.schedule_rounded : Icons.receipt_rounded,
+                          color: s.isCredit ? const Color(0xFFD97706) : AppColors.primaryForest,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(s.saleNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(
+                              '$timeStr · ${s.paymentMethod.toUpperCase()}',
+                              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            CurrencyFormatter.format(s.totalAmount),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: s.isCredit ? const Color(0xFFD97706) : AppColors.primaryForest,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          InkWell(
+                            onTap: () => _sendWhatsAppReceipt(currentCustomer, s),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.chat_rounded, size: 12, color: Color(0xFF0D9488)),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Send Receipt',
+                                  style: TextStyle(fontSize: 10, color: Color(0xFF0D9488), fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               );
             }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricBox({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
