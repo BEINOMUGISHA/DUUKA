@@ -5,10 +5,13 @@ import '../../../core/providers/app_providers.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
 import '../../payments/presentation/payments_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
+import '../../reports/presentation/eod_summary_screen.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../sms/presentation/sms_screen.dart';
 import '../../sales/presentation/sales_history_screen.dart';
 import '../../suppliers/presentation/suppliers_screen.dart';
+import '../../production/presentation/production_screen.dart';
+import '../../branches/presentation/branches_screen.dart';
 import 'settings_screen.dart';
 
 class MoreHubScreen extends ConsumerWidget {
@@ -20,6 +23,30 @@ class MoreHubScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final tools = [
+      {
+        'title': 'Production & Recipes',
+        'subtitle': 'Raw materials, formulations & batch runs',
+        'icon': Icons.precision_manufacturing_rounded,
+        'color': const Color(0xFF0F766E),
+        'badge': 'NEW',
+        'screen': const ProductionScreen(),
+      },
+      {
+        'title': 'Branches & Stock Transfers',
+        'subtitle': 'Multi-store locations & stock dispatch',
+        'icon': Icons.account_tree_rounded,
+        'color': const Color(0xFF0284C7),
+        'badge': 'NEW',
+        'screen': const BranchesScreen(),
+      },
+      {
+        'title': 'End of Day (EOD) Summary',
+        'subtitle': 'Daily till reconciliation, SMS & PDF export',
+        'icon': Icons.assessment_rounded,
+        'color': const Color(0xFF059669),
+        'badge': 'NEW',
+        'screen': const EodSummaryScreen(),
+      },
       {
         'title': 'Debtor Book (Ababanja)',
         'subtitle': 'Credit sales, due dates & reminders',
@@ -36,14 +63,14 @@ class MoreHubScreen extends ConsumerWidget {
       },
       {
         'title': 'Reports & P&L Analytics',
-        'subtitle': 'Gross profit, revenue charts & export',
+        'subtitle': 'Gross profit, staff performance & exports',
         'icon': Icons.bar_chart_rounded,
         'color': const Color(0xFF059669),
         'screen': const ReportsScreen(),
       },
       {
         'title': 'SMS & Customer Reminders',
-        'subtitle': 'SMS templates & credit balance',
+        'subtitle': 'SMS templates & credit balance reminders',
         'icon': Icons.sms_rounded,
         'color': const Color(0xFF4F46E5),
         'screen': const SmsScreen(),
@@ -71,7 +98,7 @@ class MoreHubScreen extends ConsumerWidget {
       },
       {
         'title': 'Business Profile & Settings',
-        'subtitle': 'EFRIS TIN, staff PINs & backups',
+        'subtitle': 'EFRIS TIN, staff PINs, printers & backups',
         'icon': Icons.settings_suggest_rounded,
         'color': const Color(0xFF64748B),
         'screen': const SettingsScreen(),
@@ -138,6 +165,7 @@ class MoreHubScreen extends ConsumerWidget {
 
           ...tools.map((t) {
             final color = t['color'] as Color;
+            final badge = t['badge'] as String?;
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -157,8 +185,32 @@ class MoreHubScreen extends ConsumerWidget {
                   ),
                   child: Icon(t['icon'] as IconData, color: color, size: 22),
                 ),
-                title: Text(t['title'] as String, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                subtitle: Text(t['subtitle'] as String, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                title: Row(
+                  children: [
+                    Text(
+                      t['title'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                    ),
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          badge,
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                subtitle: Text(
+                  t['subtitle'] as String,
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
               ),
             );
