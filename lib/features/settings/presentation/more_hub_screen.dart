@@ -12,6 +12,7 @@ import '../../sales/presentation/sales_history_screen.dart';
 import '../../suppliers/presentation/suppliers_screen.dart';
 import '../../production/presentation/production_screen.dart';
 import '../../branches/presentation/branches_screen.dart';
+import '../../accounting/presentation/accounting_hub_screen.dart';
 import 'settings_screen.dart';
 
 class MoreHubScreen extends ConsumerWidget {
@@ -62,6 +63,13 @@ class MoreHubScreen extends ConsumerWidget {
         'screen': const PaymentsScreen(),
       },
       {
+        'title': 'Accounting & Trial Balance',
+        'subtitle': 'Chart of accounts, journals & ledger posting',
+        'icon': Icons.account_balance_wallet_rounded,
+        'color': const Color(0xFF7C3AED),
+        'screen': const AccountingHubScreen(),
+      },
+      {
         'title': 'Reports & P&L Analytics',
         'subtitle': 'Gross profit, staff performance & exports',
         'icon': Icons.bar_chart_rounded,
@@ -106,7 +114,8 @@ class MoreHubScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('DUKA Tools & Hub'),
       ),
@@ -126,8 +135,13 @@ class MoreHubScreen extends ConsumerWidget {
                   radius: 24,
                   backgroundColor: Colors.white24,
                   child: Text(
-                    (session?.businessName ?? 'D').substring(0, 1).toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                    (session?.businessName ?? 'D')
+                        .substring(0, 1)
+                        .toUpperCase(),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -137,30 +151,40 @@ class MoreHubScreen extends ConsumerWidget {
                     children: [
                       Text(
                         session?.businessName ?? 'Kisekka Agro & Hardware',
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${session?.fullName ?? 'Owner'} · ${(session?.role ?? 'owner').toUpperCase()}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('PRO UG', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10)),
+                  child: const Text('PRO UG',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10)),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
 
-          const Text('All Management Modules', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          const Text('All Management Modules',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 12),
 
           ...tools.map((t) {
@@ -168,7 +192,8 @@ class MoreHubScreen extends ConsumerWidget {
             final badge = t['badge'] as String?;
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               child: ListTile(
                 onTap: () {
                   Navigator.push(
@@ -189,19 +214,24 @@ class MoreHubScreen extends ConsumerWidget {
                   children: [
                     Text(
                       t['title'] as String,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13.5),
                     ),
                     if (badge != null) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 1.5),
                         decoration: BoxDecoration(
                           color: color,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           badge,
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900),
                         ),
                       ),
                     ],
@@ -209,9 +239,11 @@ class MoreHubScreen extends ConsumerWidget {
                 ),
                 subtitle: Text(
                   t['subtitle'] as String,
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                  style: const TextStyle(
+                      fontSize: 11.5, color: AppColors.textMuted),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.textMuted),
               ),
             );
           }),

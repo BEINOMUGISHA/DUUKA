@@ -73,6 +73,41 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
+  Future<void> _exportAccountingStatement(
+      String reportType,
+      double grossRevenue,
+      double cogs,
+      double expenses,
+      double netProfit,
+      double vat,
+      Map<String, double> expenseMap) async {
+    final session = ref.read(authProvider);
+    final businessName = session?.businessName ?? 'DUKA';
+    final fromDate = _getFromDate();
+    final toDate = DateTime.now();
+
+    final fileSuffix = reportType.replaceAll('_', ' ').trim();
+    final bytes = await ExportService.generateAccountingStatementPdf(
+      businessName: businessName,
+      reportType: reportType,
+      period: _selectedPeriod,
+      fromDate: fromDate,
+      toDate: toDate,
+      grossRevenue: grossRevenue,
+      costOfGoodsSold: cogs,
+      operatingExpenses: expenses,
+      netProfit: netProfit,
+      vatCollected: vat,
+      extraRows: expenseMap,
+    );
+
+    await ExportService.shareOrPrintPdf(
+      pdfBytes: bytes,
+      fileName:
+          'DUKA_${fileSuffix.replaceAll(' ', '_')}_${toDate.toString().substring(0, 10)}',
+    );
+  }
+
   void _exportPdf(double grossRevenue, double cogs, double expenses,
       double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
@@ -110,50 +145,122 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Export Financial Statement',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFE0F2FE),
-                  child: Icon(Icons.picture_as_pdf_rounded,
-                      color: Color(0xFF0284C7)),
-                ),
-                title: const Text('Export as PDF Document',
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Export Financial Statements',
                     style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text(
-                    'Official A4 printable statement with tables & header',
-                    style: TextStyle(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _exportPdf(
-                      grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFDCFCE7),
-                  child:
-                      Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A)),
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFE0F2FE),
+                    child: Icon(Icons.account_balance_rounded,
+                        color: Color(0xFF0284C7)),
+                  ),
+                  title: const Text('Income Statement',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text(
+                      'Profit & loss report for the selected period',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportAccountingStatement('income_statement', grossRevenue,
+                        cogs, expenses, netProfit, vat, expenseMap);
+                  },
                 ),
-                title: const Text('Export as CSV Spreadsheet',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text(
-                    'Excel / Google Sheets compatible data file',
-                    style: TextStyle(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _exportCSV(
-                      grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
-                },
-              ),
-            ],
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFEDE9FE),
+                    child:
+                        Icon(Icons.balance_rounded, color: Color(0xFF7C3AED)),
+                  ),
+                  title: const Text('Balance Sheet',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text(
+                      'Assets, liabilities, and equity snapshot',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportAccountingStatement('balance_sheet', grossRevenue,
+                        cogs, expenses, netProfit, vat, expenseMap);
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFDCFCE7),
+                    child: Icon(Icons.account_tree_rounded,
+                        color: Color(0xFF16A34A)),
+                  ),
+                  title: const Text('Cash Flow Statement',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('Cash inflows and activity summary',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportAccountingStatement('cash_flow', grossRevenue, cogs,
+                        expenses, netProfit, vat, expenseMap);
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFFDE68A),
+                    child: Icon(Icons.receipt_long_rounded,
+                        color: Color(0xFFB45309)),
+                  ),
+                  title: const Text('Trial Balance',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('Debit and credit activity view',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportAccountingStatement('trial_balance', grossRevenue,
+                        cogs, expenses, netProfit, vat, expenseMap);
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFDCFCE7),
+                    child: Icon(Icons.picture_as_pdf_rounded,
+                        color: Color(0xFF16A34A)),
+                  ),
+                  title: const Text('Full PDF Statement',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('Official A4 report with summary tables',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportPdf(grossRevenue, cogs, expenses, netProfit, vat,
+                        expenseMap);
+                  },
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFDCFCE7),
+                    child: Icon(Icons.table_chart_rounded,
+                        color: Color(0xFF16A34A)),
+                  ),
+                  title: const Text('CSV Spreadsheet',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text(
+                      'Excel / Google Sheets compatible data file',
+                      style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportCSV(grossRevenue, cogs, expenses, netProfit, vat,
+                        expenseMap);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

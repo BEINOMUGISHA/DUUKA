@@ -559,6 +559,390 @@ class LocalCustomerData {
 }
 
 // ---------------------------------------------------------------------------
+// CHART OF ACCOUNTS
+// ---------------------------------------------------------------------------
+class LocalChartOfAccountData {
+  final String id;
+  final String businessId;
+  final String code;
+  final String name;
+  final String type; // asset, liability, equity, revenue, expense
+  final String normalSide; // debit, credit
+  final String category;
+  final String? parentAccountId;
+  final bool isActive;
+  final String? description;
+  final int createdAt;
+
+  LocalChartOfAccountData({
+    required this.id,
+    required this.businessId,
+    required this.code,
+    required this.name,
+    required this.type,
+    required this.normalSide,
+    required this.category,
+    this.parentAccountId,
+    this.isActive = true,
+    this.description,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'code': code,
+        'name': name,
+        'type': type,
+        'normalSide': normalSide,
+        'category': category,
+        'parentAccountId': parentAccountId,
+        'isActive': isActive,
+        'description': description,
+        'createdAt': createdAt,
+      };
+
+  factory LocalChartOfAccountData.fromJson(Map<String, dynamic> m) =>
+      LocalChartOfAccountData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        code: m['code'] as String,
+        name: m['name'] as String,
+        type: m['type'] as String? ?? 'asset',
+        normalSide: m['normalSide'] as String? ?? 'debit',
+        category: m['category'] as String? ?? 'general',
+        parentAccountId: m['parentAccountId'] as String?,
+        isActive: m['isActive'] as bool? ?? true,
+        description: m['description'] as String?,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// JOURNAL ENTRIES & GENERAL LEDGER
+// ---------------------------------------------------------------------------
+class LocalJournalEntryData {
+  final String id;
+  final String businessId;
+  final String reference;
+  final String memo;
+  final String debitAccountId;
+  final String creditAccountId;
+  final double amount;
+  final int entryDate;
+  final bool posted;
+  final int createdAt;
+
+  LocalJournalEntryData({
+    required this.id,
+    required this.businessId,
+    required this.reference,
+    required this.memo,
+    required this.debitAccountId,
+    required this.creditAccountId,
+    required this.amount,
+    required this.entryDate,
+    this.posted = true,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'reference': reference,
+        'memo': memo,
+        'debitAccountId': debitAccountId,
+        'creditAccountId': creditAccountId,
+        'amount': amount,
+        'entryDate': entryDate,
+        'posted': posted,
+        'createdAt': createdAt,
+      };
+
+  factory LocalJournalEntryData.fromJson(Map<String, dynamic> m) =>
+      LocalJournalEntryData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        reference: m['reference'] as String? ?? 'JE',
+        memo: m['memo'] as String? ?? '',
+        debitAccountId: m['debitAccountId'] as String,
+        creditAccountId: m['creditAccountId'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        entryDate: (m['entryDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        posted: m['posted'] as bool? ?? true,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+class LocalLedgerEntryData {
+  final String id;
+  final String businessId;
+  final String accountId;
+  final String journalEntryId;
+  final String entryType; // debit or credit
+  final double amount;
+  final String memo;
+  final double balanceAfterEntry;
+  final int createdAt;
+
+  LocalLedgerEntryData({
+    required this.id,
+    required this.businessId,
+    required this.accountId,
+    required this.journalEntryId,
+    required this.entryType,
+    required this.amount,
+    required this.memo,
+    required this.balanceAfterEntry,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'accountId': accountId,
+        'journalEntryId': journalEntryId,
+        'entryType': entryType,
+        'amount': amount,
+        'memo': memo,
+        'balanceAfterEntry': balanceAfterEntry,
+        'createdAt': createdAt,
+      };
+
+  factory LocalLedgerEntryData.fromJson(Map<String, dynamic> m) =>
+      LocalLedgerEntryData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        accountId: m['accountId'] as String,
+        journalEntryId: m['journalEntryId'] as String,
+        entryType: m['entryType'] as String? ?? 'debit',
+        amount: (m['amount'] as num).toDouble(),
+        memo: m['memo'] as String? ?? '',
+        balanceAfterEntry: (m['balanceAfterEntry'] as num?)?.toDouble() ?? 0,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// INVOICES, RECEIVABLES & PAYABLES
+// ---------------------------------------------------------------------------
+class LocalInvoiceData {
+  final String id;
+  final String businessId;
+  final String invoiceNumber;
+  final String customerId;
+  final String customerName;
+  final int issueDate;
+  final int dueDate;
+  final double subtotal;
+  final double taxAmount;
+  final double totalAmount;
+  final double balanceDue;
+  final String status; // draft, sent, paid, overdue
+  final String? notes;
+
+  LocalInvoiceData({
+    required this.id,
+    required this.businessId,
+    required this.invoiceNumber,
+    required this.customerId,
+    required this.customerName,
+    required this.issueDate,
+    required this.dueDate,
+    required this.subtotal,
+    required this.taxAmount,
+    required this.totalAmount,
+    required this.balanceDue,
+    required this.status,
+    this.notes,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'invoiceNumber': invoiceNumber,
+        'customerId': customerId,
+        'customerName': customerName,
+        'issueDate': issueDate,
+        'dueDate': dueDate,
+        'subtotal': subtotal,
+        'taxAmount': taxAmount,
+        'totalAmount': totalAmount,
+        'balanceDue': balanceDue,
+        'status': status,
+        'notes': notes,
+      };
+
+  factory LocalInvoiceData.fromJson(Map<String, dynamic> m) => LocalInvoiceData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        invoiceNumber: m['invoiceNumber'] as String,
+        customerId: m['customerId'] as String,
+        customerName: m['customerName'] as String,
+        issueDate: (m['issueDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        dueDate: (m['dueDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        subtotal: (m['subtotal'] as num?)?.toDouble() ?? 0,
+        taxAmount: (m['taxAmount'] as num?)?.toDouble() ?? 0,
+        totalAmount: (m['totalAmount'] as num?)?.toDouble() ?? 0,
+        balanceDue: (m['balanceDue'] as num?)?.toDouble() ?? 0,
+        status: m['status'] as String? ?? 'draft',
+        notes: m['notes'] as String?,
+      );
+}
+
+class LocalReceivableData {
+  final String id;
+  final String businessId;
+  final String customerId;
+  final String customerName;
+  final String invoiceId;
+  final double amount;
+  final int dueDate;
+  final String status; // open, partial, paid
+  final int createdAt;
+
+  LocalReceivableData({
+    required this.id,
+    required this.businessId,
+    required this.customerId,
+    required this.customerName,
+    required this.invoiceId,
+    required this.amount,
+    required this.dueDate,
+    required this.status,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'customerId': customerId,
+        'customerName': customerName,
+        'invoiceId': invoiceId,
+        'amount': amount,
+        'dueDate': dueDate,
+        'status': status,
+        'createdAt': createdAt,
+      };
+
+  factory LocalReceivableData.fromJson(Map<String, dynamic> m) =>
+      LocalReceivableData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        customerId: m['customerId'] as String,
+        customerName: m['customerName'] as String,
+        invoiceId: m['invoiceId'] as String,
+        amount: (m['amount'] as num?)?.toDouble() ?? 0,
+        dueDate: (m['dueDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        status: m['status'] as String? ?? 'open',
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+class LocalPayableData {
+  final String id;
+  final String businessId;
+  final String vendorId;
+  final String vendorName;
+  final String reference;
+  final double amount;
+  final int dueDate;
+  final String status; // open, partial, paid
+  final int createdAt;
+
+  LocalPayableData({
+    required this.id,
+    required this.businessId,
+    required this.vendorId,
+    required this.vendorName,
+    required this.reference,
+    required this.amount,
+    required this.dueDate,
+    required this.status,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'businessId': businessId,
+        'vendorId': vendorId,
+        'vendorName': vendorName,
+        'reference': reference,
+        'amount': amount,
+        'dueDate': dueDate,
+        'status': status,
+        'createdAt': createdAt,
+      };
+
+  factory LocalPayableData.fromJson(Map<String, dynamic> m) => LocalPayableData(
+        id: m['id'] as String,
+        businessId: m['businessId'] as String? ?? 'biz_default',
+        vendorId: m['vendorId'] as String,
+        vendorName: m['vendorName'] as String,
+        reference: m['reference'] as String,
+        amount: (m['amount'] as num?)?.toDouble() ?? 0,
+        dueDate: (m['dueDate'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        status: m['status'] as String? ?? 'open',
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
+// MULTI-ENTITY BUSINESS MODEL
+// ---------------------------------------------------------------------------
+class LocalBusinessEntityData {
+  final String id;
+  final String name;
+  final String entityType;
+  final String? country;
+  final String currency;
+  final bool isDefault;
+  final int createdAt;
+
+  LocalBusinessEntityData({
+    required this.id,
+    required this.name,
+    required this.entityType,
+    this.country,
+    required this.currency,
+    this.isDefault = false,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'entityType': entityType,
+        'country': country,
+        'currency': currency,
+        'isDefault': isDefault,
+        'createdAt': createdAt,
+      };
+
+  factory LocalBusinessEntityData.fromJson(Map<String, dynamic> m) =>
+      LocalBusinessEntityData(
+        id: m['id'] as String,
+        name: m['name'] as String,
+        entityType: m['entityType'] as String? ?? 'business',
+        country: m['country'] as String?,
+        currency: m['currency'] as String? ?? 'UGX',
+        isDefault: m['isDefault'] as bool? ?? false,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+// ---------------------------------------------------------------------------
 // SMS MESSAGE
 // ---------------------------------------------------------------------------
 class LocalSmsData {
@@ -1146,6 +1530,13 @@ class AppDatabase {
   static const _kMomo = 'duka_momo_v2';
   static const _kNotifications = 'duka_notifs_v2';
   static const _kQueue = 'duka_queue_v2';
+  static const _kChartOfAccounts = 'duka_coa_v2';
+  static const _kJournalEntries = 'duka_journal_entries_v2';
+  static const _kLedgerEntries = 'duka_ledger_entries_v2';
+  static const _kInvoices = 'duka_invoices_v2';
+  static const _kReceivables = 'duka_receivables_v2';
+  static const _kPayables = 'duka_payables_v2';
+  static const _kEntities = 'duka_business_entities_v2';
 
   SharedPreferences? _prefs;
   bool _initialized = false;
@@ -1165,6 +1556,13 @@ class AppDatabase {
   final Map<String, LocalStockTransferData> _transfers = {};
   final Map<String, LocalMobileMoneyTxData> _momo = {};
   final Map<String, LocalNotificationData> _notifications = {};
+  final Map<String, LocalChartOfAccountData> _chartOfAccounts = {};
+  final Map<String, LocalJournalEntryData> _journalEntries = {};
+  final Map<String, LocalLedgerEntryData> _ledgerEntries = {};
+  final Map<String, LocalInvoiceData> _invoices = {};
+  final Map<String, LocalReceivableData> _receivables = {};
+  final Map<String, LocalPayableData> _payables = {};
+  final Map<String, LocalBusinessEntityData> _businessEntities = {};
   final List<SyncQueueItem> _queue = [];
 
   final _changeController = StreamController<void>.broadcast();
@@ -1182,6 +1580,8 @@ class AppDatabase {
     if (_rawMaterials.isEmpty) _seedDefaultRawMaterials();
     if (_recipes.isEmpty) _seedDefaultRecipes();
     if (_branches.isEmpty) _seedDefaultBranches();
+    if (_chartOfAccounts.isEmpty) _seedDefaultChartOfAccounts();
+    if (_businessEntities.isEmpty) _seedDefaultBusinessEntities();
     _initialized = true;
   }
 
@@ -1211,6 +1611,20 @@ class AppDatabase {
         _kMomo, _momo, LocalMobileMoneyTxData.fromJson);
     _loadMap<LocalNotificationData>(
         _kNotifications, _notifications, LocalNotificationData.fromJson);
+    _loadMap<LocalChartOfAccountData>(
+        _kChartOfAccounts, _chartOfAccounts, LocalChartOfAccountData.fromJson);
+    _loadMap<LocalJournalEntryData>(
+        _kJournalEntries, _journalEntries, LocalJournalEntryData.fromJson);
+    _loadMap<LocalLedgerEntryData>(
+        _kLedgerEntries, _ledgerEntries, LocalLedgerEntryData.fromJson);
+    _loadMap<LocalInvoiceData>(
+        _kInvoices, _invoices, LocalInvoiceData.fromJson);
+    _loadMap<LocalReceivableData>(
+        _kReceivables, _receivables, LocalReceivableData.fromJson);
+    _loadMap<LocalPayableData>(
+        _kPayables, _payables, LocalPayableData.fromJson);
+    _loadMap<LocalBusinessEntityData>(
+        _kEntities, _businessEntities, LocalBusinessEntityData.fromJson);
 
     final raw = _prefs?.getString(_kQueue);
     if (raw != null) {
@@ -1241,6 +1655,126 @@ class AppDatabase {
   }
 
   void _notify() => _changeController.add(null);
+
+  void _seedDefaultChartOfAccounts() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final accounts = [
+      LocalChartOfAccountData(
+        id: 'coa_cash',
+        businessId: 'biz_default',
+        code: '1000',
+        name: 'Cash & Bank',
+        type: 'asset',
+        normalSide: 'debit',
+        category: 'bank',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_inventory',
+        businessId: 'biz_default',
+        code: '1100',
+        name: 'Inventory',
+        type: 'asset',
+        normalSide: 'debit',
+        category: 'stock',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_receivables',
+        businessId: 'biz_default',
+        code: '1200',
+        name: 'Accounts Receivable',
+        type: 'asset',
+        normalSide: 'debit',
+        category: 'receivables',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_ap',
+        businessId: 'biz_default',
+        code: '2000',
+        name: 'Accounts Payable',
+        type: 'liability',
+        normalSide: 'credit',
+        category: 'payables',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_equity',
+        businessId: 'biz_default',
+        code: '3000',
+        name: 'Owner Equity',
+        type: 'equity',
+        normalSide: 'credit',
+        category: 'equity',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_sales',
+        businessId: 'biz_default',
+        code: '4000',
+        name: 'Sales Revenue',
+        type: 'revenue',
+        normalSide: 'credit',
+        category: 'revenue',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_cogs',
+        businessId: 'biz_default',
+        code: '5000',
+        name: 'Cost of Goods Sold',
+        type: 'expense',
+        normalSide: 'debit',
+        category: 'cogs',
+        createdAt: now,
+      ),
+      LocalChartOfAccountData(
+        id: 'coa_expenses',
+        businessId: 'biz_default',
+        code: '6000',
+        name: 'Operating Expenses',
+        type: 'expense',
+        normalSide: 'debit',
+        category: 'expense',
+        createdAt: now,
+      ),
+    ];
+
+    for (final account in accounts) {
+      _chartOfAccounts[account.id] = account;
+    }
+    _persist(_kChartOfAccounts, _chartOfAccounts, (a) => a.toJson());
+  }
+
+  void _seedDefaultBusinessEntities() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final entities = [
+      LocalBusinessEntityData(
+        id: 'entity_ug',
+        name: 'Kisekka Agro & Hardware Ltd',
+        entityType: 'business',
+        country: 'Uganda',
+        currency: 'UGX',
+        isDefault: true,
+        createdAt: now,
+      ),
+      LocalBusinessEntityData(
+        id: 'entity_warehouse',
+        name: 'Kisekka Warehouse Unit',
+        entityType: 'warehouse',
+        country: 'Uganda',
+        currency: 'UGX',
+        isDefault: false,
+        createdAt: now,
+      ),
+    ];
+
+    for (final entity in entities) {
+      _businessEntities[entity.id] = entity;
+    }
+    _persist(_kEntities, _businessEntities, (e) => e.toJson());
+  }
 
   void _seedDefaultProducts() {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -1964,6 +2498,184 @@ class AppDatabase {
   Future<void> insertBranch(LocalBranchData branch) async {
     _branches[branch.id] = branch;
     await _persist(_kBranches, _branches, (b) => b.toJson());
+    _notify();
+  }
+
+  // ---- ACCOUNTING CORE ------------------------------------------------------
+  Future<List<LocalChartOfAccountData>> getChartOfAccounts() async =>
+      (_chartOfAccounts.values.toList()
+        ..sort((a, b) {
+          final aCode = int.tryParse(a.code) ?? 999999;
+          final bCode = int.tryParse(b.code) ?? 999999;
+          return aCode.compareTo(bCode);
+        }));
+
+  Future<void> insertChartOfAccount(LocalChartOfAccountData account) async {
+    _chartOfAccounts[account.id] = account;
+    await _persist(_kChartOfAccounts, _chartOfAccounts, (a) => a.toJson());
+    _notify();
+  }
+
+  Future<List<LocalBusinessEntityData>> getBusinessEntities() async =>
+      (_businessEntities.values.toList()
+        ..sort((a, b) => a.name.compareTo(b.name)));
+
+  Future<void> insertBusinessEntity(LocalBusinessEntityData entity) async {
+    _businessEntities[entity.id] = entity;
+    await _persist(_kEntities, _businessEntities, (e) => e.toJson());
+    _notify();
+  }
+
+  Future<List<LocalJournalEntryData>> getJournalEntries() async =>
+      (_journalEntries.values.toList()
+        ..sort((a, b) => b.entryDate.compareTo(a.entryDate)));
+
+  Future<List<LocalLedgerEntryData>> getLedgerEntries() async =>
+      (_ledgerEntries.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+
+  Future<void> createJournalEntry(LocalJournalEntryData entry) async {
+    final normalized = LocalJournalEntryData(
+      id: entry.id,
+      businessId: entry.businessId,
+      reference: entry.reference,
+      memo: entry.memo,
+      debitAccountId: entry.debitAccountId,
+      creditAccountId: entry.creditAccountId,
+      amount: entry.amount,
+      entryDate: entry.entryDate,
+      posted: entry.posted,
+      createdAt: entry.createdAt,
+    );
+
+    _journalEntries[normalized.id] = normalized;
+    final debitId = 'ledger_${normalized.id}_dr';
+    final creditId = 'ledger_${normalized.id}_cr';
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    _ledgerEntries[debitId] = LocalLedgerEntryData(
+      id: debitId,
+      businessId: normalized.businessId,
+      accountId: normalized.debitAccountId,
+      journalEntryId: normalized.id,
+      entryType: 'debit',
+      amount: normalized.amount,
+      memo: normalized.memo,
+      balanceAfterEntry: normalized.amount,
+      createdAt: now,
+    );
+
+    _ledgerEntries[creditId] = LocalLedgerEntryData(
+      id: creditId,
+      businessId: normalized.businessId,
+      accountId: normalized.creditAccountId,
+      journalEntryId: normalized.id,
+      entryType: 'credit',
+      amount: normalized.amount,
+      memo: normalized.memo,
+      balanceAfterEntry: normalized.amount,
+      createdAt: now + 1,
+    );
+
+    await _persist(_kJournalEntries, _journalEntries, (j) => j.toJson());
+    await _persist(_kLedgerEntries, _ledgerEntries, (l) => l.toJson());
+    _notify();
+  }
+
+  // ---- INVOICES, RECEIVABLES & PAYABLES ----------------------------------------
+  Future<List<LocalInvoiceData>> getInvoices() async =>
+      (_invoices.values.toList()
+        ..sort((a, b) => b.issueDate.compareTo(a.issueDate)));
+
+  Future<void> createInvoice(LocalInvoiceData invoice) async {
+    _invoices[invoice.id] = invoice;
+    await _persist(_kInvoices, _invoices, (inv) => inv.toJson());
+    _notify();
+  }
+
+  Future<void> updateInvoiceStatus(String invoiceId, String status) async {
+    final inv = _invoices[invoiceId];
+    if (inv != null) {
+      _invoices[invoiceId] = LocalInvoiceData(
+        id: inv.id,
+        businessId: inv.businessId,
+        invoiceNumber: inv.invoiceNumber,
+        customerId: inv.customerId,
+        customerName: inv.customerName,
+        issueDate: inv.issueDate,
+        dueDate: inv.dueDate,
+        subtotal: inv.subtotal,
+        taxAmount: inv.taxAmount,
+        totalAmount: inv.totalAmount,
+        balanceDue: inv.balanceDue,
+        status: status,
+        notes: inv.notes,
+      );
+      await _persist(_kInvoices, _invoices, (inv) => inv.toJson());
+      _notify();
+    }
+  }
+
+  Future<List<LocalReceivableData>> getReceivables() async =>
+      (_receivables.values.toList()
+        ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
+
+  Future<void> createReceivable(LocalReceivableData receivable) async {
+    _receivables[receivable.id] = receivable;
+    await _persist(_kReceivables, _receivables, (r) => r.toJson());
+    _notify();
+  }
+
+  Future<void> recordReceivablePayment(
+      String receivableId, double amount) async {
+    final rec = _receivables[receivableId];
+    if (rec == null) return;
+    final newAmount = (rec.amount - amount).clamp(0.0, double.infinity);
+    final newStatus =
+        newAmount == 0 ? 'paid' : (newAmount < rec.amount ? 'partial' : 'open');
+    _receivables[receivableId] = LocalReceivableData(
+      id: rec.id,
+      businessId: rec.businessId,
+      customerId: rec.customerId,
+      customerName: rec.customerName,
+      invoiceId: rec.invoiceId,
+      amount: newAmount,
+      dueDate: rec.dueDate,
+      status: newStatus,
+      createdAt: rec.createdAt,
+    );
+    await _persist(_kReceivables, _receivables, (r) => r.toJson());
+    _notify();
+  }
+
+  Future<List<LocalPayableData>> getPayables() async =>
+      (_payables.values.toList()
+        ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
+
+  Future<void> createPayable(LocalPayableData payable) async {
+    _payables[payable.id] = payable;
+    await _persist(_kPayables, _payables, (p) => p.toJson());
+    _notify();
+  }
+
+  Future<void> recordPayablePayment(String payableId, double amount) async {
+    final pay = _payables[payableId];
+    if (pay == null) return;
+    final newAmount = (pay.amount - amount).clamp(0.0, double.infinity);
+    final newStatus =
+        newAmount == 0 ? 'paid' : (newAmount < pay.amount ? 'partial' : 'open');
+    _payables[payableId] = LocalPayableData(
+      id: pay.id,
+      businessId: pay.businessId,
+      vendorId: pay.vendorId,
+      vendorName: pay.vendorName,
+      reference: pay.reference,
+      amount: newAmount,
+      dueDate: pay.dueDate,
+      status: newStatus,
+      createdAt: pay.createdAt,
+    );
+    await _persist(_kPayables, _payables, (p) => p.toJson());
     _notify();
   }
 
