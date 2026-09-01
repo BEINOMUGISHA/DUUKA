@@ -214,7 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _printerPaperSize,
+                initialValue: _printerPaperSize,
                 decoration: const InputDecoration(labelText: 'Thermal Paper Roll Width'),
                 items: const [
                   DropdownMenuItem(value: '58mm (Compact Portable)', child: Text('58mm (Compact Portable)')),
@@ -230,7 +230,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: const Text('Print 18% VAT Breakdown', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 subtitle: const Text('Show URA EFRIS tax details on receipt', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 value: _printVatBreakdown,
-                activeColor: AppColors.primaryForest,
+                activeThumbColor: AppColors.primaryForest,
                 onChanged: (val) => setModalState(() => _printVatBreakdown = val),
               ),
             ],

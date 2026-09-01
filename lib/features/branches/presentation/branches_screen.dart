@@ -100,7 +100,7 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> with SingleTick
                     if (nameCtrl.text.trim().isEmpty) return;
                     final now = DateTime.now().millisecondsSinceEpoch;
                     final branch = LocalBranchData(
-                      id: 'br_${now}',
+                      id: 'br_$now',
                       businessId: 'biz_default',
                       name: nameCtrl.text.trim(),
                       location: locCtrl.text.trim(),

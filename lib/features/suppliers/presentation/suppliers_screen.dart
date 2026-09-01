@@ -497,7 +497,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen>
                             children: [
                               Expanded(
                                 child: DropdownButtonFormField<String>(
-                                  value: item['productId'] as String,
+                                  initialValue: item['productId'] as String,
                                   isExpanded: true,
                                   decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
                                   items: products
@@ -552,7 +552,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen>
                                   decoration: const InputDecoration(
                                     labelText: 'Cost/Unit (UGX)',
                                     isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   ),
                                   onChanged: (val) {
                                     final c = double.tryParse(val) ?? 0;
@@ -797,7 +797,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen>
                       const SizedBox(width: 10),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: paymentMethod,
+                          initialValue: paymentMethod,
                           decoration: const InputDecoration(labelText: 'Payment Method', isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'cash', child: Text('Cash')),

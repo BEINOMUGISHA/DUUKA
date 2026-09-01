@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
@@ -43,11 +44,15 @@ class CartItem {
   int quantity;
   bool isWholesale;
 
-  CartItem({required this.product, this.quantity = 1, this.isWholesale = false});
+  CartItem(
+      {required this.product, this.quantity = 1, this.isWholesale = false});
 
-  double get unitPrice => (isWholesale && product.wholesalePrice != null) ? product.wholesalePrice! : product.sellPrice;
+  double get unitPrice => (isWholesale && product.wholesalePrice != null)
+      ? product.wholesalePrice!
+      : product.sellPrice;
   double get subtotal => unitPrice * quantity;
-  double get taxAmount => product.isTaxable ? (subtotal - (subtotal / 1.18)) : 0.0;
+  double get taxAmount =>
+      product.isTaxable ? (subtotal - (subtotal / 1.18)) : 0.0;
 }
 
 class PosQuickSaleScreen extends ConsumerStatefulWidget {
@@ -63,8 +68,10 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
   bool _isWholesaleMode = false;
   final Map<String, CartItem> _cart = {};
 
-  double get _cartTotal => _cart.values.fold(0, (sum, item) => sum + item.subtotal);
-  int get _cartItemCount => _cart.values.fold(0, (sum, item) => sum + item.quantity);
+  double get _cartTotal =>
+      _cart.values.fold(0, (sum, item) => sum + item.subtotal);
+  int get _cartItemCount =>
+      _cart.values.fold(0, (sum, item) => sum + item.quantity);
 
   void _addToCart(PosItem product) {
     HapticFeedback.lightImpact();
@@ -72,7 +79,8 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
       if (_cart.containsKey(product.id)) {
         _cart[product.id]!.quantity++;
       } else {
-        _cart[product.id] = CartItem(product: product, quantity: 1, isWholesale: _isWholesaleMode);
+        _cart[product.id] = CartItem(
+            product: product, quantity: 1, isWholesale: _isWholesaleMode);
       }
     });
   }
@@ -156,19 +164,22 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       children: [
                         Text(
                           product.name,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const Text(
                           'Set quantity',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.textMuted),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.primaryForest.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
@@ -204,15 +215,17 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       if (selectedQty <= 0) {
                         _cart.remove(product.id);
                       } else {
-                        _cart[product.id] = CartItem(product: product, quantity: selectedQty);
+                        _cart[product.id] =
+                            CartItem(product: product, quantity: selectedQty);
                       }
                     });
                     Navigator.pop(ctx);
                   },
                   icon: const Icon(Icons.check_circle_rounded),
                   label: Text(
-                    'Confirm ${selectedQty}× ${product.unit}  •  ${CurrencyFormatter.format(product.sellPrice * selectedQty)}',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    'Confirm $selectedQty× ${product.unit}  •  ${CurrencyFormatter.format(product.sellPrice * selectedQty)}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 13),
                   ),
                 ),
               ),
@@ -228,10 +241,14 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
     final dbProducts = ref.watch(productsProvider);
     final posProducts = dbProducts.map((p) {
       String icon = '📦';
-      if (p.category == 'Agro') icon = '🌾';
-      else if (p.category == 'Seeds') icon = '🌱';
-      else if (p.category == 'Chemicals') icon = '🧪';
-      else if (p.category == 'Hardware') icon = '🧱';
+      if (p.category == 'Agro') {
+        icon = '🌾';
+      } else if (p.category == 'Seeds')
+        icon = '🌱';
+      else if (p.category == 'Chemicals')
+        icon = '🧪';
+      else if (p.category == 'Hardware')
+        icon = '🧱';
       else if (p.category == 'Equipment') icon = '⚙️';
 
       return PosItem(
@@ -249,8 +266,10 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
     }).toList();
 
     final filteredProducts = posProducts.where((p) {
-      final matchesCat = _selectedCategory == 'All' || p.category == _selectedCategory;
-      final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesCat =
+          _selectedCategory == 'All' || p.category == _selectedCategory;
+      final matchesSearch =
+          p.name.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCat && matchesSearch;
     }).toList();
 
@@ -274,19 +293,24 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
               avatar: Icon(
                 _isWholesaleMode ? Icons.store_rounded : Icons.person_rounded,
                 size: 14,
-                color: _isWholesaleMode ? Colors.white : AppColors.primaryForest,
+                color:
+                    _isWholesaleMode ? Colors.white : AppColors.primaryForest,
               ),
               label: Text(
                 _isWholesaleMode ? 'Wholesale' : 'Retail',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: _isWholesaleMode ? Colors.white : AppColors.primaryForest,
+                  color:
+                      _isWholesaleMode ? Colors.white : AppColors.primaryForest,
                 ),
               ),
-              backgroundColor: _isWholesaleMode ? const Color(0xFF0284C7) : const Color(0xFFE0F2FE),
+              backgroundColor: _isWholesaleMode
+                  ? const Color(0xFF0284C7)
+                  : const Color(0xFFE0F2FE),
               side: BorderSide.none,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               onPressed: () {
                 setState(() {
                   _isWholesaleMode = !_isWholesaleMode;
@@ -297,7 +321,9 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     duration: const Duration(seconds: 1),
-                    content: Text(_isWholesaleMode ? 'Switched to Wholesale Bulk Pricing' : 'Switched to Standard Retail Pricing'),
+                    content: Text(_isWholesaleMode
+                        ? 'Switched to Wholesale Bulk Pricing'
+                        : 'Switched to Standard Retail Pricing'),
                   ),
                 );
               },
@@ -325,9 +351,11 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: ref.tr('search_products_hint'),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.primaryForest),
+                    prefixIcon: const Icon(Icons.search_rounded,
+                        size: 20, color: AppColors.primaryForest),
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 14),
                   ),
                   onChanged: (val) => setState(() => _searchQuery = val),
                 ),
@@ -341,23 +369,32 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          avatar: Text(cat['icon']!, style: const TextStyle(fontSize: 13)),
+                          avatar: Text(cat['icon']!,
+                              style: const TextStyle(fontSize: 13)),
                           label: Text(
                             name,
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? Colors.white : AppColors.textMain,
+                              fontWeight: isSelected
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textMain,
                             ),
                           ),
                           selected: isSelected,
                           selectedColor: AppColors.primaryForest,
                           backgroundColor: AppColors.surfaceMuted,
                           side: BorderSide(
-                            color: isSelected ? AppColors.primaryForest : AppColors.borderLight,
+                            color: isSelected
+                                ? AppColors.primaryForest
+                                : AppColors.borderLight,
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          onSelected: (_) => setState(() => _selectedCategory = name),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 4),
+                          onSelected: (_) =>
+                              setState(() => _selectedCategory = name),
                         ),
                       );
                     }).toList(),
@@ -392,7 +429,9 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: cartQty > 0 ? AppColors.primaryEmerald.withValues(alpha: 0.6) : AppColors.borderLight,
+                        color: cartQty > 0
+                            ? AppColors.primaryEmerald.withValues(alpha: 0.6)
+                            : AppColors.borderLight,
                         width: cartQty > 0 ? 1.5 : 1,
                       ),
                       boxShadow: [
@@ -413,7 +452,8 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceMuted,
                                 borderRadius: BorderRadius.circular(6),
@@ -421,28 +461,40 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(prod.icon, style: const TextStyle(fontSize: 10)),
+                                  Text(prod.icon,
+                                      style: const TextStyle(fontSize: 10)),
                                   const SizedBox(width: 3),
                                   Text(
                                     prod.category,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textMuted),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
+                                color: isLowStock
+                                    ? Colors.red.shade50
+                                    : Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: isLowStock ? Colors.red.shade300 : Colors.green.shade200),
+                                border: Border.all(
+                                    color: isLowStock
+                                        ? Colors.red.shade300
+                                        : Colors.green.shade200),
                               ),
                               child: Text(
                                 '${prod.currentStock.toInt()} ${prod.unit}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: isLowStock ? AppColors.danger : AppColors.success,
+                                  color: isLowStock
+                                      ? AppColors.danger
+                                      : AppColors.success,
                                 ),
                               ),
                             ),
@@ -454,7 +506,10 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                         Expanded(
                           child: Text(
                             prod.name,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, height: 1.25),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                height: 1.25),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -489,7 +544,8 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                                   onTap: () => _decrementCart(prod),
                                   child: const Padding(
                                     padding: EdgeInsets.all(4),
-                                    child: Icon(Icons.remove_rounded, size: 16, color: Colors.white),
+                                    child: Icon(Icons.remove_rounded,
+                                        size: 16, color: Colors.white),
                                   ),
                                 ),
                                 // Long-press to open spinning wheel quantity picker
@@ -498,10 +554,14 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                                   child: Tooltip(
                                     message: 'Hold to set exact quantity',
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
                                       child: Text(
                                         '$cartQty',
-                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.white),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 13,
+                                            color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -510,7 +570,8 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                                   onTap: () => _addToCart(prod),
                                   child: const Padding(
                                     padding: EdgeInsets.all(4),
-                                    child: Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                                    child: Icon(Icons.add_rounded,
+                                        size: 16, color: Colors.white),
                                   ),
                                 ),
                               ],
@@ -523,11 +584,16 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () => _addToCart(prod),
                               icon: const Icon(Icons.add_rounded, size: 16),
-                              label: Text(ref.tr('add'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              label: Text(ref.tr('add'),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800)),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primaryForest,
-                                side: const BorderSide(color: AppColors.primaryForest, width: 1.2),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                side: const BorderSide(
+                                    color: AppColors.primaryForest, width: 1.2),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 padding: EdgeInsets.zero,
                               ),
                             ),
@@ -576,16 +642,22 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.accentGold,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$_cartItemCount',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: Colors.black),
                     ),
-                  ).animate(key: ValueKey(_cartItemCount)).scale(duration: 200.ms, curve: Curves.easeOutBack),
+                  )
+                      .animate(key: ValueKey(_cartItemCount))
+                      .scale(duration: 200.ms, curve: Curves.easeOutBack),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,26 +665,38 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
                     children: [
                       Text(
                         ref.tr('total_payable'),
-                        style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w600),
                       ),
                       Text(
                         CurrencyFormatter.format(_cartTotal),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white),
                       ),
                     ],
                   ),
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: _showCheckoutSheet,
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.black),
+                    icon: const Icon(Icons.arrow_forward_rounded,
+                        size: 16, color: Colors.black),
                     label: Text(
                       ref.tr('checkout_btn'),
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 13),
+                      style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.emeraldNeon,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                   ),
@@ -637,14 +721,16 @@ class _CheckoutBottomSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_CheckoutBottomSheet> createState() => _CheckoutBottomSheetState();
+  ConsumerState<_CheckoutBottomSheet> createState() =>
+      _CheckoutBottomSheetState();
 }
 
 class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
   String _paymentMethod = UgandaPresets.paymentMtnMomo;
   final TextEditingController _momoRefController = TextEditingController();
   final TextEditingController _customerNameController = TextEditingController();
-  final TextEditingController _customerPhoneController = TextEditingController();
+  final TextEditingController _customerPhoneController =
+      TextEditingController();
   final TextEditingController _paidAmountController = TextEditingController();
   bool _isCreditSale = false;
 
@@ -670,33 +756,43 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
   }
 
   void _processPayment() {
-    final paid = double.tryParse(_paidAmountController.text) ?? (_isCreditSale ? 0.0 : widget.totalAmount);
+    final paid = double.tryParse(_paidAmountController.text) ??
+        (_isCreditSale ? 0.0 : widget.totalAmount);
     final due = widget.totalAmount - paid;
 
     final session = ref.read(authProvider);
     final syncEngine = ref.read(syncEngineProvider);
 
-    final dateStr = DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
-    final saleNumber = 'SL-$dateStr-${1000 + (widget.totalAmount.toInt() % 8999)}';
-    final fiscalCode = session?.isEfrisEnrolled == true ? 'FC-${const Uuid().v4().substring(0, 8).toUpperCase()}' : null;
+    final dateStr =
+        DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
+    final saleNumber =
+        'SL-$dateStr-${1000 + (widget.totalAmount.toInt() % 8999)}';
+    final fiscalCode = session?.isEfrisEnrolled == true
+        ? 'FC-${const Uuid().v4().substring(0, 8).toUpperCase()}'
+        : null;
 
     final saleId = 'sl_${DateTime.now().millisecondsSinceEpoch}';
     final salePayload = {
       'id': saleId,
       'offlineId': saleId,
       'saleNumber': saleNumber,
-      'customerId': _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
-      'customerName': _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Walk-in Customer',
+      'customerId':
+          _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
+      'customerName': _customerNameController.text.isNotEmpty
+          ? _customerNameController.text
+          : 'Walk-in Customer',
       'customerPhone': _customerPhoneController.text,
-      'items': widget.cartItems.map((ci) => {
-        'productId': ci.product.id,
-        'productName': ci.product.name,
-        'quantity': ci.quantity,
-        'unitPrice': ci.product.sellPrice,
-        'subtotal': ci.subtotal,
-        'costPrice': ci.product.costPrice,
-        'taxAmount': ci.taxAmount,
-      }).toList(),
+      'items': widget.cartItems
+          .map((ci) => {
+                'productId': ci.product.id,
+                'productName': ci.product.name,
+                'quantity': ci.quantity,
+                'unitPrice': ci.product.sellPrice,
+                'subtotal': ci.subtotal,
+                'costPrice': ci.product.costPrice,
+                'taxAmount': ci.taxAmount,
+              })
+          .toList(),
       'subtotalAmount': widget.totalAmount / 1.18,
       'taxAmount': widget.totalAmount - (widget.totalAmount / 1.18),
       'discountAmount': 0.0,
@@ -706,7 +802,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       'paymentMethod': _isCreditSale ? 'credit' : _paymentMethod,
       'momoReference': _momoRefController.text,
       'isCredit': _isCreditSale || due > 0,
-      'dueDate': _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
+      'dueDate': _isCreditSale
+          ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch
+          : null,
       'cashierName': session?.fullName ?? 'Main Cashier',
       'branchId': ref.read(selectedBranchIdProvider) ?? 'br_main',
     };
@@ -716,8 +814,11 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       id: saleId,
       businessId: session?.businessId ?? 'biz_default',
       saleNumber: saleNumber,
-      customerId: _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
-      customerName: _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Walk-in Customer',
+      customerId:
+          _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
+      customerName: _customerNameController.text.isNotEmpty
+          ? _customerNameController.text
+          : 'Walk-in Customer',
       customerPhone: _customerPhoneController.text,
       itemsJson: jsonEncode(salePayload['items']),
       subtotalAmount: widget.totalAmount / 1.18,
@@ -730,7 +831,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       paymentMethod: _isCreditSale ? 'credit' : _paymentMethod,
       momoReference: _momoRefController.text,
       isCredit: _isCreditSale || due > 0,
-      dueDate: _isCreditSale ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch : null,
+      dueDate: _isCreditSale
+          ? DateTime.now().add(const Duration(days: 14)).millisecondsSinceEpoch
+          : null,
       efrisFiscalCode: fiscalCode,
       deviceId: session?.deviceId ?? 'device-001',
       cashierName: session?.fullName ?? 'Main Cashier',
@@ -742,13 +845,19 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
 
     // Decrement stock in database
     for (final ci in widget.cartItems) {
-      ref.read(databaseProvider).updateProductStock(ci.product.id, -ci.quantity.toDouble());
+      ref
+          .read(databaseProvider)
+          .updateProductStock(ci.product.id, -ci.quantity.toDouble());
     }
 
     // Record credit debtor if credit sale or partial payment
     if (_isCreditSale || due > 0) {
-      final custName = _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Credit Customer';
-      final custPhone = _customerPhoneController.text.isNotEmpty ? _customerPhoneController.text : '0700000000';
+      final custName = _customerNameController.text.isNotEmpty
+          ? _customerNameController.text
+          : 'Credit Customer';
+      final custPhone = _customerPhoneController.text.isNotEmpty
+          ? _customerPhoneController.text
+          : '0700000000';
       final debtor = LocalDebtorData(
         id: 'd_${DateTime.now().millisecondsSinceEpoch}',
         businessId: session?.businessId ?? 'biz_default',
@@ -777,7 +886,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       MaterialPageRoute(
         builder: (ctx) => ReceiptShareScreen(
           saleNumber: saleNumber,
-          customerName: _customerNameController.text.isNotEmpty ? _customerNameController.text : 'Walk-in Customer',
+          customerName: _customerNameController.text.isNotEmpty
+              ? _customerNameController.text
+              : 'Walk-in Customer',
           customerPhone: _customerPhoneController.text,
           totalAmount: widget.totalAmount,
           paidAmount: paid,
@@ -794,28 +905,28 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
   /// Opens a 3D spinning wheel to pick the payment method.
   void _showPaymentWheelPicker() {
     final paymentItems = [
-      WheelPickerItem<String>(
+      const WheelPickerItem<String>(
         value: UgandaPresets.paymentMtnMomo,
         title: 'MTN MoMo',
         subtitle: 'Mobile Money · Uganda',
         icon: Icons.phone_android_rounded,
         color: AppColors.mtnYellow,
       ),
-      WheelPickerItem<String>(
+      const WheelPickerItem<String>(
         value: UgandaPresets.paymentAirtelMoney,
         title: 'Airtel Money',
         subtitle: 'Mobile Money · Uganda',
         icon: Icons.send_to_mobile_rounded,
         color: AppColors.airtelRed,
       ),
-      WheelPickerItem<String>(
+      const WheelPickerItem<String>(
         value: UgandaPresets.paymentCash,
         title: 'Cash',
         subtitle: 'Physical UGX',
         icon: Icons.payments_rounded,
         color: AppColors.cashGreen,
       ),
-      WheelPickerItem<String>(
+      const WheelPickerItem<String>(
         value: UgandaPresets.paymentBank,
         title: 'Bank Transfer',
         subtitle: 'EFT / RTGS',
@@ -824,7 +935,8 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
       ),
     ];
 
-    final currentIndex = paymentItems.indexWhere((item) => item.value == _paymentMethod);
+    final currentIndex =
+        paymentItems.indexWhere((item) => item.value == _paymentMethod);
     int selectedIndex = currentIndex >= 0 ? currentIndex : 0;
 
     showModalBottomSheet(
@@ -892,11 +1004,13 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                   icon: Icon(paymentItems[selectedIndex].icon),
                   label: Text(
                     'Pay with ${paymentItems[selectedIndex].title}',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: paymentItems[selectedIndex].color,
-                    foregroundColor: paymentItems[selectedIndex].value == UgandaPresets.paymentMtnMomo
+                    foregroundColor: paymentItems[selectedIndex].value ==
+                            UgandaPresets.paymentMtnMomo
                         ? Colors.black
                         : Colors.white,
                   ),
@@ -930,8 +1044,12 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(ref.tr('complete_sale'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                Text(ref.tr('complete_sale'),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w900)),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded)),
               ],
             ),
             const Divider(),
@@ -965,11 +1083,17 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                       children: [
                         Text(
                           '${ref.tr('total_payable')}:',
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white70, fontSize: 12),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white70,
+                              fontSize: 12),
                         ),
                         Text(
                           CurrencyFormatter.format(widget.totalAmount),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white),
                         ),
                       ],
                     ),
@@ -983,13 +1107,21 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: _isCreditSale ? AppColors.creditAmber.withValues(alpha: 0.12) : AppColors.surfaceMuted,
+                color: _isCreditSale
+                    ? AppColors.creditAmber.withValues(alpha: 0.12)
+                    : AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _isCreditSale ? AppColors.creditAmber : AppColors.borderLight),
+                border: Border.all(
+                    color: _isCreditSale
+                        ? AppColors.creditAmber
+                        : AppColors.borderLight),
               ),
               child: SwitchListTile(
-                title: Text(ref.tr('sell_on_credit'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                subtitle: Text(ref.tr('add_to_debtor_book'), style: const TextStyle(fontSize: 12)),
+                title: Text(ref.tr('sell_on_credit'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 14)),
+                subtitle: Text(ref.tr('add_to_debtor_book'),
+                    style: const TextStyle(fontSize: 12)),
                 value: _isCreditSale,
                 activeThumbColor: AppColors.creditAmber,
                 contentPadding: EdgeInsets.zero,
@@ -999,7 +1131,8 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                     if (val) {
                       _paidAmountController.text = '0';
                     } else {
-                      _paidAmountController.text = widget.totalAmount.toInt().toString();
+                      _paidAmountController.text =
+                          widget.totalAmount.toInt().toString();
                     }
                   });
                 },
@@ -1038,7 +1171,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
             ],
 
             if (!_isCreditSale) ...[
-              Text(ref.tr('select_payment_method'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              Text(ref.tr('select_payment_method'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 13)),
               const SizedBox(height: 8),
 
               // Payment options with distinct visual branding
@@ -1082,9 +1217,12 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryForest,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     shape: StadiumBorder(
-                      side: BorderSide(color: AppColors.primaryForest.withValues(alpha: 0.3)),
+                      side: BorderSide(
+                          color:
+                              AppColors.primaryForest.withValues(alpha: 0.3)),
                     ),
                   ),
                 ),
@@ -1105,7 +1243,8 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              if (_paymentMethod == UgandaPresets.paymentMtnMomo || _paymentMethod == UgandaPresets.paymentAirtelMoney) ...[
+              if (_paymentMethod == UgandaPresets.paymentMtnMomo ||
+                  _paymentMethod == UgandaPresets.paymentAirtelMoney) ...[
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -1143,10 +1282,13 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                     suffixIcon: TextButton(
                       onPressed: () {
                         setState(() {
-                          _momoRefController.text = 'TX-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+                          _momoRefController.text =
+                              'TX-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
                         });
                       },
-                      child: Text(ref.tr('generate_ref'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: Text(ref.tr('generate_ref'),
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -1162,8 +1304,11 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                 onPressed: _processPayment,
                 icon: const Icon(Icons.check_circle_rounded),
                 label: Text(
-                  _isCreditSale ? ref.tr('confirm_credit_sale') : ref.tr('complete_sale_receipt'),
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                  _isCreditSale
+                      ? ref.tr('confirm_credit_sale')
+                      : ref.tr('complete_sale_receipt'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, fontSize: 15),
                 ),
               ),
             ),
@@ -1188,7 +1333,10 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primaryForest),
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryForest),
             ),
           ),
         ),
@@ -1230,7 +1378,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: isSelected ? textColor : AppColors.textMuted),
+              Icon(icon,
+                  size: 18,
+                  color: isSelected ? textColor : AppColors.textMuted),
               const SizedBox(height: 4),
               Text(
                 label,

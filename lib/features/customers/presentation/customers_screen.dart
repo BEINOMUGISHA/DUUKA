@@ -206,7 +206,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                       ),
                       Switch(
                         value: isFavorite,
-                        activeColor: AppColors.accentGold,
+                        activeThumbColor: AppColors.accentGold,
                         onChanged: (val) => setModalState(() => isFavorite = val),
                       ),
                     ],

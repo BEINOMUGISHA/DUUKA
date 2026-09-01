@@ -20,6 +20,7 @@ class UserSession {
   final String currency;
   final String subscriptionTier;
   final bool isEfrisEnrolled;
+  final String? tin;
   final String deviceId;
   final String userPin;
   final DateTime authenticatedAt;
@@ -35,16 +36,20 @@ class UserSession {
     required this.currency,
     required this.subscriptionTier,
     required this.isEfrisEnrolled,
+    this.tin,
     required this.deviceId,
     required this.userPin,
     required this.authenticatedAt,
   });
 
   bool get isOwner => role == 'owner';
-  bool get canViewReports => isOwner || permissions.contains('can_view_reports');
-  bool get canViewCostPrice => isOwner || permissions.contains('can_view_cost_price');
+  bool get canViewReports =>
+      isOwner || permissions.contains('can_view_reports');
+  bool get canViewCostPrice =>
+      isOwner || permissions.contains('can_view_cost_price');
   bool get canVoidSale => isOwner || permissions.contains('can_void_sale');
-  bool get canApproveCredit => isOwner || permissions.contains('can_approve_credit');
+  bool get canApproveCredit =>
+      isOwner || permissions.contains('can_approve_credit');
 
   UserSession copyWith({
     String? userId,
@@ -57,6 +62,7 @@ class UserSession {
     String? currency,
     String? subscriptionTier,
     bool? isEfrisEnrolled,
+    String? tin,
     String? deviceId,
     String? userPin,
     DateTime? authenticatedAt,
@@ -72,6 +78,7 @@ class UserSession {
       currency: currency ?? this.currency,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       isEfrisEnrolled: isEfrisEnrolled ?? this.isEfrisEnrolled,
+      tin: tin ?? this.tin,
       deviceId: deviceId ?? this.deviceId,
       userPin: userPin ?? this.userPin,
       authenticatedAt: authenticatedAt ?? this.authenticatedAt,
@@ -88,7 +95,12 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 // Convex Client Provider
 final convexClientProvider = Provider<ConvexClient>((ref) {
-  return ConvexClient(deploymentUrl: 'https://content-giraffe-287.convex.cloud');
+  const deploymentUrl = String.fromEnvironment(
+    'CONVEX_URL',
+    defaultValue: 'https://content-giraffe-287.convex.cloud',
+  );
+
+  return ConvexClient(deploymentUrl: deploymentUrl);
 });
 
 // --- AUTHENTICATION (PARAMOUNT) ---
@@ -106,11 +118,18 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       fullName: 'Ssempijja Robert',
       phone: '0772123456',
       role: 'owner',
-      permissions: const ['can_manage_business', 'can_view_reports', 'can_view_cost_price', 'can_void_sale', 'can_approve_credit'],
+      permissions: const [
+        'can_manage_business',
+        'can_view_reports',
+        'can_view_cost_price',
+        'can_void_sale',
+        'can_approve_credit'
+      ],
       businessName: 'Kisekka Agro & Hardware Ltd',
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: true,
+      tin: '1004928374',
       deviceId: 'device-sme-ug-001',
       userPin: '1234',
       authenticatedAt: DateTime.now(),
@@ -118,7 +137,10 @@ class AuthNotifier extends StateNotifier<UserSession?> {
   }
 
   /// Strict Login with Phone & 4-Digit Security PIN
-  Future<void> login({required String phone, required String pin, required String deviceId}) async {
+  Future<void> login(
+      {required String phone,
+      required String pin,
+      required String deviceId}) async {
     if (pin.length != 4) {
       throw Exception('A 4-digit security PIN is required.');
     }
@@ -137,11 +159,14 @@ class AuthNotifier extends StateNotifier<UserSession?> {
           fullName: res['fullName'] as String,
           phone: res['phone'] as String,
           role: res['role'] as String,
-          permissions: (res['permissions'] as List<dynamic>).map((e) => e.toString()).toList(),
+          permissions: (res['permissions'] as List<dynamic>)
+              .map((e) => e.toString())
+              .toList(),
           businessName: res['businessName'] as String,
           currency: res['currency'] as String? ?? 'UGX',
           subscriptionTier: res['subscriptionTier'] as String? ?? 'free',
           isEfrisEnrolled: res['isEfrisEnrolled'] as bool? ?? false,
+          tin: res['tin'] as String?,
           deviceId: deviceId,
           userPin: pin,
           authenticatedAt: DateTime.now(),
@@ -150,7 +175,8 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Convex cloud login not active, fallback to secure local-first: $e');
+        print(
+            'Convex cloud login not active, fallback to secure local-first: $e');
       }
     }
 
@@ -161,11 +187,18 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       fullName: 'SME Business Owner',
       phone: phone,
       role: 'owner',
-      permissions: const ['can_manage_business', 'can_view_reports', 'can_view_cost_price', 'can_void_sale', 'can_approve_credit'],
+      permissions: const [
+        'can_manage_business',
+        'can_view_reports',
+        'can_view_cost_price',
+        'can_void_sale',
+        'can_approve_credit'
+      ],
       businessName: 'My DUKA Shop',
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: true,
+      tin: null,
       deviceId: deviceId,
       userPin: pin,
       authenticatedAt: DateTime.now(),
@@ -197,16 +230,25 @@ class AuthNotifier extends StateNotifier<UserSession?> {
 
       if (res != null && res is Map) {
         state = UserSession(
-          userId: res['userId'] as String? ?? 'usr_${phone.replaceAll(RegExp(r'[^0-9]'), '')}',
-          businessId: res['businessId'] as String? ?? 'biz_${phone.replaceAll(RegExp(r'[^0-9]'), '')}',
+          userId: res['userId'] as String? ??
+              'usr_${phone.replaceAll(RegExp(r'[^0-9]'), '')}',
+          businessId: res['businessId'] as String? ??
+              'biz_${phone.replaceAll(RegExp(r'[^0-9]'), '')}',
           fullName: ownerName,
           phone: phone,
           role: 'owner',
-          permissions: const ['can_manage_business', 'can_view_reports', 'can_view_cost_price', 'can_void_sale', 'can_approve_credit'],
+          permissions: const [
+            'can_manage_business',
+            'can_view_reports',
+            'can_view_cost_price',
+            'can_void_sale',
+            'can_approve_credit'
+          ],
           businessName: businessName,
           currency: 'UGX',
           subscriptionTier: 'pro',
           isEfrisEnrolled: tin != null && tin.isNotEmpty,
+          tin: tin,
           deviceId: deviceId,
           userPin: pin,
           authenticatedAt: DateTime.now(),
@@ -226,14 +268,37 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       fullName: ownerName,
       phone: phone,
       role: 'owner',
-      permissions: const ['can_manage_business', 'can_view_reports', 'can_view_cost_price', 'can_void_sale', 'can_approve_credit'],
+      permissions: const [
+        'can_manage_business',
+        'can_view_reports',
+        'can_view_cost_price',
+        'can_void_sale',
+        'can_approve_credit'
+      ],
       businessName: businessName,
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: tin != null && tin.isNotEmpty,
+      tin: tin,
       deviceId: deviceId,
       userPin: pin,
       authenticatedAt: DateTime.now(),
+    );
+  }
+
+  void updateProfile({
+    String? businessName,
+    String? fullName,
+    String? phone,
+    String? tin,
+  }) {
+    if (state == null) return;
+
+    state = state!.copyWith(
+      businessName: businessName ?? state!.businessName,
+      fullName: fullName ?? state!.fullName,
+      phone: phone ?? state!.phone,
+      tin: tin ?? state!.tin,
     );
   }
 
@@ -278,7 +343,8 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 }
 
-final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+final themeModeProvider =
+    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier();
 });
 
@@ -306,7 +372,8 @@ class CustomThemeColorNotifier extends StateNotifier<Color> {
   }
 }
 
-final customThemeColorProvider = StateNotifierProvider<CustomThemeColorNotifier, Color>((ref) {
+final customThemeColorProvider =
+    StateNotifierProvider<CustomThemeColorNotifier, Color>((ref) {
   return CustomThemeColorNotifier();
 });
 
@@ -412,7 +479,8 @@ class ProductsNotifier extends StateNotifier<List<LocalProductData>> {
   }
 }
 
-final productsProvider = StateNotifierProvider<ProductsNotifier, List<LocalProductData>>((ref) {
+final productsProvider =
+    StateNotifierProvider<ProductsNotifier, List<LocalProductData>>((ref) {
   final db = ref.watch(databaseProvider);
   return ProductsNotifier(db);
 });
@@ -449,7 +517,8 @@ class SalesNotifier extends StateNotifier<List<LocalSaleData>> {
   }
 }
 
-final salesProvider = StateNotifierProvider<SalesNotifier, List<LocalSaleData>>((ref) {
+final salesProvider =
+    StateNotifierProvider<SalesNotifier, List<LocalSaleData>>((ref) {
   final db = ref.watch(databaseProvider);
   return SalesNotifier(db);
 });
@@ -486,7 +555,8 @@ class ExpensesNotifier extends StateNotifier<List<LocalExpenseData>> {
   }
 }
 
-final expensesProvider = StateNotifierProvider<ExpensesNotifier, List<LocalExpenseData>>((ref) {
+final expensesProvider =
+    StateNotifierProvider<ExpensesNotifier, List<LocalExpenseData>>((ref) {
   final db = ref.watch(databaseProvider);
   return ExpensesNotifier(db);
 });
@@ -512,7 +582,8 @@ class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
     await db.insertDebtor(debtor);
   }
 
-  Future<void> recordPayment(String debtorId, double amount, String method, String? ref) async {
+  Future<void> recordPayment(
+      String debtorId, double amount, String method, String? ref) async {
     await db.recordDebtorPayment(debtorId, amount, method, ref);
   }
 
@@ -523,7 +594,8 @@ class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
   }
 }
 
-final debtorsProvider = StateNotifierProvider<DebtorsNotifier, List<LocalDebtorData>>((ref) {
+final debtorsProvider =
+    StateNotifierProvider<DebtorsNotifier, List<LocalDebtorData>>((ref) {
   final db = ref.watch(databaseProvider);
   return DebtorsNotifier(db);
 });
@@ -560,7 +632,8 @@ class CustomersNotifier extends StateNotifier<List<LocalCustomerData>> {
   }
 }
 
-final customersProvider = StateNotifierProvider<CustomersNotifier, List<LocalCustomerData>>((ref) {
+final customersProvider =
+    StateNotifierProvider<CustomersNotifier, List<LocalCustomerData>>((ref) {
   final db = ref.watch(databaseProvider);
   return CustomersNotifier(db);
 });
@@ -593,7 +666,8 @@ class SmsNotifier extends StateNotifier<List<LocalSmsData>> {
   }
 }
 
-final smsProvider = StateNotifierProvider<SmsNotifier, List<LocalSmsData>>((ref) {
+final smsProvider =
+    StateNotifierProvider<SmsNotifier, List<LocalSmsData>>((ref) {
   final db = ref.watch(databaseProvider);
   return SmsNotifier(db);
 });
@@ -626,7 +700,9 @@ class MobileMoneyNotifier extends StateNotifier<List<LocalMobileMoneyTxData>> {
   }
 }
 
-final mobileMoneyProvider = StateNotifierProvider<MobileMoneyNotifier, List<LocalMobileMoneyTxData>>((ref) {
+final mobileMoneyProvider =
+    StateNotifierProvider<MobileMoneyNotifier, List<LocalMobileMoneyTxData>>(
+        (ref) {
   final db = ref.watch(databaseProvider);
   return MobileMoneyNotifier(db);
 });
@@ -659,7 +735,9 @@ class NotificationsNotifier extends StateNotifier<List<LocalNotificationData>> {
   }
 }
 
-final notificationsProvider = StateNotifierProvider<NotificationsNotifier, List<LocalNotificationData>>((ref) {
+final notificationsProvider =
+    StateNotifierProvider<NotificationsNotifier, List<LocalNotificationData>>(
+        (ref) {
   final db = ref.watch(databaseProvider);
   return NotificationsNotifier(db);
 });
@@ -704,7 +782,9 @@ class RawMaterialsNotifier extends StateNotifier<List<LocalRawMaterialData>> {
   }
 }
 
-final rawMaterialsProvider = StateNotifierProvider<RawMaterialsNotifier, List<LocalRawMaterialData>>((ref) {
+final rawMaterialsProvider =
+    StateNotifierProvider<RawMaterialsNotifier, List<LocalRawMaterialData>>(
+        (ref) {
   final db = ref.watch(databaseProvider);
   return RawMaterialsNotifier(db);
 });
@@ -741,13 +821,15 @@ class RecipesNotifier extends StateNotifier<List<LocalRecipeData>> {
   }
 }
 
-final recipesProvider = StateNotifierProvider<RecipesNotifier, List<LocalRecipeData>>((ref) {
+final recipesProvider =
+    StateNotifierProvider<RecipesNotifier, List<LocalRecipeData>>((ref) {
   final db = ref.watch(databaseProvider);
   return RecipesNotifier(db);
 });
 
 // --- PRODUCTION BATCHES NOTIFIER ---
-class ProductionBatchesNotifier extends StateNotifier<List<LocalProductionBatchData>> {
+class ProductionBatchesNotifier
+    extends StateNotifier<List<LocalProductionBatchData>> {
   final AppDatabase db;
   StreamSubscription<void>? _sub;
 
@@ -768,7 +850,8 @@ class ProductionBatchesNotifier extends StateNotifier<List<LocalProductionBatchD
     required double batchesCount,
     String? notes,
   }) async {
-    await db.recordProductionBatch(recipeId: recipeId, batchesCount: batchesCount, notes: notes);
+    await db.recordProductionBatch(
+        recipeId: recipeId, batchesCount: batchesCount, notes: notes);
   }
 
   @override
@@ -778,7 +861,8 @@ class ProductionBatchesNotifier extends StateNotifier<List<LocalProductionBatchD
   }
 }
 
-final productionBatchesProvider = StateNotifierProvider<ProductionBatchesNotifier, List<LocalProductionBatchData>>((ref) {
+final productionBatchesProvider = StateNotifierProvider<
+    ProductionBatchesNotifier, List<LocalProductionBatchData>>((ref) {
   final db = ref.watch(databaseProvider);
   return ProductionBatchesNotifier(db);
 });
@@ -811,13 +895,15 @@ class BranchesNotifier extends StateNotifier<List<LocalBranchData>> {
   }
 }
 
-final branchesProvider = StateNotifierProvider<BranchesNotifier, List<LocalBranchData>>((ref) {
+final branchesProvider =
+    StateNotifierProvider<BranchesNotifier, List<LocalBranchData>>((ref) {
   final db = ref.watch(databaseProvider);
   return BranchesNotifier(db);
 });
 
 // --- STOCK TRANSFERS NOTIFIER ---
-class StockTransfersNotifier extends StateNotifier<List<LocalStockTransferData>> {
+class StockTransfersNotifier
+    extends StateNotifier<List<LocalStockTransferData>> {
   final AppDatabase db;
   StreamSubscription<void>? _sub;
 
@@ -862,13 +948,12 @@ class StockTransfersNotifier extends StateNotifier<List<LocalStockTransferData>>
   }
 }
 
-final stockTransfersProvider = StateNotifierProvider<StockTransfersNotifier, List<LocalStockTransferData>>((ref) {
+final stockTransfersProvider =
+    StateNotifierProvider<StockTransfersNotifier, List<LocalStockTransferData>>(
+        (ref) {
   final db = ref.watch(databaseProvider);
   return StockTransfersNotifier(db);
 });
 
 // Current active branch filter
 final selectedBranchIdProvider = StateProvider<String?>((ref) => null);
-
-
-

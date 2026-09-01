@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -31,7 +30,8 @@ class ReceivePaymentSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ReceivePaymentSheet> createState() => _ReceivePaymentSheetState();
+  ConsumerState<ReceivePaymentSheet> createState() =>
+      _ReceivePaymentSheetState();
 }
 
 class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
@@ -47,7 +47,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
   void initState() {
     super.initState();
     _phoneController = TextEditingController(text: widget.initialPhone ?? '');
-    _amountController = TextEditingController(text: widget.amount.toInt().toString());
+    _amountController =
+        TextEditingController(text: widget.amount.toInt().toString());
   }
 
   @override
@@ -64,7 +65,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
 
     if (rawPhone.isEmpty || amt <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid phone number and amount')),
+        const SnackBar(
+            content: Text('Please enter a valid phone number and amount')),
       );
       return;
     }
@@ -74,7 +76,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
 
     setState(() {
       _state = PaymentState.requesting;
-      _statusMessage = 'Contacting ${_selectedProvider == UgandaPresets.paymentMtnMomo ? 'MTN' : 'Airtel'} gateway...';
+      _statusMessage =
+          'Contacting ${_selectedProvider == UgandaPresets.paymentMtnMomo ? 'MTN' : 'Airtel'} gateway...';
     });
 
     final convex = ref.read(convexClientProvider);
@@ -84,7 +87,9 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
       final res = await convex.mutation('payments:initiateMobileMoneyPayment', {
         'businessId': session?.businessId ?? 'biz_default',
         'userId': session?.userId ?? 'usr_default',
-        'provider': _selectedProvider == UgandaPresets.paymentMtnMomo ? 'mtn_momo' : 'airtel_money',
+        'provider': _selectedProvider == UgandaPresets.paymentMtnMomo
+            ? 'mtn_momo'
+            : 'airtel_money',
         'phone': normalizedPhone,
         'amount': amt,
         'externalReference': refUuid,
@@ -95,7 +100,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
 
       setState(() {
         _state = PaymentState.waitingForPin;
-        _statusMessage = 'Prompt sent to +$normalizedPhone.\nEnter PIN on your mobile phone to approve.';
+        _statusMessage =
+            'Prompt sent to +$normalizedPhone.\nEnter PIN on your mobile phone to approve.';
       });
 
       // Poll status for sandbox/live confirmation
@@ -114,7 +120,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
         }
 
         try {
-          final statusRes = await convex.mutation('payments:checkMobileMoneyStatus', {
+          final statusRes =
+              await convex.mutation('payments:checkMobileMoneyStatus', {
             'businessId': session?.businessId ?? 'biz_default',
             'userId': session?.userId ?? 'usr_default',
             'transactionId': _transactionReference,
@@ -126,7 +133,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             if (mounted) {
               setState(() {
                 _state = PaymentState.successful;
-                _statusMessage = 'Payment confirmed! Received ${CurrencyFormatter.format(amt)}.';
+                _statusMessage =
+                    'Payment confirmed! Received ${CurrencyFormatter.format(amt)}.';
               });
 
               // Log in local DB
@@ -137,6 +145,7 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                 provider: _selectedProvider,
                 phone: normalizedPhone,
                 amount: amt,
+                reference: refUuid,
                 externalReference: refUuid,
                 status: 'successful',
                 createdAt: DateTime.now().millisecondsSinceEpoch,
@@ -183,8 +192,12 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Receive Mobile Money', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                const Text('Receive Mobile Money',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close)),
               ],
             ),
             const Divider(),
@@ -195,39 +208,58 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
               children: [
                 Expanded(
                   child: InkWell(
-                    onTap: _state == PaymentState.waitingForPin || _state == PaymentState.requesting
+                    onTap: _state == PaymentState.waitingForPin ||
+                            _state == PaymentState.requesting
                         ? null
-                        : () => setState(() => _selectedProvider = UgandaPresets.paymentMtnMomo),
+                        : () => setState(() =>
+                            _selectedProvider = UgandaPresets.paymentMtnMomo),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _selectedProvider == UgandaPresets.paymentMtnMomo ? AppColors.mtnYellow : AppColors.surfaceMuted,
+                        color: _selectedProvider == UgandaPresets.paymentMtnMomo
+                            ? AppColors.mtnYellow
+                            : AppColors.surfaceMuted,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _selectedProvider == UgandaPresets.paymentMtnMomo ? Colors.amber.shade800 : Colors.transparent,
+                          color:
+                              _selectedProvider == UgandaPresets.paymentMtnMomo
+                                  ? Colors.amber.shade800
+                                  : Colors.transparent,
                           width: 2,
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: const Text('MTN MoMo', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black)),
+                      child: const Text('MTN MoMo',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: Colors.black)),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: InkWell(
-                    onTap: _state == PaymentState.waitingForPin || _state == PaymentState.requesting
+                    onTap: _state == PaymentState.waitingForPin ||
+                            _state == PaymentState.requesting
                         ? null
-                        : () => setState(() => _selectedProvider = UgandaPresets.paymentAirtelMoney),
+                        : () => setState(() => _selectedProvider =
+                            UgandaPresets.paymentAirtelMoney),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _selectedProvider == UgandaPresets.paymentAirtelMoney ? AppColors.airtelRed : AppColors.surfaceMuted,
+                        color: _selectedProvider ==
+                                UgandaPresets.paymentAirtelMoney
+                            ? AppColors.airtelRed
+                            : AppColors.surfaceMuted,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _selectedProvider == UgandaPresets.paymentAirtelMoney ? Colors.red.shade900 : Colors.transparent,
+                          color: _selectedProvider ==
+                                  UgandaPresets.paymentAirtelMoney
+                              ? Colors.red.shade900
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -237,7 +269,10 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 13,
-                          color: _selectedProvider == UgandaPresets.paymentAirtelMoney ? Colors.white : AppColors.textMain,
+                          color: _selectedProvider ==
+                                  UgandaPresets.paymentAirtelMoney
+                              ? Colors.white
+                              : AppColors.textMain,
                         ),
                       ),
                     ),
@@ -251,7 +286,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              enabled: _state == PaymentState.initial || _state == PaymentState.failed,
+              enabled: _state == PaymentState.initial ||
+                  _state == PaymentState.failed,
               decoration: const InputDecoration(
                 labelText: 'Amount (UGX) *',
                 prefixIcon: Icon(Icons.payments_rounded),
@@ -263,7 +299,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              enabled: _state == PaymentState.initial || _state == PaymentState.failed,
+              enabled: _state == PaymentState.initial ||
+                  _state == PaymentState.failed,
               decoration: InputDecoration(
                 labelText: 'Customer Phone (e.g. 0772123456) *',
                 prefixIcon: const Icon(Icons.phone_android_rounded),
@@ -274,9 +311,11 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             const SizedBox(height: 16),
 
             // Dynamic State Display
-            if (_state == PaymentState.requesting || _state == PaymentState.waitingForPin) ...[
+            if (_state == PaymentState.requesting ||
+                _state == PaymentState.waitingForPin) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(16),
@@ -295,14 +334,23 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                             shape: BoxShape.circle,
                             color: Colors.amber.withValues(alpha: 0.2),
                           ),
-                        ).animate(onPlay: (c) => c.repeat()).scale(begin: const Offset(1, 1), end: const Offset(1.6, 1.6), duration: 1200.ms).fadeOut(duration: 1200.ms),
+                        )
+                            .animate(onPlay: (c) => c.repeat())
+                            .scale(
+                                begin: const Offset(1, 1),
+                                end: const Offset(1.6, 1.6),
+                                duration: 1200.ms)
+                            .fadeOut(duration: 1200.ms),
 
                         // Center Icon
                         Container(
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: _selectedProvider == UgandaPresets.paymentMtnMomo ? AppColors.mtnYellow : AppColors.airtelRed,
+                            color: _selectedProvider ==
+                                    UgandaPresets.paymentMtnMomo
+                                ? AppColors.mtnYellow
+                                : AppColors.airtelRed,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -314,17 +362,26 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                           ),
                           child: Icon(
                             Icons.phonelink_ring_rounded,
-                            color: _selectedProvider == UgandaPresets.paymentMtnMomo ? Colors.black : Colors.white,
+                            color: _selectedProvider ==
+                                    UgandaPresets.paymentMtnMomo
+                                ? Colors.black
+                                : Colors.white,
                             size: 22,
                           ),
-                        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(0.95, 0.95), end: const Offset(1.05, 1.05), duration: 800.ms),
+                        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+                            begin: const Offset(0.95, 0.95),
+                            end: const Offset(1.05, 1.05),
+                            duration: 800.ms),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       _statusMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF92400E)),
                     ),
                     const SizedBox(height: 4),
                     const Text(
@@ -352,13 +409,19 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                         color: AppColors.success,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.check_rounded, color: Colors.white, size: 30),
-                    ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+                      child: const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 30),
+                    )
+                        .animate()
+                        .scale(duration: 400.ms, curve: Curves.easeOutBack),
                     const SizedBox(height: 10),
                     Text(
                       _statusMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.success),
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.success),
                     ),
                   ],
                 ),
@@ -374,12 +437,16 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 28),
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.danger, size: 28),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _statusMessage,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.danger),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.danger),
                       ),
                     ),
                   ],
@@ -394,7 +461,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: _state == PaymentState.requesting || _state == PaymentState.waitingForPin
+                  onPressed: _state == PaymentState.requesting ||
+                          _state == PaymentState.waitingForPin
                       ? null
                       : _initiatePayment,
                   icon: const Icon(Icons.send_to_mobile_rounded),
@@ -410,7 +478,8 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w900)),
+                  child: const Text('Done',
+                      style: TextStyle(fontWeight: FontWeight.w900)),
                 ),
               ),
 
@@ -420,7 +489,9 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             // DUKA QR Code / Payment Link Section
             Center(
               child: ExpansionTile(
-                title: const Text('Or Show DUKA Payment QR Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                title: const Text('Or Show DUKA Payment QR Code',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -433,7 +504,9 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
                           backgroundColor: Colors.white,
                         ),
                         const SizedBox(height: 6),
-                        Text(paymentUrl, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                        Text(paymentUrl,
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textMuted)),
                       ],
                     ),
                   ),

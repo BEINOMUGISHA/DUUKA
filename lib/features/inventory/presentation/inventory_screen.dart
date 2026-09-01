@@ -68,7 +68,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: ['Agro', 'Seeds', 'Chemicals', 'Hardware', 'Equipment', 'General'].contains(catCtrl.text)
+                      initialValue: ['Agro', 'Seeds', 'Chemicals', 'Hardware', 'Equipment', 'General'].contains(catCtrl.text)
                           ? catCtrl.text
                           : 'Agro',
                       decoration: InputDecoration(labelText: '${ref.tr('category')} *'),
@@ -83,7 +83,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: ['pcs', 'bag', 'pkt', 'bottle', 'kg', 'tin'].contains(unitCtrl.text)
+                      initialValue: ['pcs', 'bag', 'pkt', 'bottle', 'kg', 'tin'].contains(unitCtrl.text)
                           ? unitCtrl.text
                           : 'pcs',
                       decoration: InputDecoration(labelText: '${ref.tr('unit')} *'),

@@ -57,11 +57,11 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: paymentMethod,
                   decoration: const InputDecoration(labelText: 'Payment Channel *'),
-                  items: [
-                    DropdownMenuItem(value: UgandaPresets.paymentCash, child: const Text('Cash')),
-                    DropdownMenuItem(value: UgandaPresets.paymentMtnMomo, child: const Text('MTN MoMo')),
-                    DropdownMenuItem(value: UgandaPresets.paymentAirtelMoney, child: const Text('Airtel Money')),
-                    DropdownMenuItem(value: UgandaPresets.paymentBank, child: const Text('Bank Transfer')),
+                  items: const [
+                    DropdownMenuItem(value: UgandaPresets.paymentCash, child: Text('Cash')),
+                    DropdownMenuItem(value: UgandaPresets.paymentMtnMomo, child: Text('MTN MoMo')),
+                    DropdownMenuItem(value: UgandaPresets.paymentAirtelMoney, child: Text('Airtel Money')),
+                    DropdownMenuItem(value: UgandaPresets.paymentBank, child: Text('Bank Transfer')),
                   ],
                   onChanged: (val) => setDialogState(() => paymentMethod = val!),
                 ),
@@ -408,7 +408,7 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               const Text('Select SMS Language:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: selectedLanguage,
+                initialValue: selectedLanguage,
                 decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),

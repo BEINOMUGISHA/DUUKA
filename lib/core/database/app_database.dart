@@ -505,7 +505,8 @@ class LocalCustomerData {
         'updatedAt': updatedAt,
       };
 
-  factory LocalCustomerData.fromJson(Map<String, dynamic> m) => LocalCustomerData(
+  factory LocalCustomerData.fromJson(Map<String, dynamic> m) =>
+      LocalCustomerData(
         id: m['id'] as String,
         serverId: m['serverId'] as String?,
         businessId: m['businessId'] as String,
@@ -519,8 +520,10 @@ class LocalCustomerData {
         isFavorite: m['isFavorite'] as bool? ?? false,
         tier: m['tier'] as String? ?? 'regular',
         notes: m['notes'] as String?,
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
-        updatedAt: (m['updatedAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        updatedAt: (m['updatedAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 
   LocalCustomerData copyWith({
@@ -598,7 +601,8 @@ class LocalSmsData {
         message: m['message'] as String,
         type: m['type'] as String? ?? 'custom',
         status: m['status'] as String? ?? 'sent',
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 }
 
@@ -793,7 +797,8 @@ class LocalRecipeData {
   final String outputProductId;
   final String outputProductName;
   final double outputQuantity;
-  final String ingredientsJson; // List of {rawMaterialId, rawMaterialName, quantity, unit}
+  final String
+      ingredientsJson; // List of {rawMaterialId, rawMaterialName, quantity, unit}
   final double laborCost;
   final String? notes;
   final int createdAt;
@@ -834,7 +839,8 @@ class LocalRecipeData {
         ingredientsJson: m['ingredientsJson'] as String,
         laborCost: (m['laborCost'] as num?)?.toDouble() ?? 0,
         notes: m['notes'] as String?,
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 }
 
@@ -941,7 +947,8 @@ class LocalBranchData {
         managerName: m['managerName'] as String,
         phone: m['phone'] as String,
         isHeadquarters: m['isHeadquarters'] as bool? ?? false,
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 }
 
@@ -1015,10 +1022,12 @@ class LocalStockTransferData {
 class LocalMobileMoneyTxData {
   final String id;
   final String businessId;
+  final String? saleId;
   final String provider; // 'mtn', 'airtel'
   final String phone;
   final double amount;
   final String reference;
+  final String externalReference;
   final String status; // 'completed', 'pending', 'failed'
   final String type; // 'collection', 'payout'
   final int createdAt;
@@ -1026,22 +1035,26 @@ class LocalMobileMoneyTxData {
   LocalMobileMoneyTxData({
     required this.id,
     required this.businessId,
+    this.saleId,
     required this.provider,
     required this.phone,
     required this.amount,
     required this.reference,
+    required this.externalReference,
     required this.status,
-    required this.type,
+    this.type = 'collection',
     required this.createdAt,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'businessId': businessId,
+        'saleId': saleId,
         'provider': provider,
         'phone': phone,
         'amount': amount,
         'reference': reference,
+        'externalReference': externalReference,
         'status': status,
         'type': type,
         'createdAt': createdAt,
@@ -1051,13 +1064,20 @@ class LocalMobileMoneyTxData {
       LocalMobileMoneyTxData(
         id: m['id'] as String,
         businessId: m['businessId'] as String,
+        saleId: m['saleId'] as String?,
         provider: m['provider'] as String,
         phone: m['phone'] as String,
         amount: (m['amount'] as num).toDouble(),
-        reference: m['reference'] as String,
+        reference: m['reference'] as String? ??
+            m['externalReference'] as String? ??
+            '',
+        externalReference: m['externalReference'] as String? ??
+            m['reference'] as String? ??
+            '',
         status: m['status'] as String? ?? 'completed',
         type: m['type'] as String? ?? 'collection',
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 }
 
@@ -1101,7 +1121,8 @@ class LocalNotificationData {
         body: m['body'] as String,
         type: m['type'] as String? ?? 'info',
         isRead: m['isRead'] as bool? ?? false,
-        createdAt: (m['createdAt'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        createdAt: (m['createdAt'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
       );
 }
 
@@ -1165,33 +1186,45 @@ class AppDatabase {
   }
 
   void _loadAll() {
-    _loadMap<LocalProductData>(_kProducts, _products, LocalProductData.fromJson);
+    _loadMap<LocalProductData>(
+        _kProducts, _products, LocalProductData.fromJson);
     _loadMap<LocalSaleData>(_kSales, _sales, LocalSaleData.fromJson);
-    _loadMap<LocalTransactionData>(_kTransactions, _transactions, LocalTransactionData.fromJson);
-    _loadMap<LocalExpenseData>(_kExpenses, _expenses, LocalExpenseData.fromJson);
+    _loadMap<LocalTransactionData>(
+        _kTransactions, _transactions, LocalTransactionData.fromJson);
+    _loadMap<LocalExpenseData>(
+        _kExpenses, _expenses, LocalExpenseData.fromJson);
     _loadMap<LocalDebtorData>(_kDebtors, _debtors, LocalDebtorData.fromJson);
-    _loadMap<LocalRestockData>(_kRestocks, _restocks, LocalRestockData.fromJson);
-    _loadMap<LocalCustomerData>(_kCustomers, _customers, LocalCustomerData.fromJson);
+    _loadMap<LocalRestockData>(
+        _kRestocks, _restocks, LocalRestockData.fromJson);
+    _loadMap<LocalCustomerData>(
+        _kCustomers, _customers, LocalCustomerData.fromJson);
     _loadMap<LocalSmsData>(_kSms, _sms, LocalSmsData.fromJson);
-    _loadMap<LocalRawMaterialData>(_kRawMaterials, _rawMaterials, LocalRawMaterialData.fromJson);
+    _loadMap<LocalRawMaterialData>(
+        _kRawMaterials, _rawMaterials, LocalRawMaterialData.fromJson);
     _loadMap<LocalRecipeData>(_kRecipes, _recipes, LocalRecipeData.fromJson);
-    _loadMap<LocalProductionBatchData>(_kBatches, _batches, LocalProductionBatchData.fromJson);
+    _loadMap<LocalProductionBatchData>(
+        _kBatches, _batches, LocalProductionBatchData.fromJson);
     _loadMap<LocalBranchData>(_kBranches, _branches, LocalBranchData.fromJson);
-    _loadMap<LocalStockTransferData>(_kTransfers, _transfers, LocalStockTransferData.fromJson);
-    _loadMap<LocalMobileMoneyTxData>(_kMomo, _momo, LocalMobileMoneyTxData.fromJson);
-    _loadMap<LocalNotificationData>(_kNotifications, _notifications, LocalNotificationData.fromJson);
+    _loadMap<LocalStockTransferData>(
+        _kTransfers, _transfers, LocalStockTransferData.fromJson);
+    _loadMap<LocalMobileMoneyTxData>(
+        _kMomo, _momo, LocalMobileMoneyTxData.fromJson);
+    _loadMap<LocalNotificationData>(
+        _kNotifications, _notifications, LocalNotificationData.fromJson);
 
     final raw = _prefs?.getString(_kQueue);
     if (raw != null) {
       try {
         for (final item in jsonDecode(raw) as List<dynamic>) {
-          _queue.add(SyncQueueItem.fromJson(Map<String, dynamic>.from(item as Map)));
+          _queue.add(
+              SyncQueueItem.fromJson(Map<String, dynamic>.from(item as Map)));
         }
       } catch (_) {}
     }
   }
 
-  void _loadMap<T>(String key, Map<String, T> target, T Function(Map<String, dynamic>) fromJson) {
+  void _loadMap<T>(String key, Map<String, T> target,
+      T Function(Map<String, dynamic>) fromJson) {
     final raw = _prefs?.getString(key);
     if (raw == null) return;
     try {
@@ -1202,7 +1235,8 @@ class AppDatabase {
     } catch (_) {}
   }
 
-  Future<void> _persist<T>(String key, Map<String, T> map, Map<String, dynamic> Function(T) toJson) async {
+  Future<void> _persist<T>(String key, Map<String, T> map,
+      Map<String, dynamic> Function(T) toJson) async {
     await _prefs?.setString(key, jsonEncode(map.values.map(toJson).toList()));
   }
 
@@ -1211,15 +1245,114 @@ class AppDatabase {
   void _seedDefaultProducts() {
     final now = DateTime.now().millisecondsSinceEpoch;
     final seed = [
-      LocalProductData(id: 'p1', businessId: 'biz_default', name: 'NPK 17:17:17 Fertilizer 50kg', category: 'Agro', costPrice: 150000, sellPrice: 185000, wholesalePrice: 172000, currentStock: 24, minStockLevel: 10, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p2', businessId: 'biz_default', name: 'DAP Fertilizer 50kg', category: 'Agro', costPrice: 170000, sellPrice: 210000, wholesalePrice: 195000, currentStock: 18, minStockLevel: 10, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p3', businessId: 'biz_default', name: 'Longe 5 Maize Seeds 2kg', category: 'Seeds', costPrice: 12000, sellPrice: 16000, wholesalePrice: 14500, currentStock: 4, minStockLevel: 15, unit: 'pkt', updatedAt: now),
-      LocalProductData(id: 'p4', businessId: 'biz_default', name: 'Bazooka Maize Seeds 2kg', category: 'Seeds', costPrice: 14000, sellPrice: 18500, wholesalePrice: 16500, currentStock: 30, minStockLevel: 10, unit: 'pkt', updatedAt: now),
-      LocalProductData(id: 'p5', businessId: 'biz_default', name: 'Roundup Weedkiller 1L', category: 'Chemicals', costPrice: 22000, sellPrice: 28000, wholesalePrice: 25000, currentStock: 3, minStockLevel: 10, unit: 'bottle', updatedAt: now),
-      LocalProductData(id: 'p6', businessId: 'biz_default', name: 'Dudu Acelamectin 500ml', category: 'Chemicals', costPrice: 18000, sellPrice: 24000, wholesalePrice: 21500, currentStock: 15, minStockLevel: 5, unit: 'bottle', updatedAt: now),
-      LocalProductData(id: 'p7', businessId: 'biz_default', name: 'Tororo Cement 32.5R 50kg', category: 'Hardware', costPrice: 32000, sellPrice: 36000, wholesalePrice: 34000, currentStock: 80, minStockLevel: 20, unit: 'bag', updatedAt: now),
-      LocalProductData(id: 'p8', businessId: 'biz_default', name: 'Iron Sheets 28 Gauge 3m', category: 'Hardware', costPrice: 42000, sellPrice: 48500, wholesalePrice: 45000, currentStock: 60, minStockLevel: 15, unit: 'pc', updatedAt: now),
-      LocalProductData(id: 'p9', businessId: 'biz_default', name: 'Water Pump Knapsack 16L', category: 'Equipment', costPrice: 65000, sellPrice: 85000, wholesalePrice: 75000, currentStock: 8, minStockLevel: 5, unit: 'pc', updatedAt: now),
+      LocalProductData(
+          id: 'p1',
+          businessId: 'biz_default',
+          name: 'NPK 17:17:17 Fertilizer 50kg',
+          category: 'Agro',
+          costPrice: 150000,
+          sellPrice: 185000,
+          wholesalePrice: 172000,
+          currentStock: 24,
+          minStockLevel: 10,
+          unit: 'bag',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p2',
+          businessId: 'biz_default',
+          name: 'DAP Fertilizer 50kg',
+          category: 'Agro',
+          costPrice: 170000,
+          sellPrice: 210000,
+          wholesalePrice: 195000,
+          currentStock: 18,
+          minStockLevel: 10,
+          unit: 'bag',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p3',
+          businessId: 'biz_default',
+          name: 'Longe 5 Maize Seeds 2kg',
+          category: 'Seeds',
+          costPrice: 12000,
+          sellPrice: 16000,
+          wholesalePrice: 14500,
+          currentStock: 4,
+          minStockLevel: 15,
+          unit: 'pkt',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p4',
+          businessId: 'biz_default',
+          name: 'Bazooka Maize Seeds 2kg',
+          category: 'Seeds',
+          costPrice: 14000,
+          sellPrice: 18500,
+          wholesalePrice: 16500,
+          currentStock: 30,
+          minStockLevel: 10,
+          unit: 'pkt',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p5',
+          businessId: 'biz_default',
+          name: 'Roundup Weedkiller 1L',
+          category: 'Chemicals',
+          costPrice: 22000,
+          sellPrice: 28000,
+          wholesalePrice: 25000,
+          currentStock: 3,
+          minStockLevel: 10,
+          unit: 'bottle',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p6',
+          businessId: 'biz_default',
+          name: 'Dudu Acelamectin 500ml',
+          category: 'Chemicals',
+          costPrice: 18000,
+          sellPrice: 24000,
+          wholesalePrice: 21500,
+          currentStock: 15,
+          minStockLevel: 5,
+          unit: 'bottle',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p7',
+          businessId: 'biz_default',
+          name: 'Tororo Cement 32.5R 50kg',
+          category: 'Hardware',
+          costPrice: 32000,
+          sellPrice: 36000,
+          wholesalePrice: 34000,
+          currentStock: 80,
+          minStockLevel: 20,
+          unit: 'bag',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p8',
+          businessId: 'biz_default',
+          name: 'Iron Sheets 28 Gauge 3m',
+          category: 'Hardware',
+          costPrice: 42000,
+          sellPrice: 48500,
+          wholesalePrice: 45000,
+          currentStock: 60,
+          minStockLevel: 15,
+          unit: 'pc',
+          updatedAt: now),
+      LocalProductData(
+          id: 'p9',
+          businessId: 'biz_default',
+          name: 'Water Pump Knapsack 16L',
+          category: 'Equipment',
+          costPrice: 65000,
+          sellPrice: 85000,
+          wholesalePrice: 75000,
+          currentStock: 8,
+          minStockLevel: 5,
+          unit: 'pc',
+          updatedAt: now),
     ];
     for (final p in seed) {
       _products[p.id] = p;
@@ -1230,10 +1363,38 @@ class AppDatabase {
   void _seedDefaultDebtors() {
     final now = DateTime.now().millisecondsSinceEpoch;
     final seed = [
-      LocalDebtorData(id: 'd1', businessId: 'biz_default', name: 'Mugisha Patrick (Farm)', phone: '0772889900', balanceOwed: 250000, creditLimit: 500000, lastSaleDate: now - 518400000),
-      LocalDebtorData(id: 'd2', businessId: 'biz_default', name: 'Mama Sarah General Store', phone: '0754112233', balanceOwed: 180000, creditLimit: 300000, lastSaleDate: now - 345600000),
-      LocalDebtorData(id: 'd3', businessId: 'biz_default', name: 'Kato Denis (Builder)', phone: '0701998877', balanceOwed: 140000, creditLimit: 200000, lastSaleDate: now - 950400000),
-      LocalDebtorData(id: 'd4', businessId: 'biz_default', name: 'Namubiru Grace', phone: '0788334455', balanceOwed: 70000, creditLimit: 100000, lastSaleDate: now - 172800000),
+      LocalDebtorData(
+          id: 'd1',
+          businessId: 'biz_default',
+          name: 'Mugisha Patrick (Farm)',
+          phone: '0772889900',
+          balanceOwed: 250000,
+          creditLimit: 500000,
+          lastSaleDate: now - 518400000),
+      LocalDebtorData(
+          id: 'd2',
+          businessId: 'biz_default',
+          name: 'Mama Sarah General Store',
+          phone: '0754112233',
+          balanceOwed: 180000,
+          creditLimit: 300000,
+          lastSaleDate: now - 345600000),
+      LocalDebtorData(
+          id: 'd3',
+          businessId: 'biz_default',
+          name: 'Kato Denis (Builder)',
+          phone: '0701998877',
+          balanceOwed: 140000,
+          creditLimit: 200000,
+          lastSaleDate: now - 950400000),
+      LocalDebtorData(
+          id: 'd4',
+          businessId: 'biz_default',
+          name: 'Namubiru Grace',
+          phone: '0788334455',
+          balanceOwed: 70000,
+          creditLimit: 100000,
+          lastSaleDate: now - 172800000),
     ];
     for (final d in seed) {
       _debtors[d.id] = d;
@@ -1314,11 +1475,51 @@ class AppDatabase {
   void _seedDefaultRawMaterials() {
     final now = DateTime.now().millisecondsSinceEpoch;
     final seed = [
-      LocalRawMaterialData(id: 'rm1', businessId: 'biz_default', name: 'Raw Maize Grain Grade A', unit: 'kg', currentStock: 850, minStockLevel: 200, unitCost: 1100, updatedAt: now),
-      LocalRawMaterialData(id: 'rm2', businessId: 'biz_default', name: 'Nitrogen Premix Powder', unit: 'kg', currentStock: 120, minStockLevel: 30, unitCost: 4500, updatedAt: now),
-      LocalRawMaterialData(id: 'rm3', businessId: 'biz_default', name: 'Packaging Bags 50kg Heavy', unit: 'pcs', currentStock: 450, minStockLevel: 100, unitCost: 1200, updatedAt: now),
-      LocalRawMaterialData(id: 'rm4', businessId: 'biz_default', name: 'Chemical Surfactant Liquid', unit: 'ltr', currentStock: 45, minStockLevel: 15, unitCost: 8500, updatedAt: now),
-      LocalRawMaterialData(id: 'rm5', businessId: 'biz_default', name: 'Plastic Bottles 1L With Caps', unit: 'pcs', currentStock: 300, minStockLevel: 80, unitCost: 650, updatedAt: now),
+      LocalRawMaterialData(
+          id: 'rm1',
+          businessId: 'biz_default',
+          name: 'Raw Maize Grain Grade A',
+          unit: 'kg',
+          currentStock: 850,
+          minStockLevel: 200,
+          unitCost: 1100,
+          updatedAt: now),
+      LocalRawMaterialData(
+          id: 'rm2',
+          businessId: 'biz_default',
+          name: 'Nitrogen Premix Powder',
+          unit: 'kg',
+          currentStock: 120,
+          minStockLevel: 30,
+          unitCost: 4500,
+          updatedAt: now),
+      LocalRawMaterialData(
+          id: 'rm3',
+          businessId: 'biz_default',
+          name: 'Packaging Bags 50kg Heavy',
+          unit: 'pcs',
+          currentStock: 450,
+          minStockLevel: 100,
+          unitCost: 1200,
+          updatedAt: now),
+      LocalRawMaterialData(
+          id: 'rm4',
+          businessId: 'biz_default',
+          name: 'Chemical Surfactant Liquid',
+          unit: 'ltr',
+          currentStock: 45,
+          minStockLevel: 15,
+          unitCost: 8500,
+          updatedAt: now),
+      LocalRawMaterialData(
+          id: 'rm5',
+          businessId: 'biz_default',
+          name: 'Plastic Bottles 1L With Caps',
+          unit: 'pcs',
+          currentStock: 300,
+          minStockLevel: 80,
+          unitCost: 650,
+          updatedAt: now),
     ];
     for (final rm in seed) {
       _rawMaterials[rm.id] = rm;
@@ -1337,8 +1538,18 @@ class AppDatabase {
         outputProductName: 'NPK 17:17:17 Fertilizer 50kg',
         outputQuantity: 1,
         ingredientsJson: jsonEncode([
-          {'rawMaterialId': 'rm2', 'rawMaterialName': 'Nitrogen Premix Powder', 'quantity': 15.0, 'unit': 'kg'},
-          {'rawMaterialId': 'rm3', 'rawMaterialName': 'Packaging Bags 50kg Heavy', 'quantity': 1.0, 'unit': 'pcs'},
+          {
+            'rawMaterialId': 'rm2',
+            'rawMaterialName': 'Nitrogen Premix Powder',
+            'quantity': 15.0,
+            'unit': 'kg'
+          },
+          {
+            'rawMaterialId': 'rm3',
+            'rawMaterialName': 'Packaging Bags 50kg Heavy',
+            'quantity': 1.0,
+            'unit': 'pcs'
+          },
         ]),
         laborCost: 15000,
         notes: 'Blend in machine for 20 mins before sealing',
@@ -1352,8 +1563,18 @@ class AppDatabase {
         outputProductName: 'Roundup Weedkiller 1L',
         outputQuantity: 1,
         ingredientsJson: jsonEncode([
-          {'rawMaterialId': 'rm4', 'rawMaterialName': 'Chemical Surfactant Liquid', 'quantity': 1.0, 'unit': 'ltr'},
-          {'rawMaterialId': 'rm5', 'rawMaterialName': 'Plastic Bottles 1L With Caps', 'quantity': 1.0, 'unit': 'pcs'},
+          {
+            'rawMaterialId': 'rm4',
+            'rawMaterialName': 'Chemical Surfactant Liquid',
+            'quantity': 1.0,
+            'unit': 'ltr'
+          },
+          {
+            'rawMaterialId': 'rm5',
+            'rawMaterialName': 'Plastic Bottles 1L With Caps',
+            'quantity': 1.0,
+            'unit': 'pcs'
+          },
         ]),
         laborCost: 2000,
         notes: 'Wear protective gloves during bottling',
@@ -1410,21 +1631,25 @@ class AppDatabase {
   Future<void> insertQueueItem(SyncQueueItem item) async {
     _queue.removeWhere((q) => q.id == item.id);
     _queue.add(item);
-    await _prefs?.setString(_kQueue, jsonEncode(_queue.map((q) => q.toJson()).toList()));
+    await _prefs?.setString(
+        _kQueue, jsonEncode(_queue.map((q) => q.toJson()).toList()));
     _notify();
   }
 
-  Future<List<SyncQueueItem>> getPendingQueue() async => List.unmodifiable(_queue);
+  Future<List<SyncQueueItem>> getPendingQueue() async =>
+      List.unmodifiable(_queue);
   Future<int> getPendingQueueCount() async => _queue.length;
   Future<void> removeQueueItem(String id) async {
     _queue.removeWhere((q) => q.id == id);
-    await _prefs?.setString(_kQueue, jsonEncode(_queue.map((q) => q.toJson()).toList()));
+    await _prefs?.setString(
+        _kQueue, jsonEncode(_queue.map((q) => q.toJson()).toList()));
     _notify();
   }
 
   // ---- Products -------------------------------------------------------------
   Future<List<LocalProductData>> getProducts() async =>
-      (_products.values.where((p) => !p.isArchived).toList()..sort((a, b) => a.name.compareTo(b.name)));
+      (_products.values.where((p) => !p.isArchived).toList()
+        ..sort((a, b) => a.name.compareTo(b.name)));
 
   Future<void> insertProduct(LocalProductData product) async {
     _products[product.id] = product;
@@ -1433,7 +1658,8 @@ class AppDatabase {
   }
 
   Future<void> updateProduct(LocalProductData product) async {
-    _products[product.id] = product.copyWith(isSynced: false, updatedAt: DateTime.now().millisecondsSinceEpoch);
+    _products[product.id] = product.copyWith(
+        isSynced: false, updatedAt: DateTime.now().millisecondsSinceEpoch);
     await _persist(_kProducts, _products, (p) => p.toJson());
     _notify();
   }
@@ -1441,7 +1667,8 @@ class AppDatabase {
   Future<void> archiveProduct(String productId) async {
     final e = _products[productId];
     if (e != null) {
-      _products[productId] = e.copyWith(isArchived: true, updatedAt: DateTime.now().millisecondsSinceEpoch);
+      _products[productId] = e.copyWith(
+          isArchived: true, updatedAt: DateTime.now().millisecondsSinceEpoch);
       await _persist(_kProducts, _products, (p) => p.toJson());
       _notify();
     }
@@ -1460,8 +1687,9 @@ class AppDatabase {
     }
   }
 
-  List<LocalProductData> getLowStockProducts() =>
-      _products.values.where((p) => !p.isArchived && p.currentStock <= p.minStockLevel).toList();
+  List<LocalProductData> getLowStockProducts() => _products.values
+      .where((p) => !p.isArchived && p.currentStock <= p.minStockLevel)
+      .toList();
 
   // ---- Sales ----------------------------------------------------------------
   Future<void> insertSale(LocalSaleData sale) async {
@@ -1471,10 +1699,11 @@ class AppDatabase {
   }
 
   Future<List<LocalSaleData>> getSales() async =>
-      (_sales.values.where((s) => !s.isVoided).toList()..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
+      (_sales.values.where((s) => !s.isVoided).toList()
+        ..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
 
-  Future<List<LocalSaleData>> getAllSales() async =>
-      (_sales.values.toList()..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
+  Future<List<LocalSaleData>> getAllSales() async => (_sales.values.toList()
+    ..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
 
   Future<void> voidSale(String saleId) async {
     final e = _sales[saleId];
@@ -1553,15 +1782,22 @@ class AppDatabase {
     _notify();
   }
 
-  Future<List<LocalDebtorData>> getDebtors() async =>
-      (_debtors.values.toList()..sort((a, b) => b.balanceOwed.compareTo(a.balanceOwed)));
+  Future<List<LocalDebtorData>> getDebtors() async => (_debtors.values.toList()
+    ..sort((a, b) => b.balanceOwed.compareTo(a.balanceOwed)));
 
-  Future<void> recordDebtorPayment(String debtorId, double amount, String method, String? ref) async {
+  Future<void> recordDebtorPayment(
+      String debtorId, double amount, String method, String? ref) async {
     final e = _debtors[debtorId];
     if (e == null) return;
     final newBal = (e.balanceOwed - amount).clamp(0.0, double.infinity);
-    final payment = {'date': DateTime.now().millisecondsSinceEpoch, 'amount': amount, 'method': method, 'ref': ref ?? ''};
-    _debtors[debtorId] = e.copyWith(balanceOwed: newBal, paymentHistory: [...e.paymentHistory, payment]);
+    final payment = {
+      'date': DateTime.now().millisecondsSinceEpoch,
+      'amount': amount,
+      'method': method,
+      'ref': ref ?? ''
+    };
+    _debtors[debtorId] = e.copyWith(
+        balanceOwed: newBal, paymentHistory: [...e.paymentHistory, payment]);
     await _persist(_kDebtors, _debtors, (d) => d.toJson());
     _notify();
   }
@@ -1585,7 +1821,8 @@ class AppDatabase {
   }
 
   Future<void> updateCustomer(LocalCustomerData customer) async {
-    _customers[customer.id] = customer.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
+    _customers[customer.id] =
+        customer.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
     await _persist(_kCustomers, _customers, (c) => c.toJson());
     _notify();
   }
@@ -1597,8 +1834,8 @@ class AppDatabase {
   }
 
   // ---- SMS Messages ---------------------------------------------------------
-  Future<List<LocalSmsData>> getSms() async =>
-      (_sms.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+  Future<List<LocalSmsData>> getSms() async => (_sms.values.toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
   Future<List<LocalSmsData>> getSmsList() async => getSms();
 
@@ -1619,7 +1856,8 @@ class AppDatabase {
   }
 
   Future<void> updateRawMaterial(LocalRawMaterialData rm) async {
-    _rawMaterials[rm.id] = rm.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
+    _rawMaterials[rm.id] =
+        rm.copyWith(updatedAt: DateTime.now().millisecondsSinceEpoch);
     await _persist(_kRawMaterials, _rawMaterials, (m) => m.toJson());
     _notify();
   }
@@ -1660,7 +1898,8 @@ class AppDatabase {
 
   // ---- PRODUCTION BATCHES ---------------------------------------------------
   Future<List<LocalProductionBatchData>> getProductionBatches() async =>
-      (_batches.values.toList()..sort((a, b) => b.batchDate.compareTo(a.batchDate)));
+      (_batches.values.toList()
+        ..sort((a, b) => b.batchDate.compareTo(a.batchDate)));
 
   Future<void> recordProductionBatch({
     required String recipeId,
@@ -1691,7 +1930,8 @@ class AppDatabase {
     final totalBatchLabor = recipe.laborCost * batchesCount;
     final totalCost = rawMaterialsCost + totalBatchLabor;
     final totalFinishedUnits = recipe.outputQuantity * batchesCount;
-    final unitCost = totalFinishedUnits > 0 ? (totalCost / totalFinishedUnits) : 0.0;
+    final unitCost =
+        totalFinishedUnits > 0 ? (totalCost / totalFinishedUnits) : 0.0;
 
     // Increase stock of finished product in main inventory!
     await updateProductStock(recipe.outputProductId, totalFinishedUnits);
@@ -1717,7 +1957,9 @@ class AppDatabase {
 
   // ---- BRANCHES (Multi-Branch) ----------------------------------------------
   Future<List<LocalBranchData>> getBranches() async =>
-      (_branches.values.toList()..sort((a, b) => (b.isHeadquarters ? 1 : 0).compareTo(a.isHeadquarters ? 1 : 0)));
+      (_branches.values.toList()
+        ..sort((a, b) =>
+            (b.isHeadquarters ? 1 : 0).compareTo(a.isHeadquarters ? 1 : 0)));
 
   Future<void> insertBranch(LocalBranchData branch) async {
     _branches[branch.id] = branch;
@@ -1727,7 +1969,8 @@ class AppDatabase {
 
   // ---- STOCK TRANSFERS (Inter-Branch) ----------------------------------------
   Future<List<LocalStockTransferData>> getStockTransfers() async =>
-      (_transfers.values.toList()..sort((a, b) => b.transferDate.compareTo(a.transferDate)));
+      (_transfers.values.toList()
+        ..sort((a, b) => b.transferDate.compareTo(a.transferDate)));
 
   Future<void> executeStockTransfer({
     required String fromBranchId,
@@ -1762,7 +2005,8 @@ class AppDatabase {
 
   // ---- MOBILE MONEY ---------------------------------------------------------
   Future<List<LocalMobileMoneyTxData>> getMomoTransactions() async =>
-      (_momo.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+      (_momo.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
   Future<void> insertMomoTx(LocalMobileMoneyTxData tx) async {
     _momo[tx.id] = tx;
@@ -1772,7 +2016,8 @@ class AppDatabase {
 
   // ---- NOTIFICATIONS --------------------------------------------------------
   Future<List<LocalNotificationData>> getNotifications() async =>
-      (_notifications.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+      (_notifications.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
   Future<void> insertNotification(LocalNotificationData n) async {
     _notifications[n.id] = n;
@@ -1784,7 +2029,11 @@ class AppDatabase {
   double revenueInRange(DateTime from, DateTime to, {String? branchId}) {
     final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
     return _sales.values
-        .where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t && (branchId == null || s.branchId == branchId))
+        .where((s) =>
+            !s.isVoided &&
+            s.localTimestamp >= f &&
+            s.localTimestamp <= t &&
+            (branchId == null || s.branchId == branchId))
         .fold(0.0, (sum, s) => sum + s.totalAmount);
   }
 
@@ -1798,14 +2047,16 @@ class AppDatabase {
   double taxInRange(DateTime from, DateTime to) {
     final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
     return _sales.values
-        .where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)
+        .where((s) =>
+            !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)
         .fold(0.0, (sum, s) => sum + s.taxAmount);
   }
 
   double costOfGoodsInRange(DateTime from, DateTime to) {
     final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
     double cogs = 0;
-    for (final s in _sales.values.where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)) {
+    for (final s in _sales.values.where(
+        (s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)) {
       try {
         for (final item in jsonDecode(s.itemsJson) as List<dynamic>) {
           cogs += ((item['quantity'] as num?)?.toDouble() ?? 0) *
@@ -1834,13 +2085,18 @@ class AppDatabase {
   }
 
   // Staff Performance (Cashier Sales Breakdown)
-  Map<String, Map<String, dynamic>> salesByCashierInRange(DateTime from, DateTime to) {
+  Map<String, Map<String, dynamic>> salesByCashierInRange(
+      DateTime from, DateTime to) {
     final f = from.millisecondsSinceEpoch, t = to.millisecondsSinceEpoch;
     final result = <String, Map<String, dynamic>>{};
 
-    for (final s in _sales.values.where((s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)) {
-      final cashier = (s.cashierName != null && s.cashierName!.isNotEmpty) ? s.cashierName! : 'Main Cashier';
-      final current = result[cashier] ?? {'name': cashier, 'totalSales': 0.0, 'count': 0, 'voids': 0};
+    for (final s in _sales.values.where(
+        (s) => !s.isVoided && s.localTimestamp >= f && s.localTimestamp <= t)) {
+      final cashier = (s.cashierName != null && s.cashierName!.isNotEmpty)
+          ? s.cashierName!
+          : 'Main Cashier';
+      final current = result[cashier] ??
+          {'name': cashier, 'totalSales': 0.0, 'count': 0, 'voids': 0};
       current['totalSales'] = (current['totalSales'] as double) + s.totalAmount;
       current['count'] = (current['count'] as int) + 1;
       result[cashier] = current;
@@ -1861,7 +2117,8 @@ class AppDatabase {
           final price = (it['price'] as num?)?.toDouble() ?? 0.0;
           final total = (it['subtotal'] as num?)?.toDouble() ?? (qty * price);
 
-          final existing = productMap[name] ?? {'name': name, 'quantity': 0.0, 'revenue': 0.0};
+          final existing = productMap[name] ??
+              {'name': name, 'quantity': 0.0, 'revenue': 0.0};
           existing['quantity'] = (existing['quantity'] as double) + qty;
           existing['revenue'] = (existing['revenue'] as double) + total;
           productMap[name] = existing;
@@ -1870,7 +2127,8 @@ class AppDatabase {
     }
 
     final list = productMap.values.toList()
-      ..sort((a, b) => (b['revenue'] as double).compareTo(a['revenue'] as double));
+      ..sort(
+          (a, b) => (b['revenue'] as double).compareTo(a['revenue'] as double));
     return list.take(limit).toList();
   }
 

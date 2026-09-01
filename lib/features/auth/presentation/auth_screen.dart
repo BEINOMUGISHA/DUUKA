@@ -13,11 +13,16 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   int _activeTab = 0; // 0 = Sign In, 1 = Register, 2 = Instant Demo
 
-  final TextEditingController _phoneController = TextEditingController(text: '0772123456');
-  final TextEditingController _pinController = TextEditingController(text: '1234');
-  final TextEditingController _businessNameController = TextEditingController(text: 'Kisekka Agro & Hardware');
-  final TextEditingController _ownerNameController = TextEditingController(text: 'Ssempijja Robert');
-  final TextEditingController _tinController = TextEditingController(text: '1004928374');
+  final TextEditingController _phoneController =
+      TextEditingController(text: '0772123456');
+  final TextEditingController _pinController =
+      TextEditingController(text: '1234');
+  final TextEditingController _businessNameController =
+      TextEditingController(text: 'Kisekka Agro & Hardware');
+  final TextEditingController _ownerNameController =
+      TextEditingController(text: 'Ssempijja Robert');
+  final TextEditingController _tinController =
+      TextEditingController(text: '1004928374');
 
   bool _obscurePin = true;
   bool _isLoading = false;
@@ -67,7 +72,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (phone.isEmpty || phone.length < 9) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Please enter a valid Ugandan phone number (e.g. 0772123456)';
+        _errorMessage =
+            'Please enter a valid Ugandan phone number (e.g. 0772123456)';
       });
       return;
     }
@@ -94,19 +100,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         }
 
         await ref.read(authProvider.notifier).registerBusiness(
-          businessName: bizName,
-          ownerName: ownerName.isNotEmpty ? ownerName : 'Shop Owner',
-          phone: phone,
-          pin: pin,
-          tin: _tinController.text.trim().isNotEmpty ? _tinController.text.trim() : null,
-          deviceId: 'device-sme-001',
-        );
+              businessName: bizName,
+              ownerName: ownerName.isNotEmpty ? ownerName : 'Shop Owner',
+              phone: phone,
+              pin: pin,
+              tin: _tinController.text.trim().isNotEmpty
+                  ? _tinController.text.trim()
+                  : null,
+              deviceId: 'device-sme-001',
+            );
       } else {
         await ref.read(authProvider.notifier).login(
-          phone: phone,
-          pin: pin,
-          deviceId: 'device-sme-001',
-        );
+              phone: phone,
+              pin: pin,
+              deviceId: 'device-sme-001',
+            );
       }
     } catch (e) {
       if (mounted) {
@@ -161,7 +169,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentGold.withValues(alpha: 0.3),
+                              color:
+                                  AppColors.accentGold.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -190,7 +199,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColors.accentGold,
                                   borderRadius: BorderRadius.circular(6),
@@ -261,16 +271,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFECACA)),
+                              border:
+                                  Border.all(color: const Color(0xFFFECACA)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 18),
+                                const Icon(Icons.error_outline_rounded,
+                                    color: AppColors.danger, size: 18),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(color: AppColors.danger, fontSize: 11.5, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        color: AppColors.danger,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -283,15 +298,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         if (_activeTab == 2) ...[
                           const Text(
                             '1-Tap Demo Testing Accounts',
-                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900, fontSize: 15),
                           ),
                           const SizedBox(height: 4),
                           const Text(
                             'Select a preconfigured role to instantly explore all DUKA and UgaPOS capabilities:',
-                            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textMuted),
                           ),
                           const SizedBox(height: 14),
-
                           _buildDemoAccountCard(
                             role: 'Shop Owner / Admin',
                             name: 'Ssempijja Robert',
@@ -328,7 +344,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _submit,
                               icon: const Icon(Icons.bolt_rounded),
-                              label: const Text('Login to Selected Demo', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                              label: const Text('Login to Selected Demo',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 14)),
                             ),
                           ),
                         ] else ...[
@@ -371,15 +390,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             decoration: InputDecoration(
                               labelText: 'Uganda Phone Number *',
                               prefixIcon: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text('🇺🇬', style: TextStyle(fontSize: 16)),
+                                    Text('🇺🇬',
+                                        style: TextStyle(fontSize: 16)),
                                     SizedBox(width: 4),
-                                    Text('+256', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+                                    Text('+256',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: Color(0xFF334155))),
                                     SizedBox(width: 6),
-                                    Text('|', style: TextStyle(color: Color(0xFFCBD5E1))),
+                                    Text('|',
+                                        style: TextStyle(
+                                            color: Color(0xFFCBD5E1))),
                                   ],
                                 ),
                               ),
@@ -400,11 +427,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               prefixIcon: const Icon(Icons.lock_rounded),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePin ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  _obscurePin
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
                                   color: AppColors.textMuted,
                                   size: 20,
                                 ),
-                                onPressed: () => setState(() => _obscurePin = !_obscurePin),
+                                onPressed: () =>
+                                    setState(() => _obscurePin = !_obscurePin),
                               ),
                             ),
                           ),
@@ -420,17 +450,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   ? const SizedBox(
                                       width: 22,
                                       height: 22,
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                      child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          _activeTab == 1 ? 'Register Business' : 'Open My DUKA POS',
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                                          _activeTab == 1
+                                              ? 'Register Business'
+                                              : 'Open My DUKA POS',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 15),
                                         ),
                                         const SizedBox(width: 8),
-                                        const Icon(Icons.arrow_forward_rounded, size: 18),
+                                        const Icon(Icons.arrow_forward_rounded,
+                                            size: 18),
                                       ],
                                     ),
                             ),
@@ -442,12 +480,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   const SizedBox(height: 24),
 
                   // Offline & Security Badges
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 8,
                     children: [
-                      _buildSecurityPill(Icons.wifi_off_rounded, 'Offline-First Local DB'),
-                      const SizedBox(width: 10),
-                      _buildSecurityPill(Icons.verified_user_rounded, 'URA EFRIS Compliant'),
+                      _buildSecurityPill(
+                          Icons.wifi_off_rounded, 'Offline-First Local DB'),
+                      _buildSecurityPill(
+                          Icons.verified_user_rounded, 'URA EFRIS Compliant'),
                     ],
                   ),
                 ],
@@ -489,7 +530,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-              color: isSelected ? AppColors.primaryForest : const Color(0xFF64748B),
+              color: isSelected
+                  ? AppColors.primaryForest
+                  : const Color(0xFF64748B),
             ),
           ),
         ),
@@ -519,7 +562,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? badgeColor.withValues(alpha: 0.08) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? badgeColor.withValues(alpha: 0.08)
+              : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected ? badgeColor : const Color(0xFFE2E8F0),
@@ -544,14 +589,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(role, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: badgeColor)),
+                      Text(role,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              color: badgeColor)),
                       const Spacer(),
-                      Text('PIN: $pin', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+                      Text('PIN: $pin',
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text(shop, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  Text(name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(shop,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.textMuted)),
                 ],
               ),
             ),
@@ -569,16 +626,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white24),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: AppColors.goldLight, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-          ),
-        ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: AppColors.goldLight, size: 14),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                text,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

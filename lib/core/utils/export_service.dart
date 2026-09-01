@@ -74,7 +74,7 @@ class ExportService {
                         style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
                       ),
                       pw.SizedBox(height: 2),
-                      pw.Text('FINANCIAL PROFIT & LOSS STATEMENT', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                      pw.Text('FINANCIAL PROFIT & LOSS STATEMENT', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
                       pw.Text('Period: $period (${fromDate.toString().substring(0, 10)} to ${toDate.toString().substring(0, 10)})', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
                     ],
                   ),

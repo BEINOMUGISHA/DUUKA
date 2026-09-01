@@ -42,6 +42,8 @@ class SyncEngine extends ChangeNotifier {
 
   SyncState _state = const SyncState();
   SyncState get state => _state;
+  bool get isSyncing => _state.isSyncing;
+  int get pendingCount => _state.pendingCount;
 
   Timer? _autoSyncTimer;
   StreamSubscription<void>? _dbSubscription;
@@ -119,15 +121,18 @@ class SyncEngine extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final payloads = items.map((item) => {
-        'queueId': item.id,
-        'entityType': item.entityType,
-        'action': item.action,
-        'localTimestamp': item.localTimestamp,
-        'data': item.payloadJson,
-      }).toList();
+      final payloads = items
+          .map((item) => {
+                'queueId': item.id,
+                'entityType': item.entityType,
+                'action': item.action,
+                'localTimestamp': item.localTimestamp,
+                'data': item.payloadJson,
+              })
+          .toList();
 
-      final result = await convexClient.mutation('sync:processBatchOfflineSync', {
+      final result =
+          await convexClient.mutation('sync:processBatchOfflineSync', {
         'businessId': businessId,
         'userId': userId,
         'deviceId': deviceId,

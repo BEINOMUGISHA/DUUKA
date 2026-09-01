@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../core/utils/phone_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/utils/export_service.dart';

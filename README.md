@@ -78,7 +78,11 @@ DUKA/
    ```bash
    npx convex dev
    ```
-3. Copy your Convex Deployment URL (e.g. `https://energetic-starling-420.convex.cloud`) into `lib/core/providers/app_providers.dart`.
+3. Copy the deployment URL from the Convex dashboard or `.env.local` and pass it to Flutter:
+   ```bash
+   flutter run --dart-define=CONVEX_URL=https://your-project.convex.cloud
+   ```
+   You can also set a default in the app by editing the fallback value in `lib/core/providers/app_providers.dart`.
 
 ### 2. Frontend (Flutter) Setup
 
@@ -88,7 +92,7 @@ DUKA/
    ```
 2. Run the application:
    ```bash
-   flutter run
+   flutter run --dart-define=CONVEX_URL=https://your-project.convex.cloud
    ```
 
 ---

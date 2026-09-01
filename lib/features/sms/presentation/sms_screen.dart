@@ -246,13 +246,13 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
           // SMS Log
           Expanded(
             child: smsList.isEmpty
-                ? Center(
+                ? const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.sms_outlined, size: 48, color: AppColors.textMuted),
-                        const SizedBox(height: 8),
-                        const Text('No SMS messages logged yet', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                        Icon(Icons.sms_outlined, size: 48, color: AppColors.textMuted),
+                        SizedBox(height: 8),
+                        Text('No SMS messages logged yet', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   )
