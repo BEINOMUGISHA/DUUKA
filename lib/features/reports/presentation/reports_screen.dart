@@ -34,7 +34,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
   }
 
-  void _exportCSV(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) async {
+  void _exportCSV(double grossRevenue, double cogs, double expenses,
+      double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
     final businessName = session?.businessName ?? 'DUKA';
     final fromStr = _getFromDate().toString().substring(0, 10);
@@ -42,9 +43,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     final buffer = StringBuffer();
     buffer.writeln('DUKA BUSINESS FINANCIAL REPORT');
-    buffer.writeln('Business,$businessName');
-    buffer.writeln('Period,$_selectedPeriod ($fromStr to $toStr)');
-    buffer.writeln('Generated,${DateTime.now().toIso8601String()}');
+    buffer.writeln('Business,${ExportService.escapeCsvField(businessName)}');
+    buffer.writeln(
+        'Period,${ExportService.escapeCsvField('$_selectedPeriod ($fromStr to $toStr)')}');
+    buffer.writeln(
+        'Generated,${ExportService.escapeCsvField(DateTime.now().toIso8601String())}');
     buffer.writeln('');
     buffer.writeln('FINANCIAL SUMMARY (UGX)');
     buffer.writeln('Gross Revenue,${grossRevenue.toInt()}');
@@ -58,7 +61,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       buffer.writeln('OPERATING EXPENSES BREAKDOWN');
       buffer.writeln('Category,Amount (UGX)');
       expenseMap.forEach((category, amount) {
-        buffer.writeln('$category,${amount.toInt()}');
+        buffer.writeln(
+            '${ExportService.escapeCsvField(category)},${amount.toInt()}');
       });
     }
 
@@ -69,7 +73,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  void _exportPdf(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) async {
+  void _exportPdf(double grossRevenue, double cogs, double expenses,
+      double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
     final businessName = session?.businessName ?? 'DUKA';
     final fromDate = _getFromDate();
@@ -96,41 +101,56 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  void _showExportOptions(double grossRevenue, double cogs, double expenses, double netProfit, double vat, Map<String, double> expenseMap) {
+  void _showExportOptions(double grossRevenue, double cogs, double expenses,
+      double netProfit, double vat, Map<String, double> expenseMap) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Export Financial Statement', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const Text('Export Financial Statement',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFFE0F2FE),
-                  child: Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
+                  child: Icon(Icons.picture_as_pdf_rounded,
+                      color: Color(0xFF0284C7)),
                 ),
-                title: const Text('Export as PDF Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text('Official A4 printable statement with tables & header', style: TextStyle(fontSize: 12)),
+                title: const Text('Export as PDF Document',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text(
+                    'Official A4 printable statement with tables & header',
+                    style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _exportPdf(grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
+                  _exportPdf(
+                      grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
                 },
               ),
               const Divider(),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFFDCFCE7),
-                  child: Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A)),
+                  child:
+                      Icon(Icons.table_chart_rounded, color: Color(0xFF16A34A)),
                 ),
-                title: const Text('Export as CSV Spreadsheet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text('Excel / Google Sheets compatible data file', style: TextStyle(fontSize: 12)),
+                title: const Text('Export as CSV Spreadsheet',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text(
+                    'Excel / Google Sheets compatible data file',
+                    style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _exportCSV(grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
+                  _exportCSV(
+                      grossRevenue, cogs, expenses, netProfit, vat, expenseMap);
                 },
               ),
             ],
@@ -157,12 +177,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final grossProfit = grossRevenue - costOfGoodsSold;
     final operatingExpenses = db.expensesInRange(fromDate, toDate);
     final netProfit = grossProfit - operatingExpenses;
-    final profitMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0.0;
+    final profitMargin =
+        grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0.0;
     final vatCollected = db.taxInRange(fromDate, toDate);
 
     // 7-day trend data
     final dailyRevenues = db.dailyRevenueLastDays(7);
-    final maxRevenue = dailyRevenues.fold<double>(100000, (m, r) => r > m ? r : m);
+    final maxRevenue =
+        dailyRevenues.fold<double>(100000, (m, r) => r > m ? r : m);
 
     // Expense breakdown by category
     final expenseMap = db.expensesByCategory(fromDate, toDate);
@@ -170,14 +192,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final categories = ['Today', 'This Week', 'This Month', 'This Quarter'];
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(ref.tr('reports_title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download_rounded),
             tooltip: 'Export Statement (PDF / CSV)',
-            onPressed: () => _showExportOptions(grossRevenue, costOfGoodsSold, operatingExpenses, netProfit, vatCollected, expenseMap),
+            onPressed: () => _showExportOptions(grossRevenue, costOfGoodsSold,
+                operatingExpenses, netProfit, vatCollected, expenseMap),
           ),
         ],
       ),
@@ -197,15 +221,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       p,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain),
+                        fontWeight:
+                            isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.darkTextMain
+                                : AppColors.textMain),
                       ),
                     ),
                     selected: isSelected,
                     selectedColor: AppColors.primaryForest,
-                    backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-                    side: BorderSide(color: isSelected ? AppColors.primaryForest : (isDark ? AppColors.darkBorder : AppColors.borderLight)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    backgroundColor:
+                        isDark ? AppColors.darkSurface : Colors.white,
+                    side: BorderSide(
+                        color: isSelected
+                            ? AppColors.primaryForest
+                            : (isDark
+                                ? AppColors.darkBorder
+                                : AppColors.borderLight)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     onSelected: (_) => setState(() => _selectedPeriod = p),
                   ),
                 );
@@ -220,7 +256,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+              border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.borderLight),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -251,7 +288,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     children: [
                       const Text(
                         'Net Profitability',
-                        style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -259,7 +299,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          color: netProfit >= 0 ? AppColors.primaryForest : AppColors.danger,
+                          color: netProfit >= 0
+                              ? AppColors.primaryForest
+                              : AppColors.danger,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -267,9 +309,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       Row(
                         children: [
                           Icon(
-                            profitMargin >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                            profitMargin >= 0
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
                             size: 16,
-                            color: profitMargin >= 0 ? AppColors.success : AppColors.danger,
+                            color: profitMargin >= 0
+                                ? AppColors.success
+                                : AppColors.danger,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -277,7 +323,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: profitMargin >= 0 ? AppColors.success : AppColors.danger,
+                              color: profitMargin >= 0
+                                  ? AppColors.success
+                                  : AppColors.danger,
                             ),
                           ),
                         ],
@@ -296,7 +344,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+              border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,9 +355,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   children: [
                     Text(
                       '7-Day Revenue Trend',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                     ),
-                    Icon(Icons.bar_chart_rounded, size: 20, color: AppColors.primaryForest),
+                    Icon(Icons.bar_chart_rounded,
+                        size: 20, color: AppColors.primaryForest),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -322,27 +373,45 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             return BarTooltipItem(
                               CurrencyFormatter.format(rod.toY),
-                              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                              const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
                             );
                           },
                         ),
                       ),
                       titlesData: FlTitlesData(
                         show: true,
-                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
                             getTitlesWidget: (val, meta) {
                               final now = DateTime.now();
-                              final target = now.subtract(Duration(days: 6 - val.toInt()));
-                              const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                              final target =
+                                  now.subtract(Duration(days: 6 - val.toInt()));
+                              const weekdays = [
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat',
+                                'Sun'
+                              ];
                               final dayName = weekdays[target.weekday - 1];
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
-                                child: Text(dayName, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                child: Text(dayName,
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textMuted)),
                               );
                             },
                           ),
@@ -356,9 +425,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           barRods: [
                             BarChartRodData(
                               toY: dailyRevenues[i],
-                              color: i == 6 ? AppColors.emeraldNeon : AppColors.primaryForest,
+                              color: i == 6
+                                  ? AppColors.emeraldNeon
+                                  : AppColors.primaryForest,
                               width: 18,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(6)),
                             ),
                           ],
                         );
@@ -419,7 +491,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+                border: Border.all(
+                    color:
+                        isDark ? AppColors.darkBorder : AppColors.borderLight),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +504,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   ),
                   const SizedBox(height: 12),
                   ...expenseMap.entries.map((entry) {
-                    final percentage = operatingExpenses > 0 ? (entry.value / operatingExpenses) * 100 : 0;
+                    final percentage = operatingExpenses > 0
+                        ? (entry.value / operatingExpenses) * 100
+                        : 0;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
@@ -440,10 +516,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(entry.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    Text(CurrencyFormatter.format(entry.value), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                                    Text(entry.key,
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold)),
+                                    Text(CurrencyFormatter.format(entry.value),
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w900)),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
@@ -473,7 +556,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+              border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,20 +570,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryForest.withValues(alpha: 0.1),
+                            color:
+                                AppColors.primaryForest.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.account_balance_rounded, color: AppColors.primaryForest, size: 18),
+                          child: const Icon(Icons.account_balance_rounded,
+                              color: AppColors.primaryForest, size: 18),
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           'URA Tax Summary (18% VAT)',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 13),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(6),
@@ -507,7 +595,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       ),
                       child: const Text(
                         'EFRIS Ready',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.success),
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.success),
                       ),
                     ),
                   ],
@@ -516,10 +607,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('VAT Collected on Sales (18%):', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    const Text('VAT Collected on Sales (18%):',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textMuted)),
                     Text(
                       CurrencyFormatter.format(vatCollected),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primaryForest),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primaryForest),
                     ),
                   ],
                 ),
@@ -534,7 +630,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+              border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.borderLight),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,21 +644,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                            color:
+                                const Color(0xFF0284C7).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.badge_rounded, color: Color(0xFF0284C7), size: 18),
+                          child: const Icon(Icons.badge_rounded,
+                              color: Color(0xFF0284C7), size: 18),
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           'Staff Performance Tracking',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 13),
                         ),
                       ],
                     ),
                     Text(
                       _selectedPeriod,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -572,7 +675,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     return [
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text('No cashier transactions recorded in this period.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                        child: Text(
+                            'No cashier transactions recorded in this period.',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textMuted)),
                       )
                     ];
                   }
@@ -581,7 +687,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     final total = staff['totalSales'] as double;
                     final count = staff['count'] as int;
                     final avgTicket = count > 0 ? (total / count) : 0.0;
-                    final share = grossRevenue > 0 ? (total / grossRevenue) * 100 : 0.0;
+                    final share =
+                        grossRevenue > 0 ? (total / grossRevenue) * 100 : 0.0;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -591,10 +698,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13)),
                               Text(
                                 CurrencyFormatter.format(total),
-                                style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryForest, fontSize: 13),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.primaryForest,
+                                    fontSize: 13),
                               ),
                             ],
                           ),
@@ -602,8 +715,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('$count transactions · Avg ticket: ${CurrencyFormatter.format(avgTicket)}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                              Text('${share.toStringAsFixed(1)}% of revenue', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                              Text(
+                                  '$count transactions · Avg ticket: ${CurrencyFormatter.format(avgTicket)}',
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted)),
+                              Text('${share.toStringAsFixed(1)}% of revenue',
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0284C7))),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -611,8 +732,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             borderRadius: BorderRadius.circular(4),
                             child: LinearProgressIndicator(
                               value: (share / 100).clamp(0.0, 1.0),
-                              backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0284C7)),
+                              backgroundColor: isDark
+                                  ? Colors.white10
+                                  : const Color(0xFFE2E8F0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF0284C7)),
                               minHeight: 6,
                             ),
                           ),
@@ -633,10 +757,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryForest,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               icon: const Icon(Icons.assessment_rounded, color: Colors.white),
-              label: const Text('Open Daily EOD Close-Day Summary', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+              label: const Text('Open Daily EOD Close-Day Summary',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w900)),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -662,7 +789,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderLight),
+        border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,7 +803,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -685,7 +816,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color),
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w900, color: color),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

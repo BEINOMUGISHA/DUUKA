@@ -27,17 +27,23 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
     final buffer = StringBuffer();
     buffer.writeln('DUKA SALES LOG EXPORT');
-    buffer.writeln('Business,$bName');
-    buffer.writeln('Filter,$_selectedFilter');
-    buffer.writeln('Export Date,${DateTime.now().toIso8601String()}');
+    buffer.writeln('Business,${ExportService.escapeCsvField(bName)}');
+    buffer.writeln('Filter,${ExportService.escapeCsvField(_selectedFilter)}');
+    buffer.writeln(
+        'Export Date,${ExportService.escapeCsvField(DateTime.now().toIso8601String())}');
     buffer.writeln('');
-    buffer.writeln('Sale Number,Date,Customer,Payment Method,Status,Subtotal,Tax,Discount,Total,Paid,Balance Due');
+    buffer.writeln(
+        'Sale Number,Date,Customer,Payment Method,Status,Subtotal,Tax,Discount,Total,Paid,Balance Due');
 
     for (final s in salesList) {
-      final dateStr = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp).toLocal().toString().substring(0, 16);
-      final cust = (s.customerName ?? 'Walk-in').replaceAll(',', ' ');
+      final dateStr = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp)
+          .toLocal()
+          .toString()
+          .substring(0, 16);
+      final cust = s.customerName ?? 'Walk-in';
       final status = s.isVoided ? 'VOIDED' : s.paymentStatus.toUpperCase();
-      buffer.writeln('${s.saleNumber},$dateStr,$cust,${s.paymentMethod},$status,${s.subtotalAmount.toInt()},${s.taxAmount.toInt()},${s.discountAmount.toInt()},${s.totalAmount.toInt()},${s.paidAmount.toInt()},${s.dueAmount.toInt()}');
+      buffer.writeln(
+          '${ExportService.escapeCsvField(s.saleNumber)},${ExportService.escapeCsvField(dateStr)},${ExportService.escapeCsvField(cust)},${ExportService.escapeCsvField(s.paymentMethod)},${ExportService.escapeCsvField(status)},${s.subtotalAmount.toInt()},${s.taxAmount.toInt()},${s.discountAmount.toInt()},${s.totalAmount.toInt()},${s.paidAmount.toInt()},${s.dueAmount.toInt()}');
     }
 
     await ExportService.exportCsv(
@@ -51,7 +57,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final session = ref.read(authProvider);
     if (session?.canVoidSale != true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only the business owner can void sales.')),
+        const SnackBar(
+            content: Text('Only the business owner can void sales.')),
       );
       return;
     }
@@ -66,7 +73,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('This will cancel ${sale.saleNumber} (${CurrencyFormatter.format(sale.totalAmount)}) and RESTORE the stock counts to inventory.'),
+            Text(
+                'This will cancel ${sale.saleNumber} (${CurrencyFormatter.format(sale.totalAmount)}) and RESTORE the stock counts to inventory.'),
             const SizedBox(height: 14),
             TextField(
               controller: pinCtrl,
@@ -81,7 +89,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () {
@@ -96,10 +105,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               ref.read(salesProvider.notifier).voidSale(sale.id);
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Sale ${sale.saleNumber} has been voided. Stock restored.')),
+                SnackBar(
+                    content: Text(
+                        'Sale ${sale.saleNumber} has been voided. Stock restored.')),
               );
             },
-            child: const Text('Void Sale', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Void Sale',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -121,7 +134,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           currentStock: 10,
           unit: 'pcs',
         );
-        return CartItem(product: posItem, quantity: (item['quantity'] as num?)?.toInt() ?? 1);
+        return CartItem(
+            product: posItem,
+            quantity: (item['quantity'] as num?)?.toInt() ?? 1);
       }).toList();
     } catch (_) {}
 
@@ -150,13 +165,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
-    final weekStart = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+    final todayStart =
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final weekStart =
+        now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
     final monthStart = DateTime(now.year, now.month, 1).millisecondsSinceEpoch;
 
     final filtered = sales.where((s) {
-      final matchesSearch = s.saleNumber.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (s.customerName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      final matchesSearch = s.saleNumber
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          (s.customerName?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
       if (!matchesSearch) return false;
 
       switch (_selectedFilter) {
@@ -173,10 +193,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       }
     }).toList();
 
-    final totalVolume = filtered.where((s) => !s.isVoided).fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final totalVolume = filtered
+        .where((s) => !s.isVoided)
+        .fold<double>(0, (sum, s) => sum + s.totalAmount);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Sales & Audit Log'),
         actions: [
@@ -205,24 +228,34 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                   children: [
                     const Text(
                       'Total Sales Volume',
-                      style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyFormatter.format(totalVolume),
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${filtered.length} Sales',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13),
                   ),
                 ),
               ],
@@ -237,7 +270,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 hintText: 'Search by receipt number or customer...',
                 prefixIcon: Icon(Icons.search_rounded, size: 20),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
@@ -248,15 +282,26 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: Row(
-              children: ['All', 'Today', 'This Week', 'This Month', 'Voided'].map((f) {
+              children: ['All', 'Today', 'This Week', 'This Month', 'Voided']
+                  .map((f) {
                 final isSelected = _selectedFilter == f;
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(f, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600)),
+                    label: Text(f,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected
+                                ? FontWeight.w900
+                                : FontWeight.w600)),
                     selected: isSelected,
                     selectedColor: AppColors.primaryForest,
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain)),
+                    labelStyle: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.darkTextMain
+                                : AppColors.textMain)),
                     onSelected: (_) => setState(() => _selectedFilter = f),
                   ),
                 );
@@ -273,11 +318,16 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.receipt_long_outlined, size: 48, color: AppColors.textMuted),
+                        const Icon(Icons.receipt_long_outlined,
+                            size: 48, color: AppColors.textMuted),
                         const SizedBox(height: 8),
                         Text(
-                          sales.isEmpty ? 'No sales recorded yet' : 'No sales matching criteria',
-                          style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                          sales.isEmpty
+                              ? 'No sales recorded yet'
+                              : 'No sales matching criteria',
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -287,24 +337,37 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, index) {
                       final sale = filtered[index];
-                      final date = DateTime.fromMillisecondsSinceEpoch(sale.localTimestamp);
-                      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}/${date.year}';
+                      final date = DateTime.fromMillisecondsSinceEpoch(
+                          sale.localTimestamp);
+                      final timeStr =
+                          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}/${date.year}';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         child: ExpansionTile(
                           shape: const Border(),
                           collapsedShape: const Border(),
                           leading: CircleAvatar(
                             backgroundColor: sale.isVoided
                                 ? Colors.red.shade50
-                                : (sale.isCredit ? AppColors.creditAmber.withValues(alpha: 0.15) : AppColors.primaryForest.withValues(alpha: 0.1)),
+                                : (sale.isCredit
+                                    ? AppColors.creditAmber
+                                        .withValues(alpha: 0.15)
+                                    : AppColors.primaryForest
+                                        .withValues(alpha: 0.1)),
                             child: Icon(
                               sale.isVoided
                                   ? Icons.cancel_rounded
-                                  : (sale.isCredit ? Icons.schedule_rounded : Icons.check_circle_rounded),
-                              color: sale.isVoided ? AppColors.danger : (sale.isCredit ? AppColors.creditAmber : AppColors.primaryForest),
+                                  : (sale.isCredit
+                                      ? Icons.schedule_rounded
+                                      : Icons.check_circle_rounded),
+                              color: sale.isVoided
+                                  ? AppColors.danger
+                                  : (sale.isCredit
+                                      ? AppColors.creditAmber
+                                      : AppColors.primaryForest),
                               size: 20,
                             ),
                           ),
@@ -316,7 +379,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 13,
-                                  decoration: sale.isVoided ? TextDecoration.lineThrough : null,
+                                  decoration: sale.isVoided
+                                      ? TextDecoration.lineThrough
+                                      : null,
                                 ),
                               ),
                               Text(
@@ -324,7 +389,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 14,
-                                  color: sale.isVoided ? AppColors.danger : AppColors.primaryForest,
+                                  color: sale.isVoided
+                                      ? AppColors.danger
+                                      : AppColors.primaryForest,
                                 ),
                               ),
                             ],
@@ -334,11 +401,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                             children: [
                               Text(
                                 sale.customerName ?? 'Walk-in Customer',
-                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 timeStr,
-                                style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                style: const TextStyle(
+                                    fontSize: 10, color: AppColors.textMuted),
                               ),
                             ],
                           ),
@@ -353,21 +424,34 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                                   Builder(
                                     builder: (context) {
                                       try {
-                                        final items = jsonDecode(sale.itemsJson) as List<dynamic>;
+                                        final items = jsonDecode(sale.itemsJson)
+                                            as List<dynamic>;
                                         return Column(
                                           children: items.map((it) {
                                             return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 2),
                                               child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   Text(
                                                     '${it['quantity']}x ${it['productName']}',
-                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600),
                                                   ),
                                                   Text(
-                                                    CurrencyFormatter.format((it['subtotal'] as num).toDouble()),
-                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                    CurrencyFormatter.format(
+                                                        (it['subtotal'] as num)
+                                                            .toDouble()),
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold),
                                                   ),
                                                 ],
                                               ),
@@ -375,22 +459,30 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                                           }).toList(),
                                         );
                                       } catch (_) {
-                                        return const Text('Items detail unavailable');
+                                        return const Text(
+                                            'Items detail unavailable');
                                       }
                                     },
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         'Payment: ${sale.paymentMethod.toUpperCase()}',
-                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textMuted),
                                       ),
                                       if (sale.efrisFiscalCode != null)
                                         Text(
                                           'EFRIS: ${sale.efrisFiscalCode}',
-                                          style: const TextStyle(fontSize: 11, color: AppColors.primaryForest, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.primaryForest,
+                                              fontWeight: FontWeight.bold),
                                         ),
                                     ],
                                   ),
@@ -400,16 +492,28 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                                     children: [
                                       TextButton.icon(
                                         onPressed: () => _reopenReceipt(sale),
-                                        icon: const Icon(Icons.receipt_rounded, size: 16),
-                                        label: const Text('View Receipt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                        icon: const Icon(Icons.receipt_rounded,
+                                            size: 16),
+                                        label: const Text('View Receipt',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold)),
                                       ),
                                       if (!sale.isVoided) ...[
                                         const SizedBox(width: 8),
                                         OutlinedButton.icon(
-                                          style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
-                                          onPressed: () => _confirmVoidSale(sale),
-                                          icon: const Icon(Icons.cancel_outlined, size: 16),
-                                          label: const Text('Void Sale', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                          style: OutlinedButton.styleFrom(
+                                              foregroundColor:
+                                                  AppColors.danger),
+                                          onPressed: () =>
+                                              _confirmVoidSale(sale),
+                                          icon: const Icon(
+                                              Icons.cancel_outlined,
+                                              size: 16),
+                                          label: const Text('Void Sale',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                       ],
                                     ],
