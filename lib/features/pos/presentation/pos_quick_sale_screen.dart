@@ -274,13 +274,15 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
       return matchesCat && matchesSearch;
     }).toList();
 
+    final categoryNames = <String>{
+      ...posProducts.map((product) => product.category.trim()),
+    }..removeWhere((category) => category.isEmpty);
     final categories = [
       {'name': 'All', 'icon': '✨'},
-      {'name': 'Agro', 'icon': '🌾'},
-      {'name': 'Seeds', 'icon': '🌱'},
-      {'name': 'Chemicals', 'icon': '🧪'},
-      {'name': 'Hardware', 'icon': '🧱'},
-      {'name': 'Equipment', 'icon': '⚙️'},
+      ...categoryNames.map((category) => {
+            'name': category,
+            'icon': _categoryIcon(category),
+          }),
     ];
 
     return Scaffold(
@@ -767,6 +769,32 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
             ).animate().slideY(begin: 0.5, end: 0, duration: 250.ms).fadeIn()
           : null,
     );
+  }
+
+  String _categoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'agro':
+        return '🌾';
+      case 'seeds':
+        return '🌱';
+      case 'chemicals':
+        return '🧪';
+      case 'hardware':
+        return '🧱';
+      case 'equipment':
+        return '⚙️';
+      case 'food':
+      case 'beverages':
+        return '🍽️';
+      case 'medical':
+      case 'pharmacy':
+        return '🩺';
+      case 'beauty':
+      case 'salon':
+        return '✨';
+      default:
+        return '📦';
+    }
   }
 }
 

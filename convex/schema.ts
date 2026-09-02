@@ -5,6 +5,7 @@ export default defineSchema({
   // 1. Multi-tenant Businesses
   businesses: defineTable({
     name: v.string(),
+    businessVertical: v.optional(v.string()),
     legalName: v.optional(v.string()),
     ownerId: v.optional(v.string()),
     phone: v.string(),

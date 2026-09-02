@@ -17,6 +17,7 @@ class UserSession {
   final String role; // "owner", "manager", "staff"
   final List<String> permissions;
   final String businessName;
+  final String businessVertical;
   final String currency;
   final String subscriptionTier;
   final bool isEfrisEnrolled;
@@ -33,6 +34,7 @@ class UserSession {
     required this.role,
     required this.permissions,
     required this.businessName,
+    this.businessVertical = 'retail',
     required this.currency,
     required this.subscriptionTier,
     required this.isEfrisEnrolled,
@@ -59,6 +61,7 @@ class UserSession {
     String? role,
     List<String>? permissions,
     String? businessName,
+    String? businessVertical,
     String? currency,
     String? subscriptionTier,
     bool? isEfrisEnrolled,
@@ -75,6 +78,7 @@ class UserSession {
       role: role ?? this.role,
       permissions: permissions ?? this.permissions,
       businessName: businessName ?? this.businessName,
+      businessVertical: businessVertical ?? this.businessVertical,
       currency: currency ?? this.currency,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       isEfrisEnrolled: isEfrisEnrolled ?? this.isEfrisEnrolled,
@@ -163,6 +167,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
               .map((e) => e.toString())
               .toList(),
           businessName: res['businessName'] as String,
+          businessVertical: res['businessVertical'] as String? ?? 'retail',
           currency: res['currency'] as String? ?? 'UGX',
           subscriptionTier: res['subscriptionTier'] as String? ?? 'free',
           isEfrisEnrolled: res['isEfrisEnrolled'] as bool? ?? false,
@@ -213,6 +218,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
     required String pin,
     String? tin,
     required String deviceId,
+    String businessVertical = 'retail',
   }) async {
     if (pin.length != 4) {
       throw Exception('A 4-digit security PIN is required.');
@@ -226,6 +232,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
         'pin': pin,
         'tin': tin,
         'currency': 'UGX',
+        'businessVertical': businessVertical,
       });
 
       if (res != null && res is Map) {
@@ -245,6 +252,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
             'can_approve_credit'
           ],
           businessName: businessName,
+          businessVertical: businessVertical,
           currency: 'UGX',
           subscriptionTier: 'pro',
           isEfrisEnrolled: tin != null && tin.isNotEmpty,
@@ -276,6 +284,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
         'can_approve_credit'
       ],
       businessName: businessName,
+      businessVertical: businessVertical,
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: tin != null && tin.isNotEmpty,
@@ -291,6 +300,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
     String? fullName,
     String? phone,
     String? tin,
+    String? businessVertical,
   }) {
     if (state == null) return;
 
@@ -299,6 +309,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       fullName: fullName ?? state!.fullName,
       phone: phone ?? state!.phone,
       tin: tin ?? state!.tin,
+      businessVertical: businessVertical ?? state!.businessVertical,
     );
   }
 

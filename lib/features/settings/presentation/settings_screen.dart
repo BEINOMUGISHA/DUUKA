@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/constants/business_verticals.dart';
 import '../../../core/services/app_update_service.dart';
-import '../../../core/database/app_database.dart';
 import '../../branches/presentation/branches_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -28,6 +28,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ownerNameCtrl = TextEditingController(text: session?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: session?.phone ?? '');
     final tinCtrl = TextEditingController(text: session?.tin ?? '');
+    var selectedVertical = session?.businessVertical ?? 'retail';
 
     showDialog(
       context: context,
@@ -74,6 +75,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     labelText: 'URA Tax TIN',
                     prefixIcon: Icon(Icons.account_balance)),
               ),
+              const SizedBox(height: 10),
+              StatefulBuilder(
+                builder: (context, setDialogState) =>
+                    DropdownButtonFormField<String>(
+                  initialValue: selectedVertical,
+                  decoration: const InputDecoration(
+                    labelText: 'Business type',
+                    prefixIcon: Icon(Icons.category_rounded),
+                  ),
+                  items: businessVerticals
+                      .map((vertical) => DropdownMenuItem(
+                            value: vertical.id,
+                            child: Text(vertical.name),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() => selectedVertical = value);
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -90,6 +113,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     tin: tinCtrl.text.trim().isNotEmpty
                         ? tinCtrl.text.trim()
                         : null,
+                    businessVertical: selectedVertical,
                   );
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(

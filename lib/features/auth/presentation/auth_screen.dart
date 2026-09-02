@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/constants/business_verticals.dart';
 import 'auth_capital_flow_background.dart';
 
 class _BenefitCue extends StatelessWidget {
@@ -63,6 +64,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _obscurePin = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String _businessVertical = 'retail';
 
   @override
   void dispose() {
@@ -143,6 +145,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               tin: _tinController.text.trim().isNotEmpty
                   ? _tinController.text.trim()
                   : null,
+              businessVertical: _businessVertical,
               deviceId: 'device-sme-001',
             );
       } else {
@@ -456,6 +459,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     prefixIcon:
                                         Icon(Icons.account_balance_rounded),
                                   ),
+                                ),
+                                const SizedBox(height: 12),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _businessVertical,
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'What kind of business do you run?',
+                                    prefixIcon: Icon(Icons.category_rounded),
+                                  ),
+                                  items: businessVerticals
+                                      .map((vertical) => DropdownMenuItem(
+                                            value: vertical.id,
+                                            child: Text(vertical.name),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() => _businessVertical = value);
+                                    }
+                                  },
                                 ),
                                 const SizedBox(height: 12),
                               ],

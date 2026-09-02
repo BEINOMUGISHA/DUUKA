@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/constants/business_verticals.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/animated_counter.dart';
 import '../../expenses/presentation/expenses_screen.dart';
@@ -27,6 +28,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authProvider);
+    final vertical = businessVerticalFor(session?.businessVertical ?? 'retail');
     final lang = ref.watch(languageProvider);
     final syncEngine = ref.watch(syncEngineProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -37,60 +39,140 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final debtors = ref.watch(debtorsProvider);
 
     final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final todayStart =
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
 
-    final totalRevenue = sales.where((s) => !s.isVoided).fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final totalRevenue = sales
+        .where((s) => !s.isVoided)
+        .fold<double>(0, (sum, s) => sum + s.totalAmount);
     final totalExpenses = expenses.fold<double>(0, (sum, e) => sum + e.amount);
     final netBalance = totalRevenue - totalExpenses;
 
-    final todaySales = sales.where((s) => !s.isVoided && s.localTimestamp >= todayStart).fold<double>(0, (sum, s) => sum + s.totalAmount);
-    final todayExpenses = expenses.where((e) => e.date >= todayStart).fold<double>(0, (sum, e) => sum + e.amount);
+    final todaySales = sales
+        .where((s) => !s.isVoided && s.localTimestamp >= todayStart)
+        .fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final todayExpenses = expenses
+        .where((e) => e.date >= todayStart)
+        .fold<double>(0, (sum, e) => sum + e.amount);
     final todayProfit = todaySales - todayExpenses;
 
-    final lowStockCount = products.where((p) => p.currentStock <= p.minStockLevel).length;
-    final totalOverdueAmount = debtors.where((d) => d.balanceOwed > 0).fold<double>(0, (sum, d) => sum + d.balanceOwed);
+    final lowStockCount =
+        products.where((p) => p.currentStock <= p.minStockLevel).length;
+    final totalOverdueAmount = debtors
+        .where((d) => d.balanceOwed > 0)
+        .fold<double>(0, (sum, d) => sum + d.balanceOwed);
     final overdueCount = debtors.where((d) => d.balanceOwed > 0).length;
-
-    // Velocity-based stock burn (products that will run out in <= 7 days based on 7-day sales history)
-    final sevenDaysAgo = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-    final recentSales = sales.where((s) => !s.isVoided && s.localTimestamp >= sevenDaysAgo);
-    final productQtySold7d = <String, double>{};
-    for (final s in recentSales) {
-      // itemsJson parse or sales items
-      // We can approximate or use product counts
-      try {
-        final items = (s.itemsJson.isNotEmpty) ? s.itemsJson : '[]';
-        // count per product
-      } catch (_) {}
-    }
 
     // --- BUSINESS HEALTH SCORE CALCULATION (0 - 100) ---
     // 1. Profit Margin (30 pts max)
     final profitMargin = totalRevenue > 0 ? (netBalance / totalRevenue) : 0.0;
-    final marginScore = profitMargin >= 0.25 ? 30 : profitMargin >= 0.15 ? 22 : profitMargin > 0 ? 12 : 0;
+    final marginScore = profitMargin >= 0.25
+        ? 30
+        : profitMargin >= 0.15
+            ? 22
+            : profitMargin > 0
+                ? 12
+                : 0;
 
     // 2. Stock Health (25 pts max)
-    final stockOkRatio = products.isNotEmpty ? ((products.length - lowStockCount) / products.length) : 1.0;
+    final stockOkRatio = products.isNotEmpty
+        ? ((products.length - lowStockCount) / products.length)
+        : 1.0;
     final stockScore = (stockOkRatio * 25).round();
 
     // 3. Debt Risk Ratio (25 pts max)
-    final debtRatio = totalRevenue > 0 ? (totalOverdueAmount / totalRevenue) : (totalOverdueAmount > 0 ? 1.0 : 0.0);
-    final debtScore = debtRatio == 0 ? 25 : debtRatio <= 0.1 ? 20 : debtRatio <= 0.25 ? 12 : 5;
+    final debtRatio = totalRevenue > 0
+        ? (totalOverdueAmount / totalRevenue)
+        : (totalOverdueAmount > 0 ? 1.0 : 0.0);
+    final debtScore = debtRatio == 0
+        ? 25
+        : debtRatio <= 0.1
+            ? 20
+            : debtRatio <= 0.25
+                ? 12
+                : 5;
 
     // 4. Sales Activity (20 pts max)
-    final activityScore = todaySales > 0 ? 20 : sales.isNotEmpty ? 10 : 0;
+    final activityScore = todaySales > 0
+        ? 20
+        : sales.isNotEmpty
+            ? 10
+            : 0;
 
-    final healthScore = (marginScore + stockScore + debtScore + activityScore).clamp(0, 100);
+    final healthScore =
+        (marginScore + stockScore + debtScore + activityScore).clamp(0, 100);
     final (healthLabel, healthColor, healthDesc) = healthScore >= 80
-        ? ('Excellent', const Color(0xFF10B981), 'High profitability & healthy stock levels')
+        ? (
+            'Excellent',
+            const Color(0xFF10B981),
+            'High profitability & healthy stock levels'
+          )
         : healthScore >= 60
-            ? ('Good', const Color(0xFF0F766E), 'Stable cash flow, monitor low stock')
+            ? (
+                'Good',
+                const Color(0xFF0F766E),
+                'Stable cash flow, monitor low stock'
+              )
             : healthScore >= 40
-                ? ('Fair', const Color(0xFFF59E0B), 'Collect overdue credit to improve cash')
-                : ('Needs Attention', const Color(0xFFEF4444), 'High credit risk or low stock balance');
+                ? (
+                    'Fair',
+                    const Color(0xFFF59E0B),
+                    'Collect overdue credit to improve cash'
+                  )
+                : (
+                    'Needs Attention',
+                    const Color(0xFFEF4444),
+                    'High credit risk or low stock balance'
+                  );
+
+    final attentionActions = <Map<String, dynamic>>[];
+    if (lowStockCount > 0) {
+      attentionActions.add({
+        'title':
+            '$lowStockCount ${vertical.stockLabel.toLowerCase()} alert${lowStockCount == 1 ? '' : 's'}',
+        'subtitle': 'Review and reorder',
+        'icon': Icons.inventory_2_rounded,
+        'color': const Color(0xFFF59E0B),
+        'onTap': () => widget.onNavigateTab(2),
+      });
+    }
+    if (totalOverdueAmount > 0) {
+      attentionActions.add({
+        'title': 'Collect overdue balance',
+        'subtitle': CurrencyFormatter.format(totalOverdueAmount),
+        'icon': Icons.payments_rounded,
+        'color': const Color(0xFF0F766E),
+        'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
+            ),
+      });
+    }
+    if ((syncEngine?.pendingCount ?? 0) > 0) {
+      attentionActions.add({
+        'title': 'Finish syncing records',
+        'subtitle': '${syncEngine!.pendingCount} waiting to upload',
+        'icon': Icons.cloud_upload_rounded,
+        'color': const Color(0xFF2563EB),
+        'onTap': () {
+          syncEngine.syncNow();
+        },
+      });
+    }
+    if (attentionActions.isEmpty) {
+      attentionActions.add({
+        'title': 'You are ready for today',
+        'subtitle': 'Open ${vertical.salesLabel.toLowerCase()} to get started',
+        'icon': Icons.check_circle_rounded,
+        'color': const Color(0xFF059669),
+        'onTap': () => widget.onNavigateTab(1),
+      });
+    }
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9), // surface-1
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : const Color(0xFFF1F5F9), // surface-1
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -101,10 +183,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : Colors.white, // surface-2
+                color:
+                    isDark ? AppColors.darkSurface : Colors.white, // surface-2
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
                   width: 0.5,
                 ),
               ),
@@ -125,7 +209,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                color: isDark
+                                    ? AppColors.darkBorder
+                                    : const Color(0xFFE2E8F0),
                                 width: 0.5,
                               ),
                             ),
@@ -145,20 +231,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     session?.businessName ?? 'Kampala Ventures',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
+                                      color: isDark
+                                          ? AppColors.darkTextMuted
+                                          : const Color(0xFF64748B),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   // Live Cloud Sync Status Pill
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: (syncEngine?.isSyncing == true)
                                           ? Colors.amber.withValues(alpha: 0.15)
                                           : (syncEngine?.pendingCount ?? 0) > 0
-                                              ? Colors.orange.withValues(alpha: 0.15)
-                                              : Colors.green.withValues(alpha: 0.15),
+                                              ? Colors.orange
+                                                  .withValues(alpha: 0.15)
+                                              : Colors.green
+                                                  .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Row(
@@ -168,27 +259,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                           width: 6,
                                           height: 6,
                                           decoration: BoxDecoration(
-                                            color: (syncEngine?.isSyncing == true)
+                                            color: (syncEngine?.isSyncing ==
+                                                    true)
                                                 ? Colors.amber.shade700
-                                                : (syncEngine?.pendingCount ?? 0) > 0
+                                                : (syncEngine?.pendingCount ??
+                                                            0) >
+                                                        0
                                                     ? Colors.orange.shade700
                                                     : const Color(0xFF10B981),
                                             shape: BoxShape.circle,
                                           ),
-                                        ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(duration: 800.ms),
+                                        )
+                                            .animate(
+                                                onPlay: (c) =>
+                                                    c.repeat(reverse: true))
+                                            .scale(duration: 800.ms),
                                         const SizedBox(width: 4),
                                         Text(
                                           (syncEngine?.isSyncing == true)
                                               ? 'Syncing'
-                                              : (syncEngine?.pendingCount ?? 0) > 0
+                                              : (syncEngine?.pendingCount ??
+                                                          0) >
+                                                      0
                                                   ? '${syncEngine!.pendingCount} Pending'
                                                   : 'Cloud Synced',
                                           style: TextStyle(
                                             fontSize: 9,
                                             fontWeight: FontWeight.w700,
-                                            color: (syncEngine?.isSyncing == true)
+                                            color: (syncEngine?.isSyncing ==
+                                                    true)
                                                 ? Colors.amber.shade800
-                                                : (syncEngine?.pendingCount ?? 0) > 0
+                                                : (syncEngine?.pendingCount ??
+                                                            0) >
+                                                        0
                                                     ? Colors.orange.shade800
                                                     : const Color(0xFF10B981),
                                           ),
@@ -206,7 +309,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
+                                      color: isDark
+                                          ? AppColors.darkTextMain
+                                          : const Color(0xFF0F172A),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -226,11 +331,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           // Theme Mode Quick Toggle
                           IconButton(
                             icon: Icon(
-                              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                              isDark
+                                  ? Icons.light_mode_rounded
+                                  : Icons.dark_mode_rounded,
                               size: 20,
-                              color: isDark ? AppColors.accentGold : const Color(0xFF334155),
+                              color: isDark
+                                  ? AppColors.accentGold
+                                  : const Color(0xFF334155),
                             ),
-                            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+                            onPressed: () => ref
+                                .read(themeModeProvider.notifier)
+                                .toggleTheme(),
                             tooltip: 'Toggle Color Mode',
                           ),
 
@@ -238,28 +349,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           PopupMenuButton<String>(
                             padding: EdgeInsets.zero,
                             icon: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 5),
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                                color: isDark
+                                    ? AppColors.darkCard
+                                    : const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                  color: isDark
+                                      ? AppColors.darkBorder
+                                      : const Color(0xFFE2E8F0),
                                 ),
                               ),
                               child: Text(
-                                lang == 'lg' ? '🇺🇬 LG' : lang == 'rn' ? '🇺🇬 RN' : '🇬🇧 EN',
+                                lang == 'lg'
+                                    ? '🇺🇬 LG'
+                                    : lang == 'rn'
+                                        ? '🇺🇬 RN'
+                                        : '🇬🇧 EN',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
+                                  color: isDark
+                                      ? AppColors.darkTextMain
+                                      : const Color(0xFF334155),
                                 ),
                               ),
                             ),
-                            onSelected: (val) => ref.read(languageProvider.notifier).setLanguage(val),
+                            onSelected: (val) => ref
+                                .read(languageProvider.notifier)
+                                .setLanguage(val),
                             itemBuilder: (ctx) => const [
-                              PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
-                              PopupMenuItem(value: 'lg', child: Text('🇺🇬 Oluganda')),
-                              PopupMenuItem(value: 'rn', child: Text('🇺🇬 Orunyankore')),
+                              PopupMenuItem(
+                                  value: 'en', child: Text('🇬🇧 English')),
+                              PopupMenuItem(
+                                  value: 'lg', child: Text('🇺🇬 Oluganda')),
+                              PopupMenuItem(
+                                  value: 'rn', child: Text('🇺🇬 Orunyankore')),
                             ],
                           ),
                           const SizedBox(width: 8),
@@ -269,10 +396,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                              color: isDark
+                                  ? AppColors.darkCard
+                                  : const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                                color: isDark
+                                    ? AppColors.darkBorder
+                                    : const Color(0xFFE2E8F0),
                                 width: 0.5,
                               ),
                             ),
@@ -282,7 +413,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Icon(
                                   Icons.notifications_none_rounded,
                                   size: 19,
-                                  color: isDark ? AppColors.darkTextMain : const Color(0xFF334155),
+                                  color: isDark
+                                      ? AppColors.darkTextMain
+                                      : const Color(0xFF334155),
                                 ),
                                 Positioned(
                                   top: 8,
@@ -309,7 +442,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   // --- 2. TOTAL BALANCE HERO CARD ---
                   Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF072B1E) : AppColors.primaryForest,
+                      color: isDark
+                          ? const Color(0xFF072B1E)
+                          : AppColors.primaryForest,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -333,25 +468,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    lang == 'lg' ? 'Ssente Zonna Eziriwo' : 'Total balance',
+                                    lang == 'lg'
+                                        ? 'Ssente Zonna Eziriwo'
+                                        : 'Total balance',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.7),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.7),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   IconButton(
                                     icon: Icon(
-                                      _hideFigures ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                      color: Colors.white.withValues(alpha: 0.7),
+                                      _hideFigures
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.7),
                                       size: 17,
                                     ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
-                                    onPressed: () => setState(() => _hideFigures = !_hideFigures),
+                                    onPressed: () => setState(
+                                        () => _hideFigures = !_hideFigures),
                                   ),
                                 ],
                               ),
@@ -379,18 +522,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               Row(
                                 children: [
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Eziyingidde (Leero)' : 'Today Income',
-                                    value: _hideFigures ? '••••' : '↑ ${CurrencyFormatter.format(todaySales)}',
+                                    label: lang == 'lg'
+                                        ? 'Eziyingidde (Leero)'
+                                        : 'Today Income',
+                                    value: _hideFigures
+                                        ? '••••'
+                                        : '↑ ${CurrencyFormatter.format(todaySales)}',
                                   ),
                                   const SizedBox(width: 16),
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Ezafulumye' : 'Today Expenses',
-                                    value: _hideFigures ? '••••' : '↓ ${CurrencyFormatter.format(todayExpenses)}',
+                                    label: lang == 'lg'
+                                        ? 'Ezafulumye'
+                                        : 'Today Expenses',
+                                    value: _hideFigures
+                                        ? '••••'
+                                        : '↓ ${CurrencyFormatter.format(todayExpenses)}',
                                   ),
                                   const SizedBox(width: 16),
                                   _buildStatColumn(
-                                    label: lang == 'lg' ? 'Amagoba' : 'Today Profit',
-                                    value: _hideFigures ? '••••' : CurrencyFormatter.format(todayProfit),
+                                    label: lang == 'lg'
+                                        ? 'Amagoba'
+                                        : 'Today Profit',
+                                    value: _hideFigures
+                                        ? '••••'
+                                        : CurrencyFormatter.format(todayProfit),
                                   ),
                                 ],
                               ),
@@ -398,6 +553,49 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Needs your attention',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        'Next best actions',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark
+                              ? AppColors.darkTextMuted
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 86,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: attentionActions.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final action = attentionActions[index];
+                        return _buildAttentionAction(
+                          title: action['title'] as String,
+                          subtitle: action['subtitle'] as String,
+                          icon: action['icon'] as IconData,
+                          color: action['color'] as Color,
+                          isDark: isDark,
+                          onTap: action['onTap'] as VoidCallback,
+                        );
+                      },
                     ),
                   ),
 
@@ -412,7 +610,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       _buildQuickAction(
                         icon: Icons.add_shopping_cart_rounded,
                         label: lang == 'lg' ? 'Tunda' : 'New sale',
-                        iconColor: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
+                        iconColor: isDark
+                            ? AppColors.emeraldNeon
+                            : const Color(0xFF0F766E),
                         isDark: isDark,
                         onTap: () => widget.onNavigateTab(1),
                       ),
@@ -424,7 +624,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const ExpensesScreen()),
+                            MaterialPageRoute(
+                                builder: (ctx) => const ExpensesScreen()),
                           );
                         },
                       ),
@@ -443,7 +644,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const ProductionScreen()),
+                            MaterialPageRoute(
+                                builder: (ctx) => const ProductionScreen()),
                           );
                         },
                       ),
@@ -455,7 +657,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const BranchesScreen()),
+                            MaterialPageRoute(
+                                builder: (ctx) => const BranchesScreen()),
                           );
                         },
                       ),
@@ -467,7 +670,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const EodSummaryScreen()),
+                            MaterialPageRoute(
+                                builder: (ctx) => const EodSummaryScreen()),
                           );
                         },
                       ),
@@ -480,7 +684,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                      color:
+                          isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: healthColor.withValues(alpha: 0.3),
@@ -501,25 +706,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     color: healthColor.withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.analytics_rounded, size: 16, color: healthColor),
+                                  child: Icon(Icons.analytics_rounded,
+                                      size: 16, color: healthColor),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  lang == 'lg' ? 'Endabika Y\'obusuubuzi' : 'Business Health Score',
+                                  lang == 'lg'
+                                      ? 'Endabika Y\'obusuubuzi'
+                                      : 'Business Health Score',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? AppColors.darkTextMain : const Color(0xFF1E293B),
+                                    color: isDark
+                                        ? AppColors.darkTextMain
+                                        : const Color(0xFF1E293B),
                                   ),
                                 ),
                               ],
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: healthColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: healthColor.withValues(alpha: 0.3), width: 0.5),
+                                border: Border.all(
+                                    color: healthColor.withValues(alpha: 0.3),
+                                    width: 0.5),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -548,15 +761,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(height: 10),
                         TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.0, end: healthScore / 100.0),
+                          tween: Tween<double>(
+                              begin: 0.0, end: healthScore / 100.0),
                           duration: const Duration(milliseconds: 900),
                           curve: Curves.easeOutCubic,
                           builder: (context, val, _) => ClipRRect(
                             borderRadius: BorderRadius.circular(6),
                             child: LinearProgressIndicator(
                               value: val,
-                              backgroundColor: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                              valueColor: AlwaysStoppedAnimation<Color>(healthColor),
+                              backgroundColor: isDark
+                                  ? Colors.white10
+                                  : const Color(0xFFE2E8F0),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(healthColor),
                               minHeight: 7,
                             ),
                           ),
@@ -566,7 +783,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           healthDesc,
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
+                            color: isDark
+                                ? AppColors.darkTextMuted
+                                : const Color(0xFF64748B),
                           ),
                         ),
                       ],
@@ -584,28 +803,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF2C2005) : const Color(0xFFFEF3C7),
+                              color: isDark
+                                  ? const Color(0xFF2C2005)
+                                  : const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF59400B) : const Color(0xFFFDE68A),
+                                color: isDark
+                                    ? const Color(0xFF59400B)
+                                    : const Color(0xFFFDE68A),
                                 width: 0.8,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 11),
                             child: Row(
                               children: [
-                                const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFF59E0B)),
+                                const Icon(Icons.warning_amber_rounded,
+                                    size: 16, color: Color(0xFFF59E0B)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        lang == 'lg' ? '$lowStockCount ebiba bikendedde' : '$lowStockCount Low Stock',
+                                        lang == 'lg'
+                                            ? '$lowStockCount ebiba bikendedde'
+                                            : '$lowStockCount Low Stock',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                                          color: isDark
+                                              ? const Color(0xFFFDE68A)
+                                              : const Color(0xFFB45309),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -615,7 +845,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         'Re-order required',
                                         style: TextStyle(
                                           fontSize: 9.5,
-                                          color: isDark ? const Color(0xFFFDE68A).withValues(alpha: 0.7) : const Color(0xFFB45309).withValues(alpha: 0.8),
+                                          color: isDark
+                                              ? const Color(0xFFFDE68A)
+                                                  .withValues(alpha: 0.7)
+                                              : const Color(0xFFB45309)
+                                                  .withValues(alpha: 0.8),
                                         ),
                                       ),
                                     ],
@@ -632,36 +866,47 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (ctx) => const DebtorBookScreen()),
+                              MaterialPageRoute(
+                                  builder: (ctx) => const DebtorBookScreen()),
                             );
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF042621) : const Color(0xFFCCFBF1),
+                              color: isDark
+                                  ? const Color(0xFF042621)
+                                  : const Color(0xFFCCFBF1),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF0C4D44) : const Color(0xFF99F6E4),
+                                color: isDark
+                                    ? const Color(0xFF0C4D44)
+                                    : const Color(0xFF99F6E4),
                                 width: 0.8,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 11),
                             child: Row(
                               children: [
-                                const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF14B8A6)),
+                                const Icon(Icons.access_time_rounded,
+                                    size: 16, color: Color(0xFF14B8A6)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         totalOverdueAmount > 0
-                                            ? CurrencyFormatter.format(totalOverdueAmount)
+                                            ? CurrencyFormatter.format(
+                                                totalOverdueAmount)
                                             : '$overdueCount Debts',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: isDark ? const Color(0xFF99F6E4) : const Color(0xFF0F766E),
+                                          color: isDark
+                                              ? const Color(0xFF99F6E4)
+                                              : const Color(0xFF0F766E),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -671,7 +916,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         '$overdueCount Overdue debtor${overdueCount == 1 ? '' : 's'}',
                                         style: TextStyle(
                                           fontSize: 9.5,
-                                          color: isDark ? const Color(0xFF99F6E4).withValues(alpha: 0.7) : const Color(0xFF0F766E).withValues(alpha: 0.8),
+                                          color: isDark
+                                              ? const Color(0xFF99F6E4)
+                                                  .withValues(alpha: 0.7)
+                                              : const Color(0xFF0F766E)
+                                                  .withValues(alpha: 0.8),
                                         ),
                                       ),
                                     ],
@@ -704,7 +953,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           'View all',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
+                            color: isDark
+                                ? AppColors.emeraldNeon
+                                : const Color(0xFF0F766E),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -713,22 +964,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
+                      color:
+                          isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : const Color(0xFFE2E8F0),
                         width: 0.5,
                       ),
                     ),
                     child: Column(
                       children: [
-                        _buildTopItemRow('1', 'NPK 17:17:17 Fertilizer 50kg', '24 bags sold', 'UGX 4,440,000', isDark),
+                        _buildTopItemRow('1', 'NPK 17:17:17 Fertilizer 50kg',
+                            '24 bags sold', 'UGX 4,440,000', isDark),
                         const Divider(height: 16),
-                        _buildTopItemRow('2', 'Tororo Cement 32.5R 50kg', '18 bags sold', 'UGX 648,000', isDark),
+                        _buildTopItemRow('2', 'Tororo Cement 32.5R 50kg',
+                            '18 bags sold', 'UGX 648,000', isDark),
                         const Divider(height: 16),
-                        _buildTopItemRow('3', 'Bazooka Maize Seeds 2kg', '14 pkts sold', 'UGX 259,000', isDark),
+                        _buildTopItemRow('3', 'Bazooka Maize Seeds 2kg',
+                            '14 pkts sold', 'UGX 259,000', isDark),
                       ],
                     ),
                   ),
@@ -740,25 +998,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        lang == 'lg' ? 'Ebikolwa ebyakakolebwa' : 'Recent transactions',
+                        lang == 'lg'
+                            ? 'Ebikolwa ebyakakolebwa'
+                            : 'Recent transactions',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
+                          color: isDark
+                              ? AppColors.darkTextMain
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                       InkWell(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (ctx) => const SalesHistoryScreen()),
+                            MaterialPageRoute(
+                                builder: (ctx) => const SalesHistoryScreen()),
                           );
                         },
                         child: Text(
                           lang == 'lg' ? 'Laba byonna' : 'See all',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.emeraldNeon : const Color(0xFF0F766E),
+                            color: isDark
+                                ? AppColors.emeraldNeon
+                                : const Color(0xFF0F766E),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -774,14 +1039,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       alignment: Alignment.center,
                       child: Column(
                         children: [
-                          const Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.textMuted),
+                          const Icon(Icons.receipt_long_outlined,
+                              size: 36, color: AppColors.textMuted),
                           const SizedBox(height: 6),
-                          const Text('No sales recorded yet', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                          const Text('No sales recorded yet',
+                              style: TextStyle(
+                                  color: AppColors.textMuted, fontSize: 12)),
                           const SizedBox(height: 10),
                           ElevatedButton.icon(
                             onPressed: () => widget.onNavigateTab(1),
-                            icon: const Icon(Icons.point_of_sale_rounded, size: 16),
-                            label: const Text('Make First Sale', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            icon: const Icon(Icons.point_of_sale_rounded,
+                                size: 16),
+                            label: const Text('Make First Sale',
+                                style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -790,25 +1061,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Column(
                       children: sales.take(5).map((s) {
                         final isLast = s == sales.take(5).last;
-                        final date = DateTime.fromMillisecondsSinceEpoch(s.localTimestamp);
-                        final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${s.paymentMethod.toUpperCase()}';
+                        final date = DateTime.fromMillisecondsSinceEpoch(
+                            s.localTimestamp);
+                        final timeStr =
+                            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${s.paymentMethod.toUpperCase()}';
 
                         return _buildTransactionItem(
-                          icon: s.isCredit ? Icons.schedule_rounded : Icons.north_east_rounded,
+                          icon: s.isCredit
+                              ? Icons.schedule_rounded
+                              : Icons.north_east_rounded,
                           iconBg: s.isCredit
-                              ? (isDark ? const Color(0xFF332005) : const Color(0xFFFEF3C7))
-                              : (isDark ? const Color(0xFF052B1E) : const Color(0xFFDCFCE7)),
-                          iconColor: s.isCredit ? const Color(0xFFD97706) : const Color(0xFF22C55E),
-                          title: '${s.saleNumber} — ${s.customerName ?? 'Walk-in'}',
+                              ? (isDark
+                                  ? const Color(0xFF332005)
+                                  : const Color(0xFFFEF3C7))
+                              : (isDark
+                                  ? const Color(0xFF052B1E)
+                                  : const Color(0xFFDCFCE7)),
+                          iconColor: s.isCredit
+                              ? const Color(0xFFD97706)
+                              : const Color(0xFF22C55E),
+                          title:
+                              '${s.saleNumber} — ${s.customerName ?? 'Walk-in'}',
                           subtitle: timeStr,
                           amount: '+${CurrencyFormatter.format(s.totalAmount)}',
-                          amountColor: s.isCredit ? const Color(0xFFD97706) : const Color(0xFF22C55E),
+                          amountColor: s.isCredit
+                              ? const Color(0xFFD97706)
+                              : const Color(0xFF22C55E),
                           hasBorder: !isLast,
                           isDark: isDark,
                         );
                       }).toList(),
                     ),
-
                 ],
               ),
             ),
@@ -882,6 +1165,77 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildAttentionAction({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: 210,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: color.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 19),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTransactionItem({
     required IconData icon,
     required Color iconBg,
@@ -899,7 +1253,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         border: hasBorder
             ? Border(
                 bottom: BorderSide(
-                  color: isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
+                  color:
+                      isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0),
                   width: 0.5,
                 ),
               )
@@ -925,7 +1280,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   title,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? AppColors.darkTextMain : const Color(0xFF0F172A),
+                    color: isDark
+                        ? AppColors.darkTextMain
+                        : const Color(0xFF0F172A),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -934,7 +1291,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppColors.darkTextMuted : const Color(0xFF64748B),
+                    color: isDark
+                        ? AppColors.darkTextMuted
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -953,14 +1312,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildTopItemRow(String rank, String name, String qtySold, String revenue, bool isDark) {
+  Widget _buildTopItemRow(
+      String rank, String name, String qtySold, String revenue, bool isDark) {
     return Row(
       children: [
         Container(
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: rank == '1' ? AppColors.accentGold : (isDark ? AppColors.darkSurface : const Color(0xFFE2E8F0)),
+            color: rank == '1'
+                ? AppColors.accentGold
+                : (isDark ? AppColors.darkSurface : const Color(0xFFE2E8F0)),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
@@ -969,7 +1331,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: rank == '1' ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+              color: rank == '1'
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : const Color(0xFF334155)),
             ),
           ),
         ),
@@ -980,25 +1344,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 qtySold,
-                style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                style:
+                    const TextStyle(fontSize: 10, color: AppColors.textMuted),
               ),
             ],
           ),
         ),
         Text(
           revenue,
-          style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryForest, fontSize: 12),
+          style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: AppColors.primaryForest,
+              fontSize: 12),
         ),
       ],
     );
   }
 }
-
 
 // Polyline Wave Painter matching the HTML polyline
 class _PolylineWavePainter extends CustomPainter {

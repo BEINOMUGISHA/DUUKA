@@ -54,6 +54,7 @@ export const registerBusinessAndOwner = mutation({
     address: v.optional(v.string()),
     city: v.optional(v.string()),
     tin: v.optional(v.string()),
+    businessVertical: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -72,6 +73,7 @@ export const registerBusinessAndOwner = mutation({
     // 1. Create Business
     const businessId = await ctx.db.insert("businesses", {
       name: args.businessName,
+      businessVertical: args.businessVertical ?? "retail",
       legalName: args.businessName,
       phone: normalizedPhone,
       email: args.email,
@@ -133,6 +135,7 @@ export const registerBusinessAndOwner = mutation({
       role: "owner",
       currency: "UGX",
       businessName: args.businessName,
+      businessVertical: args.businessVertical ?? "retail",
     };
   },
 });
@@ -197,6 +200,7 @@ export const loginWithPhoneAndPin = mutation({
       smsCredits: business.smsCredits,
       subscriptionTier: business.subscriptionTier,
       isEfrisEnrolled: business.isEfrisEnrolled,
+      businessVertical: business.businessVertical ?? "retail",
     };
   },
 });

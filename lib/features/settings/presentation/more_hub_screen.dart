@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/constants/business_verticals.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
 import '../../payments/presentation/payments_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
@@ -13,6 +14,9 @@ import '../../suppliers/presentation/suppliers_screen.dart';
 import '../../production/presentation/production_screen.dart';
 import '../../branches/presentation/branches_screen.dart';
 import '../../accounting/presentation/accounting_hub_screen.dart';
+import '../../customers/presentation/customers_screen.dart';
+import '../../inventory/presentation/inventory_screen.dart';
+import '../../pos/presentation/pos_quick_sale_screen.dart';
 import 'settings_screen.dart';
 
 class MoreHubScreen extends ConsumerWidget {
@@ -22,6 +26,7 @@ class MoreHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final vertical = businessVerticalFor(session?.businessVertical ?? 'retail');
 
     final tools = [
       {
@@ -113,6 +118,129 @@ class MoreHubScreen extends ConsumerWidget {
       },
     ];
 
+    final quickActions = switch (vertical.id) {
+      'clinic' => [
+          _quickAction(
+              'Record patient sale / visit',
+              'Open checkout',
+              Icons.medical_services_rounded,
+              const Color(0xFF0284C7),
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Manage medical stock',
+              'Track medicines and supplies',
+              Icons.inventory_2_rounded,
+              const Color(0xFF059669),
+              const InventoryScreen()),
+          _quickAction(
+              'Open patient records',
+              'View balances and history',
+              Icons.people_alt_rounded,
+              const Color(0xFF7C3AED),
+              const CustomersScreen()),
+        ],
+      'restaurant' => [
+          _quickAction(
+              'Start a new order',
+              'Take payment at the counter',
+              Icons.restaurant_rounded,
+              AppColors.accentGold,
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Check ingredients',
+              'Protect today\'s service',
+              Icons.inventory_2_rounded,
+              const Color(0xFF059669),
+              const InventoryScreen()),
+          _quickAction(
+              'Close today\'s shift',
+              'Reconcile cash and payments',
+              Icons.assessment_rounded,
+              const Color(0xFF0284C7),
+              const EodSummaryScreen()),
+        ],
+      'salon' => [
+          _quickAction(
+              'Start a service sale',
+              'Capture services and products',
+              Icons.content_cut_rounded,
+              const Color(0xFF7C3AED),
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Manage products',
+              'Keep retail supplies ready',
+              Icons.inventory_2_rounded,
+              const Color(0xFF059669),
+              const InventoryScreen()),
+          _quickAction(
+              'Open client book',
+              'Follow up with returning clients',
+              Icons.people_alt_rounded,
+              const Color(0xFF0284C7),
+              const CustomersScreen()),
+        ],
+      'services' => [
+          _quickAction(
+              'Start a new job',
+              'Capture a charge or invoice',
+              Icons.work_outline_rounded,
+              const Color(0xFF0284C7),
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Open client book',
+              'Keep relationships organized',
+              Icons.people_alt_rounded,
+              const Color(0xFF7C3AED),
+              const CustomersScreen()),
+          _quickAction(
+              'Review business health',
+              'See profit and cash movement',
+              Icons.bar_chart_rounded,
+              const Color(0xFF059669),
+              const ReportsScreen()),
+        ],
+      'wholesale' => [
+          _quickAction(
+              'Create a customer order',
+              'Move high-volume stock',
+              Icons.local_shipping_rounded,
+              const Color(0xFF0284C7),
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Review warehouse',
+              'Check stock before dispatch',
+              Icons.inventory_2_rounded,
+              const Color(0xFF059669),
+              const InventoryScreen()),
+          _quickAction(
+              'Review customer accounts',
+              'Track balances and credit',
+              Icons.people_alt_rounded,
+              const Color(0xFF7C3AED),
+              const CustomersScreen()),
+        ],
+      _ => [
+          _quickAction(
+              'Record a sale',
+              'Serve your next customer',
+              Icons.point_of_sale_rounded,
+              AppColors.accentGold,
+              const PosQuickSaleScreen()),
+          _quickAction(
+              'Check inventory',
+              'Know what is available',
+              Icons.inventory_2_rounded,
+              const Color(0xFF059669),
+              const InventoryScreen()),
+          _quickAction(
+              'Open customer book',
+              'Build repeat business',
+              Icons.people_alt_rounded,
+              const Color(0xFF7C3AED),
+              const CustomersScreen()),
+        ],
+    };
+
     return Scaffold(
       backgroundColor:
           isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
@@ -183,6 +311,24 @@ class MoreHubScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          Text('Start with ${vertical.name}',
+              style:
+                  const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 116,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: quickActions.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final action = quickActions[index];
+                return _QuickActionCard(action: action);
+              },
+            ),
+          ),
+          const SizedBox(height: 22),
+
           const Text('All Management Modules',
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 12),
@@ -248,6 +394,61 @@ class MoreHubScreen extends ConsumerWidget {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _quickAction(String title, String subtitle,
+          IconData icon, Color color, Widget screen) =>
+      {
+        'title': title,
+        'subtitle': subtitle,
+        'icon': icon,
+        'color': color,
+        'screen': screen,
+      };
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final Map<String, dynamic> action;
+
+  const _QuickActionCard({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = action['color'] as Color;
+    return SizedBox(
+      width: 190,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (ctx) => action['screen'] as Widget),
+          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(action['icon'] as IconData, color: color, size: 24),
+                const Spacer(),
+                Text(action['title'] as String,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 12)),
+                const SizedBox(height: 2),
+                Text(action['subtitle'] as String,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: AppColors.textMuted, fontSize: 10.5)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

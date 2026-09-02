@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:duka/core/database/app_database.dart';
+import 'package:duka/core/constants/business_verticals.dart';
 import 'package:duka/core/utils/export_service.dart';
 import 'package:duka/main.dart';
 
@@ -19,6 +20,13 @@ void main() {
     expect(
         ExportService.escapeCsvField('He said "hello"'), '"He said ""hello"""');
     expect(ExportService.escapeCsvField('Line 1\nLine 2'), '"Line 1\nLine 2"');
+  });
+
+  test('business verticals support non-retail SMEs with a safe fallback', () {
+    expect(businessVerticalFor('clinic').customerLabel, 'Patients');
+    expect(businessVerticalFor('restaurant').salesLabel, 'Orders');
+    expect(businessVerticalFor('salon').customerLabel, 'Clients');
+    expect(businessVerticalFor('unknown').id, 'retail');
   });
 
   test('Accounting foundation exposes chart of accounts and journal entries',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/app_providers.dart';
+import 'core/constants/business_verticals.dart';
 import 'features/auth/presentation/auth_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/pos/presentation/pos_quick_sale_screen.dart';
@@ -67,6 +68,9 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final vertical = businessVerticalFor(
+      ref.watch(authProvider)?.businessVertical ?? 'retail',
+    );
 
     final screens = List<Widget>.generate(5, _buildScreen);
 
@@ -94,11 +98,17 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
             children: [
               _buildNavItem(index: 0, icon: Icons.home_rounded, label: 'Home'),
               _buildNavItem(
-                  index: 1, icon: Icons.point_of_sale_rounded, label: 'Sales'),
+                  index: 1,
+                  icon: Icons.point_of_sale_rounded,
+                  label: vertical.salesLabel),
               _buildNavItem(
-                  index: 2, icon: Icons.inventory_2_rounded, label: 'Stock'),
+                  index: 2,
+                  icon: Icons.inventory_2_rounded,
+                  label: vertical.stockLabel),
               _buildNavItem(
-                  index: 3, icon: Icons.people_alt_rounded, label: 'Customers'),
+                  index: 3,
+                  icon: Icons.people_alt_rounded,
+                  label: vertical.customerLabel),
               _buildNavItem(
                   index: 4, icon: Icons.grid_view_rounded, label: 'More'),
             ],
