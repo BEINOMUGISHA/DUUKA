@@ -1,6 +1,6 @@
-# DUKA - Uganda SME Finance & Inventory SaaS (Flutter + Convex)
+# DUUKA - Uganda SME Finance & Inventory SaaS (Flutter + Convex)
 
-DUKA is a cross-platform, offline-first SaaS application designed specifically for Ugandan SMEs to manage POS sales, income, expenses, stock, debtors (credit sales), and EFRIS / URA tax compliance in real-time.
+DUUKA is a cross-platform, offline-first SaaS application designed specifically for Ugandan SMEs to manage POS sales, income, expenses, stock, debtors (credit sales), and EFRIS / URA tax compliance in real-time.
 
 ---
 

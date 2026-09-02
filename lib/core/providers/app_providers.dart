@@ -194,7 +194,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
         'can_void_sale',
         'can_approve_credit'
       ],
-      businessName: 'My DUKA Shop',
+      businessName: 'My DUUKA Shop',
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: true,

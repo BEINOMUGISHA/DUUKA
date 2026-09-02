@@ -26,7 +26,7 @@ class DukaApp extends ConsumerWidget {
     final customColor = ref.watch(customThemeColorProvider);
 
     return MaterialApp(
-      title: 'DUKA - Uganda SME OS',
+      title: 'DUUKA - Uganda SME Business App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildTheme(customColor, isDark: false),
       darkTheme: AppTheme.buildTheme(customColor, isDark: true),

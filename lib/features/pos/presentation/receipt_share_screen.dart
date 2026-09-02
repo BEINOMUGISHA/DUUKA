@@ -35,14 +35,16 @@ class ReceiptShareScreen extends ConsumerWidget {
     required this.items,
   });
 
-  String _generateTextReceipt(String businessName, String currency, String thankYouMsg) {
+  String _generateTextReceipt(
+      String businessName, String currency, String thankYouMsg) {
     final buffer = StringBuffer();
     buffer.writeln('==============================');
     buffer.writeln('  $businessName');
     buffer.writeln('  Official Sales Receipt');
     buffer.writeln('==============================');
     buffer.writeln('Receipt No: $saleNumber');
-    buffer.writeln('Date: ${DateTime.now().toLocal().toString().substring(0, 16)}');
+    buffer.writeln(
+        'Date: ${DateTime.now().toLocal().toString().substring(0, 16)}');
     buffer.writeln('Customer: $customerName');
     if (customerPhone != null && customerPhone!.isNotEmpty) {
       buffer.writeln('Phone: $customerPhone');
@@ -50,13 +52,15 @@ class ReceiptShareScreen extends ConsumerWidget {
     buffer.writeln('------------------------------');
     for (final item in items) {
       buffer.writeln('${item.product.name} x ${item.quantity}');
-      buffer.writeln('  @ ${CurrencyFormatter.format(item.product.sellPrice)} = ${CurrencyFormatter.format(item.subtotal)}');
+      buffer.writeln(
+          '  @ ${CurrencyFormatter.format(item.product.sellPrice)} = ${CurrencyFormatter.format(item.subtotal)}');
     }
     buffer.writeln('------------------------------');
     buffer.writeln('TOTAL: ${CurrencyFormatter.format(totalAmount)}');
     buffer.writeln('Paid Amount: ${CurrencyFormatter.format(paidAmount)}');
     if (dueAmount > 0) {
-      buffer.writeln('Balance Due: ${CurrencyFormatter.format(dueAmount)} (Credit Sale)');
+      buffer.writeln(
+          'Balance Due: ${CurrencyFormatter.format(dueAmount)} (Credit Sale)');
     }
     buffer.writeln('Payment Method: ${paymentMethod.toUpperCase()}');
     if (momoReference != null && momoReference!.isNotEmpty) {
@@ -74,14 +78,16 @@ class ReceiptShareScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authProvider);
     final lang = ref.watch(languageProvider);
-    final businessName = session?.businessName ?? 'DUKA SME';
+    final businessName = session?.businessName ?? 'DUUKA SME';
 
     final thankYouMsg = lang == 'lg'
         ? 'Mweebale nnyo okugula gye tuli! (Thank you for your business!)'
         : 'Thank you for your business! Webale nnyo!';
 
-    final receiptText = _generateTextReceipt(businessName, session?.currency ?? 'UGX', thankYouMsg);
-    final qrData = 'https://efris.ura.go.ug/verify?inv=$saleNumber&amt=$totalAmount&fc=${fiscalCode ?? "FC-OFFLINE"}';
+    final receiptText = _generateTextReceipt(
+        businessName, session?.currency ?? 'UGX', thankYouMsg);
+    final qrData =
+        'https://efris.ura.go.ug/verify?inv=$saleNumber&amt=$totalAmount&fc=${fiscalCode ?? "FC-OFFLINE"}';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), // Dark slate aesthetic backdrop
@@ -111,14 +117,18 @@ class ReceiptShareScreen extends ConsumerWidget {
                   color: AppColors.emeraldNeon,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_rounded, color: Colors.black, size: 28),
+                child: const Icon(Icons.check_rounded,
+                    color: Colors.black, size: 28),
               ),
             ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
 
             const SizedBox(height: 14),
             const Text(
               'Sale Completed Successfully! 🎉',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17),
             ),
             const SizedBox(height: 18),
 
@@ -141,28 +151,41 @@ class ReceiptShareScreen extends ConsumerWidget {
                   // Business Header
                   Text(
                     businessName,
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primaryForest, letterSpacing: -0.3),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        color: AppColors.primaryForest,
+                        letterSpacing: -0.3),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Kampala, Uganda • Tel: ${session?.phone ?? "+256770000000"}',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 10),
 
                   // EFRIS Badge
                   if (session?.isEfrisEnrolled == true)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.efrisIndigo.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.efrisIndigo.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color:
+                                AppColors.efrisIndigo.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         'URA EFRIS FISCAL RECEIPT: ${fiscalCode ?? "FC-SYNC-PENDING"}',
-                        style: const TextStyle(color: AppColors.efrisIndigo, fontWeight: FontWeight.w800, fontSize: 10),
+                        style: const TextStyle(
+                            color: AppColors.efrisIndigo,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10),
                       ),
                     ),
 
@@ -174,24 +197,34 @@ class ReceiptShareScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${ref.tr('sales_receipt')}: $saleNumber', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
-                      Text(DateTime.now().toString().substring(0, 10), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      Text('${ref.tr('sales_receipt')}: $saleNumber',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 11)),
+                      Text(DateTime.now().toString().substring(0, 10),
+                          style: const TextStyle(
+                              fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${ref.tr('customer_name')}: $customerName', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text('${ref.tr('customer_name')}: $customerName',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600)),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.primaryForest.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           paymentMethod.toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: AppColors.primaryForest),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 10,
+                              color: AppColors.primaryForest),
                         ),
                       ),
                     ],
@@ -203,17 +236,23 @@ class ReceiptShareScreen extends ConsumerWidget {
 
                   // Item breakdown
                   ...items.map((it) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text('${it.product.name} (x${it.quantity})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                  '${it.product.name} (x${it.quantity})',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                            Text(CurrencyFormatter.format(it.subtotal),
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w800)),
+                          ],
                         ),
-                        Text(CurrencyFormatter.format(it.subtotal), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                      ],
-                    ),
-                  )),
+                      )),
 
                   const SizedBox(height: 14),
                   _buildDashedLine(),
@@ -223,10 +262,15 @@ class ReceiptShareScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${ref.tr('total_payable')}:', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                      Text('${ref.tr('total_payable')}:',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 15)),
                       Text(
                         CurrencyFormatter.format(totalAmount),
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primaryForest),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                            color: AppColors.primaryForest),
                       ),
                     ],
                   ),
@@ -234,8 +278,12 @@ class ReceiptShareScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${ref.tr('amount_paid')}:', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                      Text(CurrencyFormatter.format(paidAmount), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('${ref.tr('amount_paid')}:',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textMuted)),
+                      Text(CurrencyFormatter.format(paidAmount),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700)),
                     ],
                   ),
                   if (dueAmount > 0) ...[
@@ -243,8 +291,16 @@ class ReceiptShareScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${ref.tr('credit_balance')}:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.creditAmber)),
-                        Text(CurrencyFormatter.format(dueAmount), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.creditAmber)),
+                        Text('${ref.tr('credit_balance')}:',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.creditAmber)),
+                        Text(CurrencyFormatter.format(dueAmount),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.creditAmber)),
                       ],
                     ),
                   ],
@@ -267,13 +323,24 @@ class ReceiptShareScreen extends ConsumerWidget {
                           size: 90.0,
                         ),
                         const SizedBox(height: 4),
-                        Text(ref.tr('scan_efris_qr'), style: const TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                        Text(ref.tr('scan_efris_qr'),
+                            style: const TextStyle(
+                                fontSize: 9,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
                 ],
               ),
-            ).animate().slideY(begin: -0.15, end: 0, duration: 550.ms, curve: Curves.easeOutBack).fadeIn(duration: 400.ms),
+            )
+                .animate()
+                .slideY(
+                    begin: -0.15,
+                    end: 0,
+                    duration: 550.ms,
+                    curve: Curves.easeOutBack)
+                .fadeIn(duration: 400.ms),
 
             const SizedBox(height: 20),
 
@@ -295,11 +362,13 @@ class ReceiptShareScreen extends ConsumerWidget {
                         paymentMethod: paymentMethod,
                         momoReference: momoReference,
                         fiscalCode: fiscalCode,
-                        items: items.map((it) => {
-                          'name': it.product.name,
-                          'qty': it.quantity,
-                          'total': it.subtotal,
-                        }).toList(),
+                        items: items
+                            .map((it) => {
+                                  'name': it.product.name,
+                                  'qty': it.quantity,
+                                  'total': it.subtotal,
+                                })
+                            .toList(),
                       );
                       await ExportService.shareOrPrintPdf(
                         pdfBytes: pdfBytes,
@@ -307,12 +376,14 @@ class ReceiptShareScreen extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                    label: const Text('PDF / Print', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('PDF / Print',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
@@ -320,7 +391,8 @@ class ReceiptShareScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Share.share(receiptText, subject: 'Receipt from $businessName - $saleNumber');
+                      Share.share(receiptText,
+                          subject: 'Receipt from $businessName - $saleNumber');
                     },
                     icon: const Icon(Icons.share_rounded, size: 18),
                     label: Text(ref.tr('share_whatsapp_sms')),
@@ -328,7 +400,8 @@ class ReceiptShareScreen extends ConsumerWidget {
                       backgroundColor: const Color(0xFF25D366),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
@@ -340,8 +413,10 @@ class ReceiptShareScreen extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white.withValues(alpha: 0.15),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ],

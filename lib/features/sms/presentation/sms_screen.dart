@@ -20,7 +20,7 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
     String selectedTemplate = 'Custom';
     final customers = ref.read(customersProvider);
     final session = ref.read(authProvider);
-    final bName = session?.businessName ?? 'DUKA';
+    final bName = session?.businessName ?? 'DUUKA';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -47,30 +47,45 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Compose SMS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                    const Text('Compose SMS',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w900)),
+                    IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close)),
                   ],
                 ),
                 const Divider(),
                 // Template dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedTemplate,
-                  decoration: const InputDecoration(labelText: 'Template Preset'),
+                  decoration:
+                      const InputDecoration(labelText: 'Template Preset'),
                   items: const [
-                    DropdownMenuItem(value: 'Custom', child: Text('Custom Message')),
-                    DropdownMenuItem(value: 'Payment Received', child: Text('Payment Received Template')),
-                    DropdownMenuItem(value: 'Debt Reminder', child: Text('Debt Reminder Template')),
-                    DropdownMenuItem(value: 'Welcome Customer', child: Text('Welcome Customer Template')),
+                    DropdownMenuItem(
+                        value: 'Custom', child: Text('Custom Message')),
+                    DropdownMenuItem(
+                        value: 'Payment Received',
+                        child: Text('Payment Received Template')),
+                    DropdownMenuItem(
+                        value: 'Debt Reminder',
+                        child: Text('Debt Reminder Template')),
+                    DropdownMenuItem(
+                        value: 'Welcome Customer',
+                        child: Text('Welcome Customer Template')),
                   ],
                   onChanged: (val) {
                     setModalState(() {
                       selectedTemplate = val!;
                       if (val == 'Payment Received') {
-                        messageCtrl.text = 'Thank you for your payment to $bName. We appreciate your business!';
+                        messageCtrl.text =
+                            'Thank you for your payment to $bName. We appreciate your business!';
                       } else if (val == 'Debt Reminder') {
-                        messageCtrl.text = 'Friendly reminder from $bName regarding your outstanding balance. Thank you!';
+                        messageCtrl.text =
+                            'Friendly reminder from $bName regarding your outstanding balance. Thank you!';
                       } else if (val == 'Welcome Customer') {
-                        messageCtrl.text = 'Welcome to $bName! We look forward to serving you with quality goods.';
+                        messageCtrl.text =
+                            'Welcome to $bName! We look forward to serving you with quality goods.';
                       }
                     });
                   },
@@ -80,14 +95,19 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                 // Customer quick pick
                 if (customers.isNotEmpty)
                   DropdownButtonFormField<LocalCustomerData>(
-                    decoration: const InputDecoration(labelText: 'Or Select Existing Customer'),
+                    decoration: const InputDecoration(
+                        labelText: 'Or Select Existing Customer'),
                     items: customers
-                        .map((c) => DropdownMenuItem(value: c, child: Text('${c.name} (${c.phone})', style: const TextStyle(fontSize: 12))))
+                        .map((c) => DropdownMenuItem(
+                            value: c,
+                            child: Text('${c.name} (${c.phone})',
+                                style: const TextStyle(fontSize: 12))))
                         .toList(),
                     onChanged: (c) {
                       if (c != null) {
                         setModalState(() {
-                          phoneCtrl.text = PhoneFormatter.formatDisplay(c.phone);
+                          phoneCtrl.text =
+                              PhoneFormatter.formatDisplay(c.phone);
                         });
                       }
                     },
@@ -124,19 +144,22 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
 
                       if (rawPhone.isEmpty || msg.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter phone and message')),
+                          const SnackBar(
+                              content: Text('Please enter phone and message')),
                         );
                         return;
                       }
 
                       final normalized = PhoneFormatter.normalize(rawPhone);
-                      final smsId = 'sms_${DateTime.now().millisecondsSinceEpoch}';
+                      final smsId =
+                          'sms_${DateTime.now().millisecondsSinceEpoch}';
                       final sms = LocalSmsData(
                         id: smsId,
                         businessId: session?.businessId ?? 'biz_default',
                         phone: normalized,
                         message: msg,
-                        type: selectedTemplate.toLowerCase().replaceAll(' ', '_'),
+                        type:
+                            selectedTemplate.toLowerCase().replaceAll(' ', '_'),
                         status: 'sent',
                         createdAt: DateTime.now().millisecondsSinceEpoch,
                       );
@@ -153,7 +176,9 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                             'userId': session.userId,
                             'recipientPhone': normalized,
                             'message': msg,
-                            'template': selectedTemplate.toLowerCase().replaceAll(' ', '_'),
+                            'template': selectedTemplate
+                                .toLowerCase()
+                                .replaceAll(' ', '_'),
                             'idempotencyKey': smsId,
                           });
                           backendSent = true;
@@ -170,13 +195,15 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                             content: Text(backendSent
                                 ? '✅ SMS dispatched via gateway (1 Credit used)'
                                 : 'SMS prepared & shared via SMS/WhatsApp app'),
-                            backgroundColor: backendSent ? AppColors.success : null,
+                            backgroundColor:
+                                backendSent ? AppColors.success : null,
                           ),
                         );
                       }
                     },
                     icon: const Icon(Icons.send_rounded),
-                    label: const Text('Send SMS (1 Credit)', style: TextStyle(fontWeight: FontWeight.w900)),
+                    label: const Text('Send SMS (1 Credit)',
+                        style: TextStyle(fontWeight: FontWeight.w900)),
                   ),
                 ),
               ],
@@ -193,7 +220,8 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('SMS & Reminders'),
       ),
@@ -217,9 +245,17 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('SMS Credits Balance', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('SMS Credits Balance',
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold)),
                     SizedBox(height: 2),
-                    Text('20 Credits', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                    Text('20 Credits',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900)),
                   ],
                 ),
                 ElevatedButton.icon(
@@ -229,7 +265,9 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                   ),
                   onPressed: _showComposeSmsDialog,
                   icon: const Icon(Icons.edit_note_rounded, size: 16),
-                  label: const Text('Compose', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                  label: const Text('Compose',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
                 ),
               ],
             ),
@@ -239,7 +277,8 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('SMS Dispatch Log', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              child: Text('SMS Dispatch Log',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
             ),
           ),
 
@@ -250,9 +289,13 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.sms_outlined, size: 48, color: AppColors.textMuted),
+                        Icon(Icons.sms_outlined,
+                            size: 48, color: AppColors.textMuted),
                         SizedBox(height: 8),
-                        Text('No SMS messages logged yet', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold)),
+                        Text('No SMS messages logged yet',
+                            style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   )
@@ -261,38 +304,53 @@ class _SmsScreenState extends ConsumerState<SmsScreen> {
                     itemCount: smsList.length,
                     itemBuilder: (ctx, index) {
                       final sms = smsList[index];
-                      final date = DateTime.fromMillisecondsSinceEpoch(sms.createdAt);
-                      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}';
+                      final date =
+                          DateTime.fromMillisecondsSinceEpoch(sms.createdAt);
+                      final timeStr =
+                          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     '+${PhoneFormatter.normalize(sms.phone)}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade50,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text('DELIVERED', style: TextStyle(color: AppColors.success, fontSize: 9, fontWeight: FontWeight.bold)),
+                                    child: const Text('DELIVERED',
+                                        style: TextStyle(
+                                            color: AppColors.success,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold)),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Text(sms.message, style: const TextStyle(fontSize: 12)),
+                              Text(sms.message,
+                                  style: const TextStyle(fontSize: 12)),
                               const SizedBox(height: 6),
-                              Text(timeStr, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                              Text(timeStr,
+                                  style: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.textMuted)),
                             ],
                           ),
                         ),

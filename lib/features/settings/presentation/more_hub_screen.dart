@@ -117,7 +117,7 @@ class MoreHubScreen extends ConsumerWidget {
       backgroundColor:
           isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('DUKA Tools & Hub'),
+        title: const Text('DUUKA Tools & Hub'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

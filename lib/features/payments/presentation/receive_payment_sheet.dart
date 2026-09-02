@@ -486,10 +486,10 @@ class _ReceivePaymentSheetState extends ConsumerState<ReceivePaymentSheet> {
             const SizedBox(height: 16),
             const Divider(),
 
-            // DUKA QR Code / Payment Link Section
+            // DUUKA QR Code / Payment Link Section
             Center(
               child: ExpansionTile(
-                title: const Text('Or Show DUKA Payment QR Code',
+                title: const Text('Or Show DUUKA Payment QR Code',
                     style:
                         TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 children: [

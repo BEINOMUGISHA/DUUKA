@@ -4,7 +4,7 @@ class AppTranslations {
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
       // General & Common
-      'app_name': 'DUKA',
+      'app_name': 'DUUKA',
       'app_tagline': 'Uganda SME Finance & Stock',
       'online': 'Online',
       'offline': 'Offline',
@@ -77,7 +77,7 @@ class AppTranslations {
       'complete_sale_receipt': 'Complete Sale & Print Receipt',
       'sales_receipt': 'Sales Receipt',
       'official_receipt': 'Official Sales Receipt',
-      'scan_efris_qr': 'Scan to verify URA / DUKA Receipt',
+      'scan_efris_qr': 'Scan to verify URA / DUUKA Receipt',
       'share_whatsapp_sms': 'WhatsApp / SMS Share',
 
       // Inventory & Stock
@@ -162,18 +162,20 @@ class AppTranslations {
       'subscription_tier': 'Subscription Tier',
       'efris_integration': 'URA EFRIS Integration',
       'offline_sync_engine': 'Offline Sync Engine',
-      'offline_sync_desc': 'Local database: Drift SQLite (Offline-First). Changes are queued locally and pushed as deltas once internet connection is live.',
+      'offline_sync_desc':
+          'Local database: Drift SQLite (Offline-First). Changes are queued locally and pushed as deltas once internet connection is live.',
       'staff_permissions': 'Staff & Permissions',
       'staff_desc': 'Manage cashiers, managers, and access limits',
       'app_language': 'App Language',
       'whatsapp_support': 'WhatsApp Help & Support',
-      'whatsapp_desc': 'Chat with DUKA Uganda customer support',
+      'whatsapp_desc': 'Chat with DUUKA Uganda customer support',
 
       // Auth & Onboarding
       'signin_title': 'Sign In to Your Business',
       'signup_title': 'Create SME Business Account',
       'signin_subtitle': 'Enter your phone number and 4-digit security PIN.',
-      'signup_subtitle': 'Setup your shop, currency (UGX), and URA EFRIS compliance in 1 minute.',
+      'signup_subtitle':
+          'Setup your shop, currency (UGX), and URA EFRIS compliance in 1 minute.',
       'shop_name': 'Business / Shop Name',
       'owner_name': 'Owner Full Name',
       'tin_label': 'URA Tax Identification Number (TIN) (Optional)',
@@ -181,14 +183,14 @@ class AppTranslations {
       'pin_label': '4-Digit Security PIN',
       'create_business_btn': 'Create Business & Start',
       'signin_btn': 'Sign In',
-      'switch_to_signup': 'New to DUKA? Register Your Business',
+      'switch_to_signup': 'New to DUUKA? Register Your Business',
       'switch_to_signin': 'Already have an account? Sign In',
     },
 
     // 🇺🇬 LUGANDA (Second Main Language)
     'lg': {
       // General & Common
-      'app_name': 'DUKA',
+      'app_name': 'DUUKA',
       'app_tagline': 'Ebyensimbi n\'Obusuubuzi mu Uganda',
       'online': 'Ku Mutimbagano (Online)',
       'offline': 'Toli ku Mutimbagano (Offline)',
@@ -261,7 +263,7 @@ class AppTranslations {
       'complete_sale_receipt': 'Maza Omutunzi & Funa Risiiti',
       'sales_receipt': 'Risiiti y\'Okutunda',
       'official_receipt': 'Risiiti y\'Ebyamaguzi Entongole',
-      'scan_efris_qr': 'Soma kkoodi eno okukakasa risiiti ya URA / DUKA',
+      'scan_efris_qr': 'Soma kkoodi eno okukakasa risiiti ya URA / DUUKA',
       'share_whatsapp_sms': 'Weereza ku WhatsApp / SMS',
 
       // Inventory & Stock
@@ -346,18 +348,21 @@ class AppTranslations {
       'subscription_tier': 'Omutendera gw\'Okwewandiisa',
       'efris_integration': 'Enkolagana ne URA EFRIS',
       'offline_sync_engine': 'Enteekateeka y\'Okukola Awatali Yintaneeti',
-      'offline_sync_desc': 'Ebikolwa biterekebwa munda mu ssimu (Drift SQLite). Bw\'ofuna yintaneeti byonna byungibwa butereevu ku mutimbagano.',
+      'offline_sync_desc':
+          'Ebikolwa biterekebwa munda mu ssimu (Drift SQLite). Bw\'ofuna yintaneeti byonna byungibwa butereevu ku mutimbagano.',
       'staff_permissions': 'Abakozi n\'Obuyinza Bwabwe',
       'staff_desc': 'Fuga abakozi, bamaneja n\'ebyo bye bakkirizibwa okukola',
       'app_language': 'Olulimi lw\'Essimu',
       'whatsapp_support': 'Obuyambi ku WhatsApp',
-      'whatsapp_desc': 'Yogera n\'aba DUKA abakuyamba ku WhatsApp',
+      'whatsapp_desc': 'Yogera n\'aba DUUKA abakuyamba ku WhatsApp',
 
       // Auth & Onboarding
       'signin_title': 'Yingira mu Dduuka Lyo',
       'signup_title': 'Wandiisa Dduuka Lyo Empya',
-      'signin_subtitle': 'Ingiza ennamba y\'essimu yo ne namba ya PIN enkakasa (ennamba 4).',
-      'signup_subtitle': 'Teekawo edduuka lyo, ensimbi (UGX), n\'omusolo gwa URA mu ddakiika emu.',
+      'signin_subtitle':
+          'Ingiza ennamba y\'essimu yo ne namba ya PIN enkakasa (ennamba 4).',
+      'signup_subtitle':
+          'Teekawo edduuka lyo, ensimbi (UGX), n\'omusolo gwa URA mu ddakiika emu.',
       'shop_name': 'Erinnya ly\'Edduuka / Obusuubuzi',
       'owner_name': 'Erinnya lya Nannyini Dduuka',
       'tin_label': 'Namba y\'Omusolo eya URA (TIN) (Bw\'oba ogirina)',
@@ -365,13 +370,13 @@ class AppTranslations {
       'pin_label': 'Namba ya PIN Enkakasa (Ennamba 4)',
       'create_business_btn': 'Wandiisa Edduuka & Tandika',
       'signin_btn': 'Yingira Kati',
-      'switch_to_signup': 'Mupya ku DUKA? Wandiisa Edduuka Lyo Wano',
+      'switch_to_signup': 'Mupya ku DUUKA? Wandiisa Edduuka Lyo Wano',
       'switch_to_signin': 'Olina Akawunti? Yingira Wano',
     },
 
     // 🇺🇬 RUNYANKOLE / RUNYAKITARA (Supported regional option)
     'rn': {
-      'app_name': 'DUKA',
+      'app_name': 'DUUKA',
       'app_tagline': 'Ebyesente n\'Obushubuzi bwa Uganda',
       'online': 'Oha Mutimbagano (Online)',
       'offline': 'Tori aha Mutimbagano (Offline)',
@@ -411,7 +416,9 @@ class AppTranslations {
   };
 
   static String tr(String key, String languageCode) {
-    final lang = _localizedValues.containsKey(languageCode) ? languageCode : defaultLanguage;
+    final lang = _localizedValues.containsKey(languageCode)
+        ? languageCode
+        : defaultLanguage;
     final value = _localizedValues[lang]?[key];
     if (value != null) return value;
     // Fallback to English if translation key is missing in chosen language

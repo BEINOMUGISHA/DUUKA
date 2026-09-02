@@ -22,11 +22,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   void _exportSalesCsv(List<LocalSaleData> salesList) async {
     final session = ref.read(authProvider);
-    final bName = session?.businessName ?? 'DUKA';
+    final bName = session?.businessName ?? 'DUUKA';
     final nowStr = DateTime.now().toString().substring(0, 10);
 
     final buffer = StringBuffer();
-    buffer.writeln('DUKA SALES LOG EXPORT');
+    buffer.writeln('DUUKA SALES LOG EXPORT');
     buffer.writeln('Business,${ExportService.escapeCsvField(bName)}');
     buffer.writeln('Filter,${ExportService.escapeCsvField(_selectedFilter)}');
     buffer.writeln(
@@ -47,7 +47,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     }
 
     await ExportService.exportCsv(
-      fileName: 'DUKA_Sales_${_selectedFilter}_$nowStr',
+      fileName: 'DUUKA_Sales_${_selectedFilter}_$nowStr',
       csvContent: buffer.toString(),
       subject: '$bName - Sales Log ($_selectedFilter)',
     );

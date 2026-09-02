@@ -37,12 +37,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   void _exportCSV(double grossRevenue, double cogs, double expenses,
       double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
-    final businessName = session?.businessName ?? 'DUKA';
+    final businessName = session?.businessName ?? 'DUUKA';
     final fromStr = _getFromDate().toString().substring(0, 10);
     final toStr = DateTime.now().toString().substring(0, 10);
 
     final buffer = StringBuffer();
-    buffer.writeln('DUKA BUSINESS FINANCIAL REPORT');
+    buffer.writeln('DUUKA BUSINESS FINANCIAL REPORT');
     buffer.writeln('Business,${ExportService.escapeCsvField(businessName)}');
     buffer.writeln(
         'Period,${ExportService.escapeCsvField('$_selectedPeriod ($fromStr to $toStr)')}');
@@ -67,7 +67,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }
 
     await ExportService.exportCsv(
-      fileName: 'DUKA_Report_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
+      fileName: 'DUUKA_Report_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
       csvContent: buffer.toString(),
       subject: '$businessName - P&L Statement ($_selectedPeriod)',
     );
@@ -82,7 +82,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       double vat,
       Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
-    final businessName = session?.businessName ?? 'DUKA';
+    final businessName = session?.businessName ?? 'DUUKA';
     final fromDate = _getFromDate();
     final toDate = DateTime.now();
 
@@ -104,14 +104,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     await ExportService.shareOrPrintPdf(
       pdfBytes: bytes,
       fileName:
-          'DUKA_${fileSuffix.replaceAll(' ', '_')}_${toDate.toString().substring(0, 10)}',
+          'DUUKA_${fileSuffix.replaceAll(' ', '_')}_${toDate.toString().substring(0, 10)}',
     );
   }
 
   void _exportPdf(double grossRevenue, double cogs, double expenses,
       double netProfit, double vat, Map<String, double> expenseMap) async {
     final session = ref.read(authProvider);
-    final businessName = session?.businessName ?? 'DUKA';
+    final businessName = session?.businessName ?? 'DUUKA';
     final fromDate = _getFromDate();
     final toDate = DateTime.now();
 
@@ -132,7 +132,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final toStr = toDate.toString().substring(0, 10);
     await ExportService.shareOrPrintPdf(
       pdfBytes: bytes,
-      fileName: 'DUKA_Statement_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
+      fileName:
+          'DUUKA_Statement_${_selectedPeriod.replaceAll(' ', '_')}_$toStr',
     );
   }
 

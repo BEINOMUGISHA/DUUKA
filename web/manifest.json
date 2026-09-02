@@ -1,11 +1,11 @@
 {
-    "name": "duka",
-    "short_name": "duka",
+    "name": "DUUKA - Uganda SME Business App",
+    "short_name": "DUUKA",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#062319",
+    "theme_color": "#062319",
+    "description": "Simple offline-first sales, stock, profit, credit and mobile money management for Uganda businesses.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

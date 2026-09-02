@@ -29,7 +29,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             '${ref.tr('record_repayment')}: ${debtor.name}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
@@ -41,7 +42,10 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               children: [
                 Text(
                   'Current Balance Owed: ${CurrencyFormatter.format(debtor.balanceOwed)}',
-                  style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
                 ),
                 const SizedBox(height: 14),
                 TextField(
@@ -56,14 +60,23 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: paymentMethod,
-                  decoration: const InputDecoration(labelText: 'Payment Channel *'),
+                  decoration:
+                      const InputDecoration(labelText: 'Payment Channel *'),
                   items: const [
-                    DropdownMenuItem(value: UgandaPresets.paymentCash, child: Text('Cash')),
-                    DropdownMenuItem(value: UgandaPresets.paymentMtnMomo, child: Text('MTN MoMo')),
-                    DropdownMenuItem(value: UgandaPresets.paymentAirtelMoney, child: Text('Airtel Money')),
-                    DropdownMenuItem(value: UgandaPresets.paymentBank, child: Text('Bank Transfer')),
+                    DropdownMenuItem(
+                        value: UgandaPresets.paymentCash, child: Text('Cash')),
+                    DropdownMenuItem(
+                        value: UgandaPresets.paymentMtnMomo,
+                        child: Text('MTN MoMo')),
+                    DropdownMenuItem(
+                        value: UgandaPresets.paymentAirtelMoney,
+                        child: Text('Airtel Money')),
+                    DropdownMenuItem(
+                        value: UgandaPresets.paymentBank,
+                        child: Text('Bank Transfer')),
                   ],
-                  onChanged: (val) => setDialogState(() => paymentMethod = val!),
+                  onChanged: (val) =>
+                      setDialogState(() => paymentMethod = val!),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -78,13 +91,17 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () {
                 final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
                 if (amount <= 0 || amount > debtor.balanceOwed) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid amount not exceeding balance owed')),
+                    const SnackBar(
+                        content: Text(
+                            'Please enter a valid amount not exceeding balance owed')),
                   );
                   return;
                 }
@@ -94,7 +111,9 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                       debtor.id,
                       amount,
                       paymentMethod,
-                      refCtrl.text.trim().isNotEmpty ? refCtrl.text.trim() : null,
+                      refCtrl.text.trim().isNotEmpty
+                          ? refCtrl.text.trim()
+                          : null,
                     );
 
                 // Also record transaction in ledger
@@ -115,10 +134,13 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
 
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Received ${CurrencyFormatter.format(amount)} from ${debtor.name}')),
+                  SnackBar(
+                      content: Text(
+                          'Received ${CurrencyFormatter.format(amount)} from ${debtor.name}')),
                 );
               },
-              child: const Text('Confirm Payment', style: TextStyle(fontWeight: FontWeight.w900)),
+              child: const Text('Confirm Payment',
+                  style: TextStyle(fontWeight: FontWeight.w900)),
             ),
           ],
         ),
@@ -144,7 +166,9 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkSurface
+              : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SingleChildScrollView(
@@ -155,20 +179,28 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Add Credit Customer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  const Text('Add Credit Customer',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(Icons.close)),
                 ],
               ),
               const Divider(),
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Customer Full Name *', prefixIcon: Icon(Icons.person)),
+                decoration: const InputDecoration(
+                    labelText: 'Customer Full Name *',
+                    prefixIcon: Icon(Icons.person)),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone Number (WhatsApp/SMS) *', prefixIcon: Icon(Icons.phone)),
+                decoration: const InputDecoration(
+                    labelText: 'Phone Number (WhatsApp/SMS) *',
+                    prefixIcon: Icon(Icons.phone)),
               ),
               const SizedBox(height: 10),
               Row(
@@ -177,7 +209,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     child: TextField(
                       controller: amountCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Initial Debt (UGX) *'),
+                      decoration: const InputDecoration(
+                          labelText: 'Initial Debt (UGX) *'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -185,7 +218,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     child: TextField(
                       controller: limitCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Credit Limit (UGX)'),
+                      decoration: const InputDecoration(
+                          labelText: 'Credit Limit (UGX)'),
                     ),
                   ),
                 ],
@@ -199,12 +233,14 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     final name = nameCtrl.text.trim();
                     final phone = phoneCtrl.text.trim();
                     final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
-                    final limit = double.tryParse(limitCtrl.text.trim()) ?? 300000;
+                    final limit =
+                        double.tryParse(limitCtrl.text.trim()) ?? 300000;
                     final session = ref.read(authProvider);
 
                     if (name.isEmpty || phone.isEmpty || amount <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please fill all required fields')),
+                        const SnackBar(
+                            content: Text('Please fill all required fields')),
                       );
                       return;
                     }
@@ -222,10 +258,12 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     ref.read(debtorsProvider.notifier).addDebtor(newDebtor);
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Customer added to Debtor Book')),
+                      const SnackBar(
+                          content: Text('Customer added to Debtor Book')),
                     );
                   },
-                  child: const Text('Save Customer', style: TextStyle(fontWeight: FontWeight.w900)),
+                  child: const Text('Save Customer',
+                      style: TextStyle(fontWeight: FontWeight.w900)),
                 ),
               ),
             ],
@@ -237,11 +275,12 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
 
   Future<void> _sendWhatsAppReminder(LocalDebtorData debtor) async {
     final session = ref.read(authProvider);
-    final businessName = session?.businessName ?? 'DUKA Shop';
+    final businessName = session?.businessName ?? 'DUUKA Shop';
     final normalizedPhone = PhoneFormatter.normalize(debtor.phone);
     final message =
         'Hello ${debtor.name},\nThis is a friendly payment reminder from $businessName. Your outstanding balance is ${CurrencyFormatter.format(debtor.balanceOwed)}.\nPlease pay via MTN MoMo / Airtel Money. Thank you!';
-    final whatsappUrl = Uri.parse('https://wa.me/$normalizedPhone?text=${Uri.encodeComponent(message)}');
+    final whatsappUrl = Uri.parse(
+        'https://wa.me/$normalizedPhone?text=${Uri.encodeComponent(message)}');
 
     try {
       if (await canLaunchUrl(whatsappUrl)) {
@@ -269,7 +308,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
         'phone': debtor.phone,
         'message': message,
         'type': 'debt_reminder',
-        'idempotencyKey': 'sms-${debtor.id}-${DateTime.now().millisecondsSinceEpoch}',
+        'idempotencyKey':
+            'sms-${debtor.id}-${DateTime.now().millisecondsSinceEpoch}',
       });
       if (mounted) {
         final success = res != null && (res['success'] == true);
@@ -285,7 +325,9 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SMS error: $e'), backgroundColor: AppColors.danger),
+          SnackBar(
+              content: Text('SMS error: $e'),
+              backgroundColor: AppColors.danger),
         );
       }
     }
@@ -294,7 +336,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
   void _showReminderOptions(LocalDebtorData debtor) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -304,21 +347,28 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
             children: [
               Text(
                 'Send Reminder to ${debtor.name}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
               Text(
                 'Amount Due: ${CurrencyFormatter.format(debtor.balanceOwed)}',
-                style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
               ),
               const SizedBox(height: 16),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFF25D366),
-                  child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 20),
+                  child: Icon(Icons.chat_bubble_outline_rounded,
+                      color: Colors.white, size: 20),
                 ),
-                title: const Text('WhatsApp Message (Free)', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Open WhatsApp directly with prefilled message'),
+                title: const Text('WhatsApp Message (Free)',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle:
+                    const Text('Open WhatsApp directly with prefilled message'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _sendWhatsAppReminder(debtor);
@@ -327,9 +377,11 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFF4F46E5),
-                  child: Icon(Icons.sms_outlined, color: Colors.white, size: 20),
+                  child:
+                      Icon(Icons.sms_outlined, color: Colors.white, size: 20),
                 ),
-                title: const Text('Direct SMS (1 Credit)', style: TextStyle(fontWeight: FontWeight.bold)),
+                title: const Text('Direct SMS (1 Credit)',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text('Dispatches telecom SMS to their phone'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -339,17 +391,20 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFF64748B),
-                  child: Icon(Icons.share_outlined, color: Colors.white, size: 20),
+                  child:
+                      Icon(Icons.share_outlined, color: Colors.white, size: 20),
                 ),
-                title: const Text('Share via Any App', style: TextStyle(fontWeight: FontWeight.bold)),
+                title: const Text('Share via Any App',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text('Copy or share to Telegram, Email, etc.'),
                 onTap: () {
                   Navigator.pop(ctx);
                   final session = ref.read(authProvider);
-                  final businessName = session?.businessName ?? 'DUKA Shop';
+                  final businessName = session?.businessName ?? 'DUUKA Shop';
                   final message =
                       'Hello ${debtor.name},\nThis is a payment reminder from $businessName. Outstanding balance: ${CurrencyFormatter.format(debtor.balanceOwed)}.\nPlease pay via MTN MoMo / Airtel Money. Thank you!';
-                  Share.share(message, subject: 'Payment Reminder - $businessName');
+                  Share.share(message,
+                      subject: 'Payment Reminder - $businessName');
                 },
               ),
             ],
@@ -369,13 +424,16 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
               Icon(Icons.mark_chat_unread_rounded, color: Color(0xFF4F46E5)),
               SizedBox(width: 10),
               Expanded(
-                child: Text('Bulk SMS Reminder', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                child: Text('Bulk SMS Reminder',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
@@ -394,28 +452,37 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                   children: [
                     Text(
                       'Debtors to Remind: ${overdueDebtors.length}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Estimated SMS Cost: ${overdueDebtors.length} Credits',
-                      style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                          color: Color(0xFF4F46E5),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 14),
-              const Text('Select SMS Language:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('Select SMS Language:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: selectedLanguage,
-                decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+                decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
                   DropdownMenuItem(value: 'lg', child: Text('Luganda')),
                   DropdownMenuItem(value: 'rn', child: Text('Runyankole')),
                 ],
-                onChanged: (val) => setDialogState(() => selectedLanguage = val!),
+                onChanged: (val) =>
+                    setDialogState(() => selectedLanguage = val!),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -431,10 +498,16 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
             ),
             ElevatedButton.icon(
               icon: isSubmitting
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send_rounded, size: 16),
               label: Text(
-                isSubmitting ? 'Sending...' : 'Send to All (${overdueDebtors.length})',
+                isSubmitting
+                    ? 'Sending...'
+                    : 'Send to All (${overdueDebtors.length})',
                 style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               onPressed: (overdueDebtors.isEmpty || isSubmitting)
@@ -449,7 +522,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
 
                       try {
                         final convex = ref.read(convexClientProvider);
-                        final res = await convex.mutation('sms:bulkRemindOverdueDebtors', {
+                        final res = await convex
+                            .mutation('sms:bulkRemindOverdueDebtors', {
                           'businessId': session.businessId,
                           'userId': session.userId,
                           'language': selectedLanguage,
@@ -463,7 +537,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                           final credits = res?['remainingCredits'] ?? 0;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Bulk SMS complete! Sent: $sent, Failed: $failed. Credits remaining: $credits'),
+                              content: Text(
+                                  'Bulk SMS complete! Sent: $sent, Failed: $failed. Credits remaining: $credits'),
                               backgroundColor: AppColors.success,
                             ),
                           );
@@ -472,7 +547,9 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                         setDialogState(() => isSubmitting = false);
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Bulk SMS error: $e'), backgroundColor: AppColors.danger),
+                            SnackBar(
+                                content: Text('Bulk SMS error: $e'),
+                                backgroundColor: AppColors.danger),
                           );
                         }
                       }
@@ -490,20 +567,24 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final filtered = debtors.where((d) {
-      return d.name.toLowerCase().contains(_searchQuery.toLowerCase()) || d.phone.contains(_searchQuery);
+      return d.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          d.phone.contains(_searchQuery);
     }).toList();
 
     final totalOwed = filtered.fold<double>(0, (sum, d) => sum + d.balanceOwed);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(ref.tr('debtor_book')),
         actions: [
           IconButton(
             icon: const Icon(Icons.send_rounded),
             tooltip: 'Bulk SMS Remind All',
-            onPressed: debtors.any((d) => d.balanceOwed > 0) ? _showBulkRemindDialog : null,
+            onPressed: debtors.any((d) => d.balanceOwed > 0)
+                ? _showBulkRemindDialog
+                : null,
           ),
           IconButton(
             icon: const Icon(Icons.person_add_rounded),
@@ -534,24 +615,34 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                   children: [
                     const Text(
                       'Total Outstanding Credit',
-                      style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyFormatter.format(totalOwed),
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${filtered.length} Debtors',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13),
                   ),
                 ),
               ],
@@ -566,7 +657,8 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                 hintText: 'Search debtors by name or phone...',
                 prefixIcon: Icon(Icons.search_rounded, size: 20),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
@@ -581,11 +673,16 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.account_balance_wallet_outlined, size: 48, color: AppColors.textMuted),
+                        const Icon(Icons.account_balance_wallet_outlined,
+                            size: 48, color: AppColors.textMuted),
                         const SizedBox(height: 8),
                         Text(
-                          debtors.isEmpty ? 'No debtors recorded yet' : 'No matching debtors',
-                          style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                          debtors.isEmpty
+                              ? 'No debtors recorded yet'
+                              : 'No matching debtors',
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -595,17 +692,21 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, index) {
                       final debtor = filtered[index];
-                      final isOverLimit = debtor.balanceOwed > debtor.creditLimit;
+                      final isOverLimit =
+                          debtor.balanceOwed > debtor.creditLimit;
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         child: ExpansionTile(
                           shape: const Border(),
                           collapsedShape: const Border(),
                           leading: CircleAvatar(
-                            backgroundColor: AppColors.creditAmber.withValues(alpha: 0.15),
-                            child: const Icon(Icons.person_outline_rounded, color: AppColors.creditAmber),
+                            backgroundColor:
+                                AppColors.creditAmber.withValues(alpha: 0.15),
+                            child: const Icon(Icons.person_outline_rounded,
+                                color: AppColors.creditAmber),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -613,14 +714,19 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                               Expanded(
                                 child: Text(
                                   debtor.name,
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 14),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Text(
                                 CurrencyFormatter.format(debtor.balanceOwed),
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.danger),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                    color: AppColors.danger),
                               ),
                             ],
                           ),
@@ -628,8 +734,12 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                             '${debtor.phone} · Limit: ${CurrencyFormatter.format(debtor.creditLimit)}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isOverLimit ? AppColors.danger : AppColors.textMuted,
-                              fontWeight: isOverLimit ? FontWeight.bold : FontWeight.normal,
+                              color: isOverLimit
+                                  ? AppColors.danger
+                                  : AppColors.textMuted,
+                              fontWeight: isOverLimit
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                           children: [
@@ -640,22 +750,34 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                                 children: [
                                   const Divider(),
                                   if (debtor.paymentHistory.isNotEmpty) ...[
-                                    const Text('Payment History:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    const Text('Payment History:',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 4),
                                     ...debtor.paymentHistory.map((p) {
-                                      final pDate = DateTime.fromMillisecondsSinceEpoch(p['date'] as int);
+                                      final pDate =
+                                          DateTime.fromMillisecondsSinceEpoch(
+                                              p['date'] as int);
                                       return Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 2),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
                                               '${pDate.day}/${pDate.month} · ${p['method'].toString().toUpperCase()}',
-                                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                              style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors.textMuted),
                                             ),
                                             Text(
                                               '+${CurrencyFormatter.format((p['amount'] as num).toDouble())}',
-                                              style: const TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold),
+                                              style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppColors.success,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -667,15 +789,23 @@ class _DebtorBookScreenState extends ConsumerState<DebtorBookScreen> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       OutlinedButton.icon(
-                                        onPressed: () => _showReminderOptions(debtor),
-                                        icon: const Icon(Icons.send_rounded, size: 15),
-                                        label: const Text('Send Reminder', style: TextStyle(fontSize: 12)),
+                                        onPressed: () =>
+                                            _showReminderOptions(debtor),
+                                        icon: const Icon(Icons.send_rounded,
+                                            size: 15),
+                                        label: const Text('Send Reminder',
+                                            style: TextStyle(fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       ElevatedButton.icon(
-                                        onPressed: () => _showRecordPaymentDialog(debtor),
-                                        icon: const Icon(Icons.payments_rounded, size: 16),
-                                        label: const Text('Repay', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                                        onPressed: () =>
+                                            _showRecordPaymentDialog(debtor),
+                                        icon: const Icon(Icons.payments_rounded,
+                                            size: 16),
+                                        label: const Text('Repay',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 12)),
                                       ),
                                     ],
                                   ),

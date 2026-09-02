@@ -2535,6 +2535,22 @@ class AppDatabase {
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
   Future<void> createJournalEntry(LocalJournalEntryData entry) async {
+    if (entry.amount <= 0) {
+      throw ArgumentError.value(
+          entry.amount, 'amount', 'Amount must be greater than zero.');
+    }
+    if (entry.debitAccountId == entry.creditAccountId) {
+      throw ArgumentError('Debit and credit accounts must be different.');
+    }
+    if (!_chartOfAccounts.containsKey(entry.debitAccountId) ||
+        !_chartOfAccounts.containsKey(entry.creditAccountId)) {
+      throw ArgumentError(
+          'Both journal accounts must exist in the chart of accounts.');
+    }
+    if (_journalEntries.containsKey(entry.id)) {
+      throw StateError('A journal entry with this ID already exists.');
+    }
+
     final normalized = LocalJournalEntryData(
       id: entry.id,
       businessId: entry.businessId,
@@ -2593,6 +2609,27 @@ class AppDatabase {
     _notify();
   }
 
+  Future<void> createInvoiceWithReceivable({
+    required LocalInvoiceData invoice,
+    required LocalReceivableData receivable,
+  }) async {
+    if (invoice.totalAmount <= 0 || receivable.amount <= 0) {
+      throw ArgumentError('Invoice amounts must be greater than zero.');
+    }
+    if (invoice.totalAmount != receivable.amount) {
+      throw ArgumentError('Invoice and receivable amounts must match.');
+    }
+    if (_invoices.containsKey(invoice.id) ||
+        _receivables.containsKey(receivable.id)) {
+      throw StateError('This invoice already exists.');
+    }
+    _invoices[invoice.id] = invoice;
+    _receivables[receivable.id] = receivable;
+    await _persist(_kInvoices, _invoices, (inv) => inv.toJson());
+    await _persist(_kReceivables, _receivables, (rec) => rec.toJson());
+    _notify();
+  }
+
   Future<void> updateInvoiceStatus(String invoiceId, String status) async {
     final inv = _invoices[invoiceId];
     if (inv != null) {
@@ -2630,6 +2667,10 @@ class AppDatabase {
       String receivableId, double amount) async {
     final rec = _receivables[receivableId];
     if (rec == null) return;
+    if (amount <= 0 || amount > rec.amount) {
+      throw ArgumentError(
+          'Payment must be greater than zero and no more than the balance.');
+    }
     final newAmount = (rec.amount - amount).clamp(0.0, double.infinity);
     final newStatus =
         newAmount == 0 ? 'paid' : (newAmount < rec.amount ? 'partial' : 'open');
@@ -2661,6 +2702,10 @@ class AppDatabase {
   Future<void> recordPayablePayment(String payableId, double amount) async {
     final pay = _payables[payableId];
     if (pay == null) return;
+    if (amount <= 0 || amount > pay.amount) {
+      throw ArgumentError(
+          'Payment must be greater than zero and no more than the balance.');
+    }
     final newAmount = (pay.amount - amount).clamp(0.0, double.infinity);
     final newStatus =
         newAmount == 0 ? 'paid' : (newAmount < pay.amount ? 'partial' : 'open');
