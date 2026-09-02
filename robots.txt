@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://beinomugisha.github.io/DUUKA/sitemap.xml
