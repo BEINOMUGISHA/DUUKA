@@ -3,6 +3,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
 
+class _BenefitCue extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _BenefitCue({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.goldLight, size: 16),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
@@ -226,6 +260,39 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Run your shop with confidence.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Sell. Know your stock. Know your money.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.goldLight,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _BenefitCue(
+                          icon: Icons.point_of_sale_rounded, label: 'Sell'),
+                      SizedBox(width: 10),
+                      _BenefitCue(
+                          icon: Icons.inventory_2_rounded, label: 'Stock'),
+                      SizedBox(width: 10),
+                      _BenefitCue(icon: Icons.payments_rounded, label: 'Money'),
                     ],
                   ),
                   const SizedBox(height: 28),
