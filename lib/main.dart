@@ -40,11 +40,13 @@ class MainNavigationShell extends ConsumerStatefulWidget {
   const MainNavigationShell({super.key});
 
   @override
-  ConsumerState<MainNavigationShell> createState() => _MainNavigationShellState();
+  ConsumerState<MainNavigationShell> createState() =>
+      _MainNavigationShellState();
 }
 
 class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
 
   @override
   void initState() {
@@ -66,16 +68,11 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final List<Widget> screens = [
-      DashboardScreen(onNavigateTab: (index) => setState(() => _currentIndex = index)),
-      const PosQuickSaleScreen(),
-      const InventoryScreen(),
-      const CustomersScreen(),
-      const MoreHubScreen(),
-    ];
+    final screens = List<Widget>.generate(5, _buildScreen);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF1F5F9),
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
@@ -96,15 +93,45 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(index: 0, icon: Icons.home_rounded, label: 'Home'),
-              _buildNavItem(index: 1, icon: Icons.point_of_sale_rounded, label: 'Sales'),
-              _buildNavItem(index: 2, icon: Icons.inventory_2_rounded, label: 'Stock'),
-              _buildNavItem(index: 3, icon: Icons.people_alt_rounded, label: 'Customers'),
-              _buildNavItem(index: 4, icon: Icons.grid_view_rounded, label: 'More'),
+              _buildNavItem(
+                  index: 1, icon: Icons.point_of_sale_rounded, label: 'Sales'),
+              _buildNavItem(
+                  index: 2, icon: Icons.inventory_2_rounded, label: 'Stock'),
+              _buildNavItem(
+                  index: 3, icon: Icons.people_alt_rounded, label: 'Customers'),
+              _buildNavItem(
+                  index: 4, icon: Icons.grid_view_rounded, label: 'More'),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildScreen(int index) {
+    if (!_visitedTabs.contains(index)) {
+      return const SizedBox.shrink();
+    }
+
+    switch (index) {
+      case 0:
+        return DashboardScreen(
+          onNavigateTab: (index) => setState(() {
+            _visitedTabs.add(index);
+            _currentIndex = index;
+          }),
+        );
+      case 1:
+        return const PosQuickSaleScreen();
+      case 2:
+        return const InventoryScreen();
+      case 3:
+        return const CustomersScreen();
+      case 4:
+        return const MoreHubScreen();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildNavItem({
@@ -114,11 +141,16 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   }) {
     final isSelected = _currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor = isDark ? AppColors.emeraldNeon : AppColors.primaryForest;
-    final inactiveColor = isDark ? AppColors.darkTextMuted : const Color(0xFF94A3B8);
+    final activeColor =
+        isDark ? AppColors.emeraldNeon : AppColors.primaryForest;
+    final inactiveColor =
+        isDark ? AppColors.darkTextMuted : const Color(0xFF94A3B8);
 
     return InkWell(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => setState(() {
+        _visitedTabs.add(index);
+        _currentIndex = index;
+      }),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
