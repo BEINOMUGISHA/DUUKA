@@ -29,6 +29,39 @@ void main() {
     expect(businessVerticalFor('unknown').id, 'retail');
   });
 
+  test('local products are isolated per business', () async {
+    final db = AppDatabase();
+    await db.init();
+    await db.insertProduct(LocalProductData(
+      id: 'product_business_a',
+      businessId: 'business_a',
+      name: 'Clinic Service',
+      category: 'Services',
+      costPrice: 100,
+      sellPrice: 150,
+      currentStock: 1,
+      minStockLevel: 1,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    ));
+    await db.insertProduct(LocalProductData(
+      id: 'product_business_b',
+      businessId: 'business_b',
+      name: 'Restaurant Meal',
+      category: 'Food',
+      costPrice: 200,
+      sellPrice: 300,
+      currentStock: 1,
+      minStockLevel: 1,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    ));
+
+    final businessAProducts = await db.getProducts(businessId: 'business_a');
+    expect(businessAProducts.map((product) => product.id),
+        contains('product_business_a'));
+    expect(businessAProducts.map((product) => product.id),
+        isNot(contains('product_business_b')));
+  });
+
   test('Accounting foundation exposes chart of accounts and journal entries',
       () async {
     final db = AppDatabase();

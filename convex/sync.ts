@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Batch sync mutation for offline writes from mobile Drift DB
 export const processBatchOfflineSync = mutation({
@@ -24,7 +25,81 @@ export const processBatchOfflineSync = mutation({
       try {
         const parsed = JSON.parse(item.data);
 
-        if (item.entityType === "sale") {
+        if (item.entityType === "product") {
+          const existing = await ctx.db
+            .query("products")
+            .withIndex("by_offline_id", (q) => q.eq("offlineId", parsed.id))
+            .first();
+          if (existing) {
+            if (item.action === "update") {
+              await ctx.db.patch(existing._id, {
+                name: parsed.name,
+                sku: parsed.sku,
+                category: parsed.category,
+                costPrice: parsed.costPrice,
+                sellingPrice: parsed.sellPrice,
+                lowStockThreshold: parsed.minStockLevel,
+                unit: parsed.unit,
+                updatedAt: Date.now(),
+              });
+            }
+            results.push({ queueId: item.queueId, status: "success", serverId: existing._id });
+            continue;
+          }
+          const productId = await ctx.db.insert("products", {
+            businessId: args.businessId,
+            offlineId: parsed.id,
+            name: parsed.name,
+            sku: parsed.sku,
+            category: parsed.category ?? "General",
+            costPrice: parsed.costPrice ?? 0,
+            sellingPrice: parsed.sellPrice ?? 0,
+            stockQuantity: parsed.currentStock ?? 0,
+            lowStockThreshold: parsed.minStockLevel ?? 0,
+            unit: parsed.unit ?? "pcs",
+            isTaxable: parsed.isTaxable ?? true,
+            taxRate: parsed.taxRate ?? 0.18,
+            isArchived: parsed.isArchived ?? false,
+            createdAt: parsed.updatedAt ?? Date.now(),
+            updatedAt: Date.now(),
+          });
+          results.push({ queueId: item.queueId, status: "success", serverId: productId });
+        } else if (item.entityType === "customer") {
+          const existing = await ctx.db
+            .query("customers")
+            .withIndex("by_offline_id", (q) => q.eq("offlineId", parsed.id))
+            .first();
+          if (existing) {
+            if (item.action === "update") {
+              await ctx.db.patch(existing._id, {
+                name: parsed.name,
+                phone: parsed.phone,
+                email: parsed.email,
+                address: parsed.address,
+                creditLimit: parsed.creditLimit ?? 0,
+                notes: parsed.notes,
+                updatedAt: Date.now(),
+              });
+            }
+            results.push({ queueId: item.queueId, status: "success", serverId: existing._id });
+            continue;
+          }
+          const customerId = await ctx.db.insert("customers", {
+            businessId: args.businessId,
+            offlineId: parsed.id,
+            name: parsed.name,
+            phone: parsed.phone,
+            email: parsed.email,
+            address: parsed.address,
+            creditLimit: parsed.creditLimit ?? 0,
+            currentDebt: parsed.currentDebt ?? 0,
+            notes: parsed.notes,
+            isArchived: parsed.isArchived ?? false,
+            createdAt: parsed.createdAt ?? Date.now(),
+            updatedAt: Date.now(),
+          });
+          results.push({ queueId: item.queueId, status: "success", serverId: customerId });
+        } else if (item.entityType === "sale") {
           // Check if already synced by offlineId to prevent duplicate sales
           const existing = await ctx.db
             .query("sales")
@@ -48,10 +123,39 @@ export const processBatchOfflineSync = mutation({
           const balance = Math.max(0, total - amountPaid);
           const saleStatus = balance === 0 ? "completed" : "pending";
 
+          let resolvedCustomerId: Id<"customers"> | undefined;
+          const customerPhone = typeof parsed.customerPhone === "string"
+            ? parsed.customerPhone.replace(/[^0-9]/g, "")
+            : "";
+          if (customerPhone && customerPhone !== "0700000000") {
+            const normalizedPhone = customerPhone.startsWith("0") && customerPhone.length === 10
+              ? "256" + customerPhone.substring(1)
+              : customerPhone;
+            const customers = await ctx.db
+              .query("customers")
+              .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+              .collect();
+            const existingCustomer = customers.find((customer) => customer.phone === normalizedPhone);
+            if (existingCustomer) {
+              resolvedCustomerId = existingCustomer._id;
+            } else if (parsed.customerName && parsed.customerName !== "Walk-in Customer") {
+              resolvedCustomerId = await ctx.db.insert("customers", {
+                businessId: args.businessId,
+                name: parsed.customerName,
+                phone: normalizedPhone,
+                creditLimit: 0,
+                currentDebt: 0,
+                isArchived: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              });
+            }
+          }
+
           const saleId = await ctx.db.insert("sales", {
             businessId: args.businessId,
             saleNumber,
-            customerId: parsed.customerId,
+            customerId: resolvedCustomerId,
             customerName: parsed.customerName,
             customerPhone: parsed.customerPhone,
             subtotal,
@@ -71,6 +175,28 @@ export const processBatchOfflineSync = mutation({
             createdAt: item.localTimestamp,
           });
 
+          if (balance > 0 && resolvedCustomerId) {
+            const customer = await ctx.db.get(resolvedCustomerId);
+            if (customer) {
+              await ctx.db.patch(resolvedCustomerId, {
+                currentDebt: customer.currentDebt + balance,
+                updatedAt: Date.now(),
+              });
+            }
+            await ctx.db.insert("debts", {
+              businessId: args.businessId,
+              customerId: resolvedCustomerId,
+              saleId,
+              originalAmount: balance,
+              amountPaid: 0,
+              balance,
+              dueDate: parsed.dueDate ?? Date.now() + 14 * 24 * 60 * 60 * 1000,
+              status: "active",
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            });
+          }
+
           // Reconcile any pending MoMo transaction that referenced this sale by offlineId
           const pendingMomo = await ctx.db
             .query("mobileMoneyTransactions")
@@ -83,15 +209,52 @@ export const processBatchOfflineSync = mutation({
           // Stock delta deduction
           const items = parsed.items ?? parsed.cartItems ?? [];
           for (const it of items) {
-            const prod = await ctx.db.get(it.productId);
-            if (prod) {
-              const newStock = Math.max(0, prod.stockQuantity - it.quantity);
-              await ctx.db.patch(it.productId, { stockQuantity: newStock, updatedAt: Date.now() });
+            const products = await ctx.db
+              .query("products")
+              .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+              .collect();
+            const prod = products.find((product) =>
+              (it.sku && product.sku === it.sku) || product.name === it.productName
+            );
+            let resolvedProductId: any = prod?._id;
+            if (!prod) {
+              resolvedProductId = await ctx.db.insert("products", {
+                businessId: args.businessId,
+                name: it.productName ?? "Unnamed item",
+                sku: it.sku,
+                category: it.category ?? "General",
+                costPrice: it.costPrice ?? 0,
+                sellingPrice: it.unitPrice ?? 0,
+                stockQuantity: it.currentStock ?? 0,
+                lowStockThreshold: 0,
+                unit: it.unit ?? "pcs",
+                isTaxable: true,
+                taxRate: 0.18,
+                isArchived: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              });
+            }
+            if (resolvedProductId) {
+              const previousStock = prod?.stockQuantity ?? 0;
+              const newStock = Math.max(0, previousStock - it.quantity);
+              await ctx.db.insert("saleItems", {
+                saleId,
+                businessId: args.businessId,
+                productId: resolvedProductId,
+                productName: it.productName ?? "Unnamed item",
+                quantity: it.quantity ?? 1,
+                unitPrice: it.unitPrice ?? 0,
+                costPrice: it.costPrice ?? 0,
+                discount: it.discount ?? 0,
+                total: it.subtotal ?? (it.unitPrice ?? 0) * (it.quantity ?? 1),
+              });
+              await ctx.db.patch(resolvedProductId, { stockQuantity: newStock, updatedAt: Date.now() });
               await ctx.db.insert("stockMovements", {
                 businessId: args.businessId,
-                productId: it.productId,
+                productId: resolvedProductId,
                 deltaQuantity: -it.quantity,
-                previousStock: prod.stockQuantity,
+                previousStock,
                 newStock,
                 reason: "sale",
                 referenceId: saleId,
@@ -121,10 +284,11 @@ export const processBatchOfflineSync = mutation({
 
           results.push({ queueId: item.queueId, status: "success", serverId: txId });
         } else if (item.entityType === "customer_payment") {
-          const customer = await ctx.db.get(parsed.customerId);
+          const customerId = parsed.customerId as Id<"customers"> | undefined;
+          const customer = customerId ? await ctx.db.get(customerId) : null;
           if (customer) {
-            const newBal = Math.max(0, customer.outstandingBalance - parsed.amount);
-            await ctx.db.patch(customer._id, { outstandingBalance: newBal, isDebtor: newBal > 0, updatedAt: Date.now() });
+            const newBal = Math.max(0, customer.currentDebt - parsed.amount);
+            await ctx.db.patch(customer._id, { currentDebt: newBal, updatedAt: Date.now() });
           }
           const payId = await ctx.db.insert("payments", {
             businessId: args.businessId,

@@ -8,6 +8,7 @@ class BusinessVertical {
   final String salesLabel;
   final String stockLabel;
   final String customerLabel;
+  final Set<String> enabledFeatures;
 
   const BusinessVertical({
     required this.id,
@@ -17,6 +18,7 @@ class BusinessVertical {
     required this.salesLabel,
     required this.stockLabel,
     required this.customerLabel,
+    required this.enabledFeatures,
   });
 }
 
@@ -29,6 +31,14 @@ const businessVerticals = [
     salesLabel: 'Sales',
     stockLabel: 'Inventory',
     customerLabel: 'Customers',
+    enabledFeatures: {
+      'inventory',
+      'production',
+      'branches',
+      'credit',
+      'suppliers',
+      'sms'
+    },
   ),
   BusinessVertical(
     id: 'clinic',
@@ -38,6 +48,7 @@ const businessVerticals = [
     salesLabel: 'Visits & Sales',
     stockLabel: 'Medical Stock',
     customerLabel: 'Patients',
+    enabledFeatures: {'inventory', 'credit', 'sms'},
   ),
   BusinessVertical(
     id: 'restaurant',
@@ -47,6 +58,7 @@ const businessVerticals = [
     salesLabel: 'Orders',
     stockLabel: 'Ingredients',
     customerLabel: 'Guests',
+    enabledFeatures: {'inventory', 'credit', 'sms'},
   ),
   BusinessVertical(
     id: 'salon',
@@ -56,6 +68,7 @@ const businessVerticals = [
     salesLabel: 'Appointments',
     stockLabel: 'Products',
     customerLabel: 'Clients',
+    enabledFeatures: {'inventory', 'credit', 'sms'},
   ),
   BusinessVertical(
     id: 'services',
@@ -65,6 +78,7 @@ const businessVerticals = [
     salesLabel: 'Jobs & Invoices',
     stockLabel: 'Resources',
     customerLabel: 'Clients',
+    enabledFeatures: {'credit', 'sms'},
   ),
   BusinessVertical(
     id: 'wholesale',
@@ -74,6 +88,7 @@ const businessVerticals = [
     salesLabel: 'Orders',
     stockLabel: 'Warehouse',
     customerLabel: 'Accounts',
+    enabledFeatures: {'inventory', 'branches', 'credit', 'suppliers', 'sms'},
   ),
   BusinessVertical(
     id: 'other',
@@ -83,6 +98,7 @@ const businessVerticals = [
     salesLabel: 'Transactions',
     stockLabel: 'Resources',
     customerLabel: 'Contacts',
+    enabledFeatures: {'credit', 'sms'},
   ),
 ];
 

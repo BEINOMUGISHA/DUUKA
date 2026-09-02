@@ -865,6 +865,7 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
     final salePayload = {
       'id': saleId,
       'offlineId': saleId,
+      'businessId': session?.businessId ?? 'biz_default',
       'saleNumber': saleNumber,
       'customerId':
           _customerNameController.text.isNotEmpty ? 'cust_walkin' : null,
@@ -880,6 +881,9 @@ class _CheckoutBottomSheetState extends ConsumerState<_CheckoutBottomSheet> {
                 'unitPrice': ci.product.sellPrice,
                 'subtotal': ci.subtotal,
                 'costPrice': ci.product.costPrice,
+                'currentStock': ci.product.currentStock,
+                'unit': ci.product.unit,
+                'category': ci.product.category,
                 'taxAmount': ci.taxAmount,
               })
           .toList(),

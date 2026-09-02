@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 import { verifyUserBusinessAccess } from "./auth";
 
 // ─── List Suppliers ──────────────────────────────────────────────────────────
@@ -269,11 +270,12 @@ export const receivePurchaseOrder = mutation({
     for (const recv of args.receivedItems) {
       if (recv.quantityReceived <= 0) continue;
 
-      const prod = await ctx.db.get(recv.productId as any);
+      const productId = recv.productId as Id<"products">;
+      const prod = await ctx.db.get(productId);
       if (!prod) continue;
 
       const newStock = prod.stockQuantity + recv.quantityReceived;
-      await ctx.db.patch(recv.productId as any, {
+      await ctx.db.patch(productId, {
         stockQuantity: newStock,
         costPrice: recv.costPerUnit, // update cost price to latest GRN cost
         updatedAt: now,
@@ -281,7 +283,7 @@ export const receivePurchaseOrder = mutation({
 
       await ctx.db.insert("stockMovements", {
         businessId: args.businessId,
-        productId: recv.productId as any,
+        productId,
         deltaQuantity: recv.quantityReceived,
         previousStock: prod.stockQuantity,
         newStock,

@@ -14,10 +14,10 @@ export const listCustomers = query({
       .collect();
 
     if (args.onlyDebtors) {
-      customers = customers.filter((c) => c.outstandingBalance > 0);
+      customers = customers.filter((c) => c.currentDebt > 0);
     }
 
-    return customers.sort((a, b) => b.outstandingBalance - a.outstandingBalance);
+    return customers.sort((a, b) => b.currentDebt - a.currentDebt);
   },
 });
 
@@ -44,8 +44,7 @@ export const createCustomer = mutation({
       email: args.email,
       address: args.address,
       creditLimit: args.creditLimit,
-      outstandingBalance: balance,
-      isDebtor: balance > 0,
+      currentDebt: balance,
       notes: args.notes,
       createdAt: now,
       updatedAt: now,
@@ -72,12 +71,11 @@ export const recordCustomerPayment = mutation({
     }
 
     const now = Date.now();
-    const newBalance = Math.max(0, customer.outstandingBalance - args.amount);
+    const newBalance = Math.max(0, customer.currentDebt - args.amount);
 
     // Update customer balance
     await ctx.db.patch(args.customerId, {
-      outstandingBalance: newBalance,
-      isDebtor: newBalance > 0,
+      currentDebt: newBalance,
       updatedAt: now,
     });
 
@@ -119,7 +117,7 @@ export const recordCustomerPayment = mutation({
     return {
       paymentId,
       receiptNumber,
-      previousBalance: customer.outstandingBalance,
+      previousBalance: customer.currentDebt,
       newBalance,
     };
   },
@@ -141,7 +139,7 @@ export const getDebtorSmsReminder = query({
     }
 
     const lang = args.language ?? "en";
-    const amountStr = `UGX ${customer.outstandingBalance.toLocaleString()}`;
+    const amountStr = `UGX ${customer.currentDebt.toLocaleString()}`;
     const businessName = business.name;
 
     if (lang === "lg") {

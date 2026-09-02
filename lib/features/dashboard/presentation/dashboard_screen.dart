@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/constants/business_verticals.dart';
@@ -55,6 +56,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         .where((e) => e.date >= todayStart)
         .fold<double>(0, (sum, e) => sum + e.amount);
     final todayProfit = todaySales - todayExpenses;
+
+    final performanceRevenue = List<double>.generate(7, (index) {
+      final day = DateTime(now.year, now.month, now.day - (6 - index));
+      final nextDay = day.add(const Duration(days: 1));
+      return sales
+          .where((sale) =>
+              !sale.isVoided &&
+              sale.localTimestamp >= day.millisecondsSinceEpoch &&
+              sale.localTimestamp < nextDay.millisecondsSinceEpoch)
+          .fold<double>(0, (sum, sale) => sum + sale.totalAmount);
+    });
+    final performanceExpenses = List<double>.generate(7, (index) {
+      final day = DateTime(now.year, now.month, now.day - (6 - index));
+      final nextDay = day.add(const Duration(days: 1));
+      return expenses
+          .where((expense) =>
+              expense.date >= day.millisecondsSinceEpoch &&
+              expense.date < nextDay.millisecondsSinceEpoch)
+          .fold<double>(0, (sum, expense) => sum + expense.amount);
+    });
+    final performanceRevenueTotal =
+        performanceRevenue.fold<double>(0, (sum, value) => sum + value);
+    final performanceExpenseTotal =
+        performanceExpenses.fold<double>(0, (sum, value) => sum + value);
+    final performanceNet = performanceRevenueTotal - performanceExpenseTotal;
 
     final lowStockCount =
         products.where((p) => p.currentStock <= p.minStockLevel).length;
@@ -597,6 +623,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         );
                       },
                     ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  _buildPerformanceChart(
+                    context: context,
+                    revenue: performanceRevenue,
+                    expenses: performanceExpenses,
+                    revenueTotal: performanceRevenueTotal,
+                    expenseTotal: performanceExpenseTotal,
+                    net: performanceNet,
+                    isDark: isDark,
+                    vertical: vertical,
                   ),
 
                   const SizedBox(height: 18),
@@ -1162,6 +1201,228 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPerformanceChart({
+    required BuildContext context,
+    required List<double> revenue,
+    required List<double> expenses,
+    required double revenueTotal,
+    required double expenseTotal,
+    required double net,
+    required bool isDark,
+    required BusinessVertical vertical,
+  }) {
+    final maxValue = [...revenue, ...expenses].fold<double>(
+      0,
+      (maximum, value) => value > maximum ? value : maximum,
+    );
+    final chartMax = maxValue == 0 ? 100.0 : maxValue * 1.25;
+    final netColor = net >= 0 ? AppColors.success : AppColors.danger;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.borderLight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${vertical.salesLabel} performance',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Last 7 days',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 10.5,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  _buildChartLegend('Income', AppColors.primaryEmerald),
+                  const SizedBox(width: 8),
+                  _buildChartLegend('Costs', AppColors.accentGold),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 145,
+            child: BarChart(
+              BarChartData(
+                maxY: chartMax,
+                minY: 0,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                        BarTooltipItem(
+                      CurrencyFormatter.format(rod.toY),
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final target = DateTime.now().subtract(
+                          Duration(days: 6 - value.toInt()),
+                        );
+                        const labels = [
+                          'Mon',
+                          'Tue',
+                          'Wed',
+                          'Thu',
+                          'Fri',
+                          'Sat',
+                          'Sun',
+                        ];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Text(
+                            labels[target.weekday - 1],
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 9,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: false),
+                alignment: BarChartAlignment.spaceAround,
+                barGroups: List.generate(7, (index) {
+                  return BarChartGroupData(
+                    x: index,
+                    barsSpace: 3,
+                    barRods: [
+                      BarChartRodData(
+                        toY: revenue[index],
+                        color: AppColors.primaryEmerald,
+                        width: 7,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3),
+                        ),
+                      ),
+                      BarChartRodData(
+                        toY: expenses[index],
+                        color: AppColors.accentGold,
+                        width: 7,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildChartSummary(
+                  'Income',
+                  CurrencyFormatter.format(revenueTotal),
+                  AppColors.primaryEmerald,
+                ),
+              ),
+              Expanded(
+                child: _buildChartSummary(
+                  'Costs',
+                  CurrencyFormatter.format(expenseTotal),
+                  AppColors.accentGold,
+                ),
+              ),
+              Expanded(
+                child: _buildChartSummary(
+                  'Net',
+                  CurrencyFormatter.format(net),
+                  netColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartLegend(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label,
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            )),
+      ],
+    );
+  }
+
+  Widget _buildChartSummary(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 9)),
+        const SizedBox(height: 2),
+        Text(value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            )),
+      ],
     );
   }
 

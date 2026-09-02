@@ -1540,6 +1540,7 @@ class AppDatabase {
 
   SharedPreferences? _prefs;
   bool _initialized = false;
+  String? _activeBusinessId;
 
   final Map<String, LocalProductData> _products = {};
   final Map<String, LocalSaleData> _sales = {};
@@ -1569,6 +1570,10 @@ class AppDatabase {
   Stream<void> get onChange => _changeController.stream;
 
   AppDatabase();
+
+  void setActiveBusinessId(String? businessId) {
+    _activeBusinessId = businessId;
+  }
 
   Future<void> init() async {
     if (_initialized) return;
@@ -2181,8 +2186,12 @@ class AppDatabase {
   }
 
   // ---- Products -------------------------------------------------------------
-  Future<List<LocalProductData>> getProducts() async =>
-      (_products.values.where((p) => !p.isArchived).toList()
+  Future<List<LocalProductData>> getProducts({String? businessId}) async =>
+      (_products.values
+          .where((p) =>
+              !p.isArchived &&
+              (businessId == null || p.businessId == businessId))
+          .toList()
         ..sort((a, b) => a.name.compareTo(b.name)));
 
   Future<void> insertProduct(LocalProductData product) async {
@@ -2221,9 +2230,13 @@ class AppDatabase {
     }
   }
 
-  List<LocalProductData> getLowStockProducts() => _products.values
-      .where((p) => !p.isArchived && p.currentStock <= p.minStockLevel)
-      .toList();
+  List<LocalProductData> getLowStockProducts({String? businessId}) =>
+      _products.values
+          .where((p) =>
+              !p.isArchived &&
+              (businessId == null || p.businessId == businessId) &&
+              p.currentStock <= p.minStockLevel)
+          .toList();
 
   // ---- Sales ----------------------------------------------------------------
   Future<void> insertSale(LocalSaleData sale) async {
@@ -2232,12 +2245,18 @@ class AppDatabase {
     _notify();
   }
 
-  Future<List<LocalSaleData>> getSales() async =>
-      (_sales.values.where((s) => !s.isVoided).toList()
-        ..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
-
-  Future<List<LocalSaleData>> getAllSales() async => (_sales.values.toList()
+  Future<List<LocalSaleData>> getSales({String? businessId}) async => (_sales
+      .values
+      .where((s) =>
+          !s.isVoided && (businessId == null || s.businessId == businessId))
+      .toList()
     ..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
+
+  Future<List<LocalSaleData>> getAllSales({String? businessId}) async =>
+      (_sales.values
+          .where((s) => businessId == null || s.businessId == businessId)
+          .toList()
+        ..sort((a, b) => b.localTimestamp.compareTo(a.localTimestamp)));
 
   Future<void> voidSale(String saleId) async {
     final e = _sales[saleId];
@@ -2300,8 +2319,11 @@ class AppDatabase {
     _notify();
   }
 
-  Future<List<LocalExpenseData>> getExpenses() async =>
-      (_expenses.values.toList()..sort((a, b) => b.date.compareTo(a.date)));
+  Future<List<LocalExpenseData>> getExpenses({String? businessId}) async =>
+      (_expenses.values
+          .where((e) => businessId == null || e.businessId == businessId)
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date)));
 
   Future<void> deleteExpense(String id) async {
     _expenses.remove(id);
@@ -2316,8 +2338,11 @@ class AppDatabase {
     _notify();
   }
 
-  Future<List<LocalDebtorData>> getDebtors() async => (_debtors.values.toList()
-    ..sort((a, b) => b.balanceOwed.compareTo(a.balanceOwed)));
+  Future<List<LocalDebtorData>> getDebtors({String? businessId}) async =>
+      (_debtors.values
+          .where((d) => businessId == null || d.businessId == businessId)
+          .toList()
+        ..sort((a, b) => b.balanceOwed.compareTo(a.balanceOwed)));
 
   Future<void> recordDebtorPayment(
       String debtorId, double amount, String method, String? ref) async {
@@ -2345,8 +2370,11 @@ class AppDatabase {
   }
 
   // ---- Customers ------------------------------------------------------------
-  Future<List<LocalCustomerData>> getCustomers() async =>
-      (_customers.values.toList()..sort((a, b) => a.name.compareTo(b.name)));
+  Future<List<LocalCustomerData>> getCustomers({String? businessId}) async =>
+      (_customers.values
+          .where((c) => businessId == null || c.businessId == businessId)
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name)));
 
   Future<void> insertCustomer(LocalCustomerData customer) async {
     _customers[customer.id] = customer;
@@ -2503,7 +2531,10 @@ class AppDatabase {
 
   // ---- ACCOUNTING CORE ------------------------------------------------------
   Future<List<LocalChartOfAccountData>> getChartOfAccounts() async =>
-      (_chartOfAccounts.values.toList()
+      (_chartOfAccounts.values
+          .where((a) =>
+              _activeBusinessId == null || a.businessId == _activeBusinessId)
+          .toList()
         ..sort((a, b) {
           final aCode = int.tryParse(a.code) ?? 999999;
           final bCode = int.tryParse(b.code) ?? 999999;
@@ -2527,12 +2558,18 @@ class AppDatabase {
   }
 
   Future<List<LocalJournalEntryData>> getJournalEntries() async =>
-      (_journalEntries.values.toList()
+      (_journalEntries.values
+          .where((j) =>
+              _activeBusinessId == null || j.businessId == _activeBusinessId)
+          .toList()
         ..sort((a, b) => b.entryDate.compareTo(a.entryDate)));
 
-  Future<List<LocalLedgerEntryData>> getLedgerEntries() async =>
-      (_ledgerEntries.values.toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+  Future<List<LocalLedgerEntryData>> getLedgerEntries() async => (_ledgerEntries
+      .values
+      .where(
+          (l) => _activeBusinessId == null || l.businessId == _activeBusinessId)
+      .toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
   Future<void> createJournalEntry(LocalJournalEntryData entry) async {
     if (entry.amount <= 0) {
@@ -2599,9 +2636,11 @@ class AppDatabase {
   }
 
   // ---- INVOICES, RECEIVABLES & PAYABLES ----------------------------------------
-  Future<List<LocalInvoiceData>> getInvoices() async =>
-      (_invoices.values.toList()
-        ..sort((a, b) => b.issueDate.compareTo(a.issueDate)));
+  Future<List<LocalInvoiceData>> getInvoices() async => (_invoices.values
+      .where(
+          (i) => _activeBusinessId == null || i.businessId == _activeBusinessId)
+      .toList()
+    ..sort((a, b) => b.issueDate.compareTo(a.issueDate)));
 
   Future<void> createInvoice(LocalInvoiceData invoice) async {
     _invoices[invoice.id] = invoice;
@@ -2653,9 +2692,12 @@ class AppDatabase {
     }
   }
 
-  Future<List<LocalReceivableData>> getReceivables() async =>
-      (_receivables.values.toList()
-        ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
+  Future<List<LocalReceivableData>> getReceivables() async => (_receivables
+      .values
+      .where(
+          (r) => _activeBusinessId == null || r.businessId == _activeBusinessId)
+      .toList()
+    ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
 
   Future<void> createReceivable(LocalReceivableData receivable) async {
     _receivables[receivable.id] = receivable;
@@ -2689,9 +2731,11 @@ class AppDatabase {
     _notify();
   }
 
-  Future<List<LocalPayableData>> getPayables() async =>
-      (_payables.values.toList()
-        ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
+  Future<List<LocalPayableData>> getPayables() async => (_payables.values
+      .where(
+          (p) => _activeBusinessId == null || p.businessId == _activeBusinessId)
+      .toList()
+    ..sort((a, b) => b.dueDate.compareTo(a.dueDate)));
 
   Future<void> createPayable(LocalPayableData payable) async {
     _payables[payable.id] = payable;

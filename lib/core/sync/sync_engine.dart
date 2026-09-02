@@ -146,12 +146,25 @@ class SyncEngine extends ChangeNotifier {
           final serverId = res['serverId'] as String?;
 
           if (queueId != null && status == 'success') {
+            final queuedItem = items.cast<SyncQueueItem?>().firstWhere(
+                  (item) => item?.id == queueId,
+                  orElse: () => null,
+                );
+            Map<String, dynamic> localPayload = {};
+            if (queuedItem != null) {
+              try {
+                localPayload =
+                    jsonDecode(queuedItem.payloadJson) as Map<String, dynamic>;
+              } catch (_) {}
+            }
+            final localRecordId = localPayload['id'] as String? ?? queueId;
+
             // Remove from local queue
             await db.removeQueueItem(queueId);
 
             // Update matching local sale or transaction table
-            await db.markSaleSynced(queueId, serverId: serverId);
-            await db.markTransactionSynced(queueId, serverId: serverId);
+            await db.markSaleSynced(localRecordId, serverId: serverId);
+            await db.markTransactionSynced(localRecordId, serverId: serverId);
           }
         }
       }

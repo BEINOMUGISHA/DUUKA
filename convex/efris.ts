@@ -15,10 +15,15 @@ export const generateEfrisInvoicePayload = query({
       throw new Error("Business or Sale not found");
     }
 
-    const items = sale.items.map((item, index) => {
+    const items = await ctx.db
+      .query("saleItems")
+      .withIndex("by_sale", (q) => q.eq("saleId", args.saleId))
+      .collect();
+
+    const formattedItems = items.map((item, index) => {
       const vatRate = 0.18;
-      const netAmount = item.subtotal / (1 + vatRate);
-      const taxAmount = item.subtotal - netAmount;
+      const netAmount = item.total / (1 + vatRate);
+      const taxAmount = item.total - netAmount;
 
       return {
         itemSeq: index + 1,
@@ -26,7 +31,7 @@ export const generateEfrisInvoicePayload = query({
         goodsDescription: item.productName,
         quantity: item.quantity,
         unitPrice: Math.round(item.unitPrice / (1 + vatRate)),
-        totalAmount: item.subtotal,
+        totalAmount: item.total,
         taxRate: vatRate,
         taxAmount: Math.round(taxAmount),
         discount: 0,
@@ -46,16 +51,16 @@ export const generateEfrisInvoicePayload = query({
         buyerPhone: sale.customerPhone ?? "N/A",
       },
       invoiceDetails: {
-        invoiceNo: sale.efrisInvoiceNo ?? `URA-${sale.saleNumber}`,
+        invoiceNo: `URA-${sale.saleNumber}`,
         fiscalCode: sale.efrisFiscalCode ?? "FC-PENDING",
-        verificationCode: sale.efrisVerificationCode ?? "VC-PENDING",
+        verificationCode: "VC-PENDING",
         issuedDate: new Date(sale.createdAt).toISOString(),
         paymentMethod: sale.paymentMethod,
         currency: "UGX",
-        items,
-        subtotalAmount: sale.subtotalAmount,
-        totalTaxAmount: sale.taxAmount,
-        netTotalAmount: sale.totalAmount,
+        items: formattedItems,
+        subtotalAmount: sale.subtotal,
+        totalTaxAmount: sale.tax,
+        netTotalAmount: sale.total,
         qrCodeUrl: sale.efrisQrCodeData,
       },
     };

@@ -100,7 +100,7 @@ export const checkMobileMoneyStatus = mutation({
     const now = Date.now();
     const elapsedSeconds = (now - tx.createdAt) / 1000;
 
-    let newStatus = tx.status;
+    let newStatus: "pending" | "successful" | "failed" | "cancelled" | "expired" = tx.status;
     if (args.simulateSuccess || elapsedSeconds >= 4) {
       newStatus = "successful";
       await ctx.db.patch(args.transactionId, {

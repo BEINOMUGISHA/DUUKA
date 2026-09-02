@@ -59,6 +59,7 @@ export default defineSchema({
   // 4. Products Catalog & Stock
   products: defineTable({
     businessId: v.id("businesses"),
+    offlineId: v.optional(v.string()),
     name: v.string(),
     sku: v.optional(v.string()),
     barcode: v.optional(v.string()),
@@ -79,7 +80,8 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_business_and_category", ["businessId", "category"])
     .index("by_business_and_sku", ["businessId", "sku"])
-    .index("by_business_and_barcode", ["businessId", "barcode"]),
+    .index("by_business_and_barcode", ["businessId", "barcode"])
+    .index("by_offline_id", ["offlineId"]),
 
   // 5. Stock Movements (Inventory Audit Trail)
   stockMovements: defineTable({
@@ -112,6 +114,7 @@ export default defineSchema({
   // 6. Customers
   customers: defineTable({
     businessId: v.id("businesses"),
+    offlineId: v.optional(v.string()),
     name: v.string(),
     phone: v.string(), // Normalized "2567XXXXXXXX"
     email: v.optional(v.string()),
@@ -126,7 +129,8 @@ export default defineSchema({
     .index("by_business", ["businessId"])
     .index("by_phone", ["phone"])
     .index("by_business_and_phone", ["businessId", "phone"])
-    .index("by_business_and_debt", ["businessId", "currentDebt"]),
+    .index("by_business_and_debt", ["businessId", "currentDebt"])
+    .index("by_offline_id", ["offlineId"]),
 
   // 7. Sales Records
   sales: defineTable({
@@ -356,8 +360,10 @@ export default defineSchema({
     amount: v.number(),
     paymentMethod: v.union(v.literal("cash"), v.literal("mtn_momo"), v.literal("airtel_money"), v.literal("bank")),
     reference: v.optional(v.string()),
+    receiptImageStorageId: v.optional(v.id("_storage")),
     notes: v.optional(v.string()),
     isRecurring: v.boolean(),
+    recurringFrequency: v.optional(v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))),
     date: v.number(),
     deviceId: v.string(),
     createdBy: v.id("users"),

@@ -35,6 +35,7 @@ class MoreHubScreen extends ConsumerWidget {
         'icon': Icons.precision_manufacturing_rounded,
         'color': const Color(0xFF0F766E),
         'badge': 'NEW',
+        'feature': 'production',
         'screen': const ProductionScreen(),
       },
       {
@@ -43,6 +44,7 @@ class MoreHubScreen extends ConsumerWidget {
         'icon': Icons.account_tree_rounded,
         'color': const Color(0xFF0284C7),
         'badge': 'NEW',
+        'feature': 'branches',
         'screen': const BranchesScreen(),
       },
       {
@@ -58,6 +60,7 @@ class MoreHubScreen extends ConsumerWidget {
         'subtitle': 'Credit sales, due dates & reminders',
         'icon': Icons.book_online_rounded,
         'color': const Color(0xFFD97706),
+        'feature': 'credit',
         'screen': const DebtorBookScreen(),
       },
       {
@@ -86,6 +89,7 @@ class MoreHubScreen extends ConsumerWidget {
         'subtitle': 'SMS templates & credit balance reminders',
         'icon': Icons.sms_rounded,
         'color': const Color(0xFF4F46E5),
+        'feature': 'sms',
         'screen': const SmsScreen(),
       },
       {
@@ -107,6 +111,7 @@ class MoreHubScreen extends ConsumerWidget {
         'subtitle': 'Supplier master, purchase orders & AP',
         'icon': Icons.local_shipping_rounded,
         'color': const Color(0xFF8B5CF6),
+        'feature': 'suppliers',
         'screen': const SuppliersScreen(),
       },
       {
@@ -117,6 +122,11 @@ class MoreHubScreen extends ConsumerWidget {
         'screen': const SettingsScreen(),
       },
     ];
+
+    final visibleTools = tools.where((tool) {
+      final feature = tool['feature'] as String?;
+      return feature == null || vertical.enabledFeatures.contains(feature);
+    }).toList();
 
     final quickActions = switch (vertical.id) {
       'clinic' => [
@@ -333,7 +343,7 @@ class MoreHubScreen extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 12),
 
-          ...tools.map((t) {
+          ...visibleTools.map((t) {
             final color = t['color'] as Color;
             final badge = t['badge'] as String?;
             return Card(

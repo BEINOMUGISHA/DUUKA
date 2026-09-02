@@ -18,6 +18,7 @@ class UserSession {
   final List<String> permissions;
   final String businessName;
   final String businessVertical;
+  final bool isCloudSession;
   final String currency;
   final String subscriptionTier;
   final bool isEfrisEnrolled;
@@ -35,6 +36,7 @@ class UserSession {
     required this.permissions,
     required this.businessName,
     this.businessVertical = 'retail',
+    this.isCloudSession = false,
     required this.currency,
     required this.subscriptionTier,
     required this.isEfrisEnrolled,
@@ -62,6 +64,7 @@ class UserSession {
     List<String>? permissions,
     String? businessName,
     String? businessVertical,
+    bool? isCloudSession,
     String? currency,
     String? subscriptionTier,
     bool? isEfrisEnrolled,
@@ -79,6 +82,7 @@ class UserSession {
       permissions: permissions ?? this.permissions,
       businessName: businessName ?? this.businessName,
       businessVertical: businessVertical ?? this.businessVertical,
+      isCloudSession: isCloudSession ?? this.isCloudSession,
       currency: currency ?? this.currency,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       isEfrisEnrolled: isEfrisEnrolled ?? this.isEfrisEnrolled,
@@ -168,6 +172,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
               .toList(),
           businessName: res['businessName'] as String,
           businessVertical: res['businessVertical'] as String? ?? 'retail',
+          isCloudSession: true,
           currency: res['currency'] as String? ?? 'UGX',
           subscriptionTier: res['subscriptionTier'] as String? ?? 'free',
           isEfrisEnrolled: res['isEfrisEnrolled'] as bool? ?? false,
@@ -231,7 +236,6 @@ class AuthNotifier extends StateNotifier<UserSession?> {
         'phone': phone,
         'pin': pin,
         'tin': tin,
-        'currency': 'UGX',
         'businessVertical': businessVertical,
       });
 
@@ -253,6 +257,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
           ],
           businessName: businessName,
           businessVertical: businessVertical,
+          isCloudSession: true,
           currency: 'UGX',
           subscriptionTier: 'pro',
           isEfrisEnrolled: tin != null && tin.isNotEmpty,
@@ -285,6 +290,7 @@ class AuthNotifier extends StateNotifier<UserSession?> {
       ],
       businessName: businessName,
       businessVertical: businessVertical,
+      isCloudSession: false,
       currency: 'UGX',
       subscriptionTier: 'pro',
       isEfrisEnrolled: tin != null && tin.isNotEmpty,
@@ -391,7 +397,7 @@ final customThemeColorProvider =
 // --- SYNC ENGINE PROVIDER ---
 final syncEngineProvider = Provider<SyncEngine?>((ref) {
   final session = ref.watch(authProvider);
-  if (session == null) return null;
+  if (session == null || !session.isCloudSession) return null;
 
   final db = ref.watch(databaseProvider);
   final client = ref.watch(convexClientProvider);
@@ -436,26 +442,38 @@ extension TranslationRef on WidgetRef {
 // --- PRODUCTS NOTIFIER ---
 class ProductsNotifier extends StateNotifier<List<LocalProductData>> {
   final AppDatabase db;
+  final SyncEngine? syncEngine;
+  final String? businessId;
   StreamSubscription<void>? _sub;
 
-  ProductsNotifier(this.db) : super([]) {
+  ProductsNotifier(this.db, this.syncEngine, this.businessId) : super([]) {
     _init();
   }
 
   Future<void> _init() async {
     await db.init();
-    state = await db.getProducts();
+    state = await db.getProducts(businessId: businessId);
     _sub = db.onChange.listen((_) async {
-      state = await db.getProducts();
+      state = await db.getProducts(businessId: businessId);
     });
   }
 
   Future<void> addProduct(LocalProductData product) async {
     await db.insertProduct(product);
+    await syncEngine?.enqueueMutation(
+      entityType: 'product',
+      action: 'create',
+      payload: product.toJson(),
+    );
   }
 
   Future<void> editProduct(LocalProductData product) async {
     await db.updateProduct(product);
+    await syncEngine?.enqueueMutation(
+      entityType: 'product',
+      action: 'update',
+      payload: product.toJson(),
+    );
   }
 
   Future<void> archiveProduct(String id) async {
@@ -493,23 +511,25 @@ class ProductsNotifier extends StateNotifier<List<LocalProductData>> {
 final productsProvider =
     StateNotifierProvider<ProductsNotifier, List<LocalProductData>>((ref) {
   final db = ref.watch(databaseProvider);
-  return ProductsNotifier(db);
+  return ProductsNotifier(
+      db, ref.watch(syncEngineProvider), ref.watch(authProvider)?.businessId);
 });
 
 // --- SALES NOTIFIER ---
 class SalesNotifier extends StateNotifier<List<LocalSaleData>> {
   final AppDatabase db;
+  final String? businessId;
   StreamSubscription<void>? _sub;
 
-  SalesNotifier(this.db) : super([]) {
+  SalesNotifier(this.db, this.businessId) : super([]) {
     _init();
   }
 
   Future<void> _init() async {
     await db.init();
-    state = await db.getSales();
+    state = await db.getSales(businessId: businessId);
     _sub = db.onChange.listen((_) async {
-      state = await db.getSales();
+      state = await db.getSales(businessId: businessId);
     });
   }
 
@@ -531,23 +551,24 @@ class SalesNotifier extends StateNotifier<List<LocalSaleData>> {
 final salesProvider =
     StateNotifierProvider<SalesNotifier, List<LocalSaleData>>((ref) {
   final db = ref.watch(databaseProvider);
-  return SalesNotifier(db);
+  return SalesNotifier(db, ref.watch(authProvider)?.businessId);
 });
 
 // --- EXPENSES NOTIFIER ---
 class ExpensesNotifier extends StateNotifier<List<LocalExpenseData>> {
   final AppDatabase db;
+  final String? businessId;
   StreamSubscription<void>? _sub;
 
-  ExpensesNotifier(this.db) : super([]) {
+  ExpensesNotifier(this.db, this.businessId) : super([]) {
     _init();
   }
 
   Future<void> _init() async {
     await db.init();
-    state = await db.getExpenses();
+    state = await db.getExpenses(businessId: businessId);
     _sub = db.onChange.listen((_) async {
-      state = await db.getExpenses();
+      state = await db.getExpenses(businessId: businessId);
     });
   }
 
@@ -569,23 +590,24 @@ class ExpensesNotifier extends StateNotifier<List<LocalExpenseData>> {
 final expensesProvider =
     StateNotifierProvider<ExpensesNotifier, List<LocalExpenseData>>((ref) {
   final db = ref.watch(databaseProvider);
-  return ExpensesNotifier(db);
+  return ExpensesNotifier(db, ref.watch(authProvider)?.businessId);
 });
 
 // --- DEBTORS NOTIFIER ---
 class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
   final AppDatabase db;
+  final String? businessId;
   StreamSubscription<void>? _sub;
 
-  DebtorsNotifier(this.db) : super([]) {
+  DebtorsNotifier(this.db, this.businessId) : super([]) {
     _init();
   }
 
   Future<void> _init() async {
     await db.init();
-    state = await db.getDebtors();
+    state = await db.getDebtors(businessId: businessId);
     _sub = db.onChange.listen((_) async {
-      state = await db.getDebtors();
+      state = await db.getDebtors(businessId: businessId);
     });
   }
 
@@ -608,32 +630,44 @@ class DebtorsNotifier extends StateNotifier<List<LocalDebtorData>> {
 final debtorsProvider =
     StateNotifierProvider<DebtorsNotifier, List<LocalDebtorData>>((ref) {
   final db = ref.watch(databaseProvider);
-  return DebtorsNotifier(db);
+  return DebtorsNotifier(db, ref.watch(authProvider)?.businessId);
 });
 
 // --- CUSTOMERS NOTIFIER ---
 class CustomersNotifier extends StateNotifier<List<LocalCustomerData>> {
   final AppDatabase db;
+  final SyncEngine? syncEngine;
+  final String? businessId;
   StreamSubscription<void>? _sub;
 
-  CustomersNotifier(this.db) : super([]) {
+  CustomersNotifier(this.db, this.syncEngine, this.businessId) : super([]) {
     _init();
   }
 
   Future<void> _init() async {
     await db.init();
-    state = await db.getCustomers();
+    state = await db.getCustomers(businessId: businessId);
     _sub = db.onChange.listen((_) async {
-      state = await db.getCustomers();
+      state = await db.getCustomers(businessId: businessId);
     });
   }
 
   Future<void> addCustomer(LocalCustomerData customer) async {
     await db.insertCustomer(customer);
+    await syncEngine?.enqueueMutation(
+      entityType: 'customer',
+      action: 'create',
+      payload: customer.toJson(),
+    );
   }
 
   Future<void> updateCustomer(LocalCustomerData customer) async {
     await db.updateCustomer(customer);
+    await syncEngine?.enqueueMutation(
+      entityType: 'customer',
+      action: 'update',
+      payload: customer.toJson(),
+    );
   }
 
   @override
@@ -646,7 +680,8 @@ class CustomersNotifier extends StateNotifier<List<LocalCustomerData>> {
 final customersProvider =
     StateNotifierProvider<CustomersNotifier, List<LocalCustomerData>>((ref) {
   final db = ref.watch(databaseProvider);
-  return CustomersNotifier(db);
+  return CustomersNotifier(
+      db, ref.watch(syncEngineProvider), ref.watch(authProvider)?.businessId);
 });
 
 // --- SMS NOTIFIER ---

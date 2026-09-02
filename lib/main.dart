@@ -27,7 +27,7 @@ class DukaApp extends ConsumerWidget {
     final customColor = ref.watch(customThemeColorProvider);
 
     return MaterialApp(
-      title: 'DUUKA - Uganda SME Business App',
+      title: 'DUUKA - Business Operating System for SMEs',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildTheme(customColor, isDark: false),
       darkTheme: AppTheme.buildTheme(customColor, isDark: true),
@@ -71,6 +71,9 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     final vertical = businessVerticalFor(
       ref.watch(authProvider)?.businessVertical ?? 'retail',
     );
+    ref.read(databaseProvider).setActiveBusinessId(
+          ref.read(authProvider)?.businessId,
+        );
 
     final screens = List<Widget>.generate(5, _buildScreen);
 

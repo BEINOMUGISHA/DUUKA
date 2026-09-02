@@ -47,7 +47,7 @@ export const getDebtSummary = query({
 
     const paidThisMonth = payments
       .filter((p) => (p.entityType === "debt" || p.entityType === "customer_credit") && p.createdAt >= monthStart)
-      .fold(0, (sum, p) => sum + p.amount);
+      .reduce((sum, p) => sum + p.amount, 0);
 
     return {
       totalDebt,
@@ -154,10 +154,10 @@ export const recordDebtPayment = mutation({
     if (debt.saleId) {
       const sale = await ctx.db.get(debt.saleId);
       if (sale) {
-        const salePaid = sale.paidAmount + args.amount;
+        const salePaid = sale.amountPaid + args.amount;
         const saleBalance = Math.max(0, sale.total - salePaid);
         await ctx.db.patch(debt.saleId, {
-          paidAmount: salePaid,
+          amountPaid: salePaid,
           balance: saleBalance,
         });
       }
