@@ -5,6 +5,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/providers/business_providers.dart';
 import '../../../core/database/app_database.dart';
+import '../../../core/utils/sector_image_generator.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});

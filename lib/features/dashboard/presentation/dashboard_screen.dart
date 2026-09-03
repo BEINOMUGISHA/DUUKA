@@ -7,6 +7,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/constants/business_verticals.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/animated_counter.dart';
+import '../../../core/widgets/offline_sync_indicator.dart';
 import '../../expenses/presentation/expenses_screen.dart';
 import '../../credit/presentation/debtor_book_screen.dart';
 import '../../sales/presentation/sales_history_screen.dart';
@@ -462,8 +463,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 14),
 
-                  const SizedBox(height: 18),
+                  // Offline Sync Indicator Banner (Design System Item #10)
+                  OfflineSyncIndicator(
+                    isOffline: syncEngine?.isOffline ?? false,
+                    pendingCount: syncEngine?.pendingCount ?? 0,
+                    onSyncPressed: () => syncEngine?.syncNow(),
+                  ),
+
+                  const SizedBox(height: 14),
 
                   // --- 2. TOTAL BALANCE HERO CARD ---
                   Container(

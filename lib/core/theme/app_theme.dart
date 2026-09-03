@@ -2,15 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Luxury Emerald & Deep Forest Palette
-  static const Color primaryDark = Color(0xFF062319);
-  static const Color primaryForest = Color(0xFF0B4F37);
-  static const Color primaryLight = Color(0xFF107350);
-  static const Color primaryEmerald = Color(0xFF10B981);
+  // Exact Design System Tokens from Showcase
+  static const Color forestGreen = Color(0xFF1B4332);
+  static const Color emerald = Color(0xFF2D6A4F);
+  static const Color warmGold = Color(0xFFD4A017);
+  static const Color ivoryBg = Color(0xFFF8F5F0);
+  static const Color charcoal = Color(0xFF1F1F1F);
+  static const Color softSage = Color(0xFFE8ECE6);
+  static const Color alertAmber = Color(0xFFF59E0B);
+
+  // Brand Palette Mapping
+  static const Color primaryDark = Color(0xFF1B4332);
+  static const Color primaryForest = Color(0xFF1B4332);
+  static const Color primaryLight = Color(0xFF2D6A4F);
+  static const Color primaryEmerald = Color(0xFF2D6A4F);
   static const Color emeraldNeon = Color(0xFF34D399);
 
   // Warm Gold & Accents
-  static const Color accentGold = Color(0xFFF59E0B);
+  static const Color accentGold = Color(0xFFD4A017);
   static const Color goldLight = Color(0xFFFDE68A);
   static const Color accentAmber = Color(0xFFD97706);
   static const Color streakFlame = Color(0xFFFF6B4A);
@@ -20,23 +29,23 @@ class AppColors {
   static const Color mtnYellowDark = Color(0xFFE5B800);
   static const Color airtelRed = Color(0xFFE60000);
   static const Color airtelRedLight = Color(0xFFFF3333);
-  static const Color cashGreen = Color(0xFF10B981);
+  static const Color cashGreen = Color(0xFF2D6A4F);
   static const Color bankBlue = Color(0xFF2563EB);
 
   // Status & Surfaces (Light)
   static const Color creditAmber = Color(0xFFF97316);
   static const Color efrisIndigo = Color(0xFF6366F1);
-  static const Color background = Color(0xFFF8FAFC);
+  static const Color background = Color(0xFFF8F5F0);
   static const Color surfaceCard = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFF1F5F9);
-  static const Color textMain = Color(0xFF0F172A);
+  static const Color surfaceMuted = Color(0xFFE8ECE6);
+  static const Color textMain = Color(0xFF1F1F1F);
   static const Color textMuted = Color(0xFF64748B);
   static const Color textLight = Color(0xFF94A3B8);
-  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderLight = Color(0xFFE8ECE6);
   static const Color borderSubtle = Color(0xFFF1F5F9);
   static const Color danger = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
-  static const Color success = Color(0xFF10B981);
+  static const Color success = Color(0xFF2D6A4F);
 
   // Dark Mode Surfaces (Deep Obsidian Emerald)
   static const Color darkBackground = Color(0xFF07110D);
@@ -238,13 +247,13 @@ class AppTheme {
                 ? AppColors.primaryEmerald
                 : primaryColor,
             foregroundColor: Colors.white,
-            elevation: 2,
-            shadowColor: primaryColor.withValues(alpha: 0.35),
+            elevation: 0,
+            shadowColor: primaryColor.withValues(alpha: 0.2),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
             textStyle: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w800, fontSize: 15),
+                fontWeight: FontWeight.w700, fontSize: 15),
           ),
         ),
         cardTheme: CardThemeData(
@@ -252,7 +261,7 @@ class AppTheme {
           elevation: 0,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(8),
             side: const BorderSide(color: AppColors.darkBorder, width: 1),
           ),
         ),
@@ -260,20 +269,20 @@ class AppTheme {
           filled: true,
           fillColor: AppColors.darkCard,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           hintStyle: GoogleFonts.plusJakartaSans(
               color: AppColors.darkTextMuted, fontSize: 14),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.darkBorder),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.darkBorder),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: primaryColor, width: 2),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: primaryColor, width: 1.5),
           ),
         ),
       );
@@ -290,7 +299,7 @@ class AppTheme {
         surface: AppColors.surfaceCard,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w900,
             color: AppColors.textMain,
@@ -305,11 +314,11 @@ class AppTheme {
             fontWeight: FontWeight.w700, color: AppColors.textMain),
         titleMedium: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w600, color: AppColors.textMain),
-        bodyLarge: GoogleFonts.plusJakartaSans(
+        bodyLarge: GoogleFonts.inter(
             color: AppColors.textMain,
             fontSize: 15,
             fontWeight: FontWeight.w500),
-        bodyMedium: GoogleFonts.plusJakartaSans(
+        bodyMedium: GoogleFonts.inter(
             color: AppColors.textMuted, fontSize: 13),
       ),
       appBarTheme: AppBarTheme(
@@ -330,13 +339,13 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          elevation: 2,
-          shadowColor: primaryColor.withValues(alpha: 0.35),
+          elevation: 0,
+          shadowColor: primaryColor.withValues(alpha: 0.2),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           textStyle: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w800, fontSize: 15),
+              fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
       cardTheme: CardThemeData(
@@ -344,7 +353,7 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           side: const BorderSide(color: AppColors.borderLight, width: 1),
         ),
       ),
@@ -352,20 +361,20 @@ class AppTheme {
         filled: true,
         fillColor: Colors.white,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-        hintStyle: GoogleFonts.plusJakartaSans(
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: GoogleFonts.inter(
             color: AppColors.textLight, fontSize: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: primaryColor, width: 2),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
       ),
     );

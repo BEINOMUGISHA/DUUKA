@@ -43,6 +43,7 @@ class SyncEngine extends ChangeNotifier {
   SyncState _state = const SyncState();
   SyncState get state => _state;
   bool get isSyncing => _state.isSyncing;
+  bool get isOffline => _state.lastError != null;
   int get pendingCount => _state.pendingCount;
 
   Timer? _autoSyncTimer;
