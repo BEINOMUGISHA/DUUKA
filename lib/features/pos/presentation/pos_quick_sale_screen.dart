@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/providers/business_providers.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/widgets/spinning_wheel_picker.dart';
 import 'receipt_share_screen.dart';
@@ -275,6 +276,7 @@ class _PosQuickSaleScreenState extends ConsumerState<PosQuickSaleScreen> {
     }).toList();
 
     final categoryNames = <String>{
+      ...ref.watch(productCategoriesProvider),
       ...posProducts.map((product) => product.category.trim()),
     }..removeWhere((category) => category.isEmpty);
     final categories = [

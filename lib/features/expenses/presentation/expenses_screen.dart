@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/uganda_presets.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/providers/business_providers.dart';
 import '../../../core/database/app_database.dart';
 
 class ExpensesScreen extends ConsumerStatefulWidget {
@@ -19,7 +20,15 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   void _showAddExpenseDialog([UgandaExpenseCategory? preset]) {
     final amountCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
-    String selectedCategory = preset?.labelEn ?? UgandaPresets.expenseCategories.first.labelEn;
+    final verticalExpenseCategories = ref.read(expenseCategoriesProvider);
+    final expenseCategories = <String>{
+      ...verticalExpenseCategories,
+      ...UgandaPresets.expenseCategories.map((category) => category.labelEn),
+    }.toList();
+    String selectedCategory = preset?.labelEn ??
+        (verticalExpenseCategories.isNotEmpty
+            ? verticalExpenseCategories.first
+            : UgandaPresets.expenseCategories.first.labelEn);
     String paymentMethod = UgandaPresets.paymentCash;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -47,20 +56,45 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(ref.tr('log_expense'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded)),
+                    Text(ref.tr('log_expense'),
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w900)),
+                    IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded)),
                   ],
                 ),
                 const Divider(),
                 DropdownButtonFormField<String>(
                   initialValue: selectedCategory,
-                  decoration: InputDecoration(labelText: '${ref.tr('expense_category')} *'),
-                  items: UgandaPresets.expenseCategories.map((cat) {
+                  decoration: InputDecoration(
+                      labelText: '${ref.tr('expense_category')} *'),
+                  items: expenseCategories.map((category) {
+                    final cat = UgandaPresets.expenseCategories.firstWhere(
+                      (preset) => preset.labelEn == category,
+                      orElse: () => const UgandaExpenseCategory(
+                        id: 'business',
+                        labelEn: '',
+                        labelLg: '',
+                        labelRn: '',
+                        icon: 'category',
+                      ),
+                    );
                     final lang = ref.read(languageProvider);
-                    final label = lang == 'lg' ? cat.labelLg : lang == 'rn' ? cat.labelRn : cat.labelEn;
-                    return DropdownMenuItem(value: cat.labelEn, child: Text(label, style: const TextStyle(fontSize: 13)));
+                    final label = cat.labelEn.isEmpty
+                        ? category
+                        : lang == 'lg'
+                            ? cat.labelLg
+                            : lang == 'rn'
+                                ? cat.labelRn
+                                : cat.labelEn;
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(label, style: const TextStyle(fontSize: 13)),
+                    );
                   }).toList(),
-                  onChanged: (val) => setSheetState(() => selectedCategory = val!),
+                  onChanged: (val) =>
+                      setSheetState(() => selectedCategory = val!),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -82,7 +116,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text(ref.tr('select_payment_method'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                Text(ref.tr('select_payment_method'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -91,7 +127,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                       value: UgandaPresets.paymentCash,
                       isSelected: paymentMethod == UgandaPresets.paymentCash,
                       color: AppColors.cashGreen,
-                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentCash),
+                      onTap: () => setSheetState(
+                          () => paymentMethod = UgandaPresets.paymentCash),
                     ),
                     const SizedBox(width: 8),
                     _buildPayMethodCard(
@@ -99,15 +136,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                       value: UgandaPresets.paymentMtnMomo,
                       isSelected: paymentMethod == UgandaPresets.paymentMtnMomo,
                       color: AppColors.mtnYellow,
-                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentMtnMomo),
+                      onTap: () => setSheetState(
+                          () => paymentMethod = UgandaPresets.paymentMtnMomo),
                     ),
                     const SizedBox(width: 8),
                     _buildPayMethodCard(
                       label: 'Airtel',
                       value: UgandaPresets.paymentAirtelMoney,
-                      isSelected: paymentMethod == UgandaPresets.paymentAirtelMoney,
+                      isSelected:
+                          paymentMethod == UgandaPresets.paymentAirtelMoney,
                       color: AppColors.airtelRed,
-                      onTap: () => setSheetState(() => paymentMethod = UgandaPresets.paymentAirtelMoney),
+                      onTap: () => setSheetState(() =>
+                          paymentMethod = UgandaPresets.paymentAirtelMoney),
                     ),
                   ],
                 ),
@@ -117,17 +157,26 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                   height: 48,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
+                      final amount =
+                          double.tryParse(amountCtrl.text.trim()) ?? 0;
                       if (amount <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter a valid expense amount')),
+                          const SnackBar(
+                              content:
+                                  Text('Please enter a valid expense amount')),
                         );
                         return;
                       }
 
                       final catObj = UgandaPresets.expenseCategories.firstWhere(
                         (c) => c.labelEn == selectedCategory,
-                        orElse: () => UgandaPresets.expenseCategories.first,
+                        orElse: () => const UgandaExpenseCategory(
+                          id: 'business',
+                          labelEn: 'Business Expense',
+                          labelLg: 'Business Expense',
+                          labelRn: 'Business Expense',
+                          icon: 'category',
+                        ),
                       );
 
                       final session = ref.read(authProvider);
@@ -142,14 +191,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                         date: DateTime.now().millisecondsSinceEpoch,
                       );
 
-                      ref.read(expensesProvider.notifier).addExpense(newExpense);
+                      ref
+                          .read(expensesProvider.notifier)
+                          .addExpense(newExpense);
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(ref.tr('expense_logged'))),
                       );
                     },
                     icon: const Icon(Icons.check_circle_rounded),
-                    label: Text(ref.tr('save_expense'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                    label: Text(ref.tr('save_expense'),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w900, fontSize: 14)),
                   ),
                 ),
               ],
@@ -176,7 +229,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           decoration: BoxDecoration(
             color: isSelected ? color : AppColors.surfaceMuted,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? Colors.transparent : AppColors.borderLight),
+            border: Border.all(
+                color: isSelected ? Colors.transparent : AppColors.borderLight),
           ),
           child: Center(
             child: Text(
@@ -184,7 +238,11 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: isSelected ? (value == UgandaPresets.paymentMtnMomo ? Colors.black : Colors.white) : AppColors.textMain,
+                color: isSelected
+                    ? (value == UgandaPresets.paymentMtnMomo
+                        ? Colors.black
+                        : Colors.white)
+                    : AppColors.textMain,
               ),
             ),
           ),
@@ -199,8 +257,10 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
-    final weekStart = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+    final todayStart =
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final weekStart =
+        now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
     final monthStart = DateTime(now.year, now.month, 1).millisecondsSinceEpoch;
 
     final filtered = expenses.where((e) {
@@ -219,7 +279,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final totalSpent = filtered.fold<double>(0, (sum, e) => sum + e.amount);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(ref.tr('expenses_title')),
       ),
@@ -252,24 +313,34 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                   children: [
                     Text(
                       ref.tr('total_expenses'),
-                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyFormatter.format(totalSpent),
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${filtered.length} Items',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13),
                   ),
                 ),
               ],
@@ -285,8 +356,11 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    avatar: Text(cat.icon, style: const TextStyle(fontSize: 12)),
-                    label: Text(cat.labelEn, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    avatar:
+                        Text(cat.icon, style: const TextStyle(fontSize: 12)),
+                    label: Text(cat.labelEn,
+                        style: const TextStyle(
+                            fontSize: 11, fontWeight: FontWeight.bold)),
                     onPressed: () => _showAddExpenseDialog(cat),
                   ),
                 );
@@ -304,10 +378,20 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(f, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600)),
+                    label: Text(f,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected
+                                ? FontWeight.w900
+                                : FontWeight.w600)),
                     selected: isSelected,
                     selectedColor: AppColors.primaryForest,
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : (isDark ? AppColors.darkTextMain : AppColors.textMain)),
+                    labelStyle: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.darkTextMain
+                                : AppColors.textMain)),
                     onSelected: (_) => setState(() => _selectedFilter = f),
                   ),
                 );
@@ -324,11 +408,16 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.receipt_outlined, size: 48, color: AppColors.textMuted),
+                        const Icon(Icons.receipt_outlined,
+                            size: 48, color: AppColors.textMuted),
                         const SizedBox(height: 8),
                         Text(
-                          expenses.isEmpty ? ref.tr('no_expenses') : 'No expenses in selected period',
-                          style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                          expenses.isEmpty
+                              ? ref.tr('no_expenses')
+                              : 'No expenses in selected period',
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -338,8 +427,10 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, index) {
                       final item = filtered[index];
-                      final date = DateTime.fromMillisecondsSinceEpoch(item.date);
-                      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}';
+                      final date =
+                          DateTime.fromMillisecondsSinceEpoch(item.date);
+                      final timeStr =
+                          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} · ${date.day}/${date.month}';
 
                       return Dismissible(
                         key: Key(item.id),
@@ -351,14 +442,17 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                           child: const Icon(Icons.delete, color: Colors.white),
                         ),
                         onDismissed: (_) {
-                          ref.read(expensesProvider.notifier).deleteExpense(item.id);
+                          ref
+                              .read(expensesProvider.notifier)
+                              .deleteExpense(item.id);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Expense deleted')),
                           );
                         },
                         child: Card(
                           margin: const EdgeInsets.only(bottom: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           child: ListTile(
                             leading: Container(
                               width: 40,
@@ -368,15 +462,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               alignment: Alignment.center,
-                              child: Text(item.icon, style: const TextStyle(fontSize: 20)),
+                              child: Text(item.icon,
+                                  style: const TextStyle(fontSize: 20)),
                             ),
                             title: Text(
                               item.categoryName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             subtitle: Text(
                               '${item.notes.isNotEmpty ? '${item.notes} · ' : ''}$timeStr',
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppColors.textMuted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -402,7 +499,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text(
           ref.tr('log_expense'),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
         ),
       ),
     );

@@ -46,7 +46,8 @@ class SyncState {
 class SyncConflict {
   final String queueId;
   final String entityType;
-  final String conflictType; // version_mismatch, duplicate_prevention, validation_error
+  final String
+      conflictType; // version_mismatch, duplicate_prevention, validation_error
   final String error;
   final DateTime detectedAt;
   final bool resolved;
@@ -81,6 +82,7 @@ class SyncEngine extends ChangeNotifier {
   final String deviceId;
 
   SyncState _state = const SyncState();
+  final List<SyncConflict> _conflicts = [];
   SyncState get state => _state;
   bool get isSyncing => _state.isSyncing;
   int get pendingCount => _state.pendingCount;
@@ -119,10 +121,10 @@ class SyncEngine extends ChangeNotifier {
   Future<void> refreshPendingCount() async {
     try {
       final count = await db.getPendingQueueCount();
-      final conflictCount = await db.getConflictCount();
       _state = _state.copyWith(
         pendingCount: count,
-        conflictCount: conflictCount,
+        conflictCount:
+            _conflicts.where((conflict) => !conflict.resolved).length,
       );
       notifyListeners();
     } catch (e) {
@@ -136,7 +138,6 @@ class SyncEngine extends ChangeNotifier {
     required String action,
     required Map<String, dynamic> payload,
     int? timestamp,
-    int? clientVersion,
   }) async {
     final queueId = _uuid.v4();
     final now = timestamp ?? DateTime.now().millisecondsSinceEpoch;
@@ -148,7 +149,6 @@ class SyncEngine extends ChangeNotifier {
         action: action,
         localTimestamp: now,
         payloadJson: jsonEncode(payload),
-        clientVersion: clientVersion,
         createdAt: now,
       ),
     );
@@ -188,12 +188,11 @@ class SyncEngine extends ChangeNotifier {
                 'action': item.action,
                 'localTimestamp': item.localTimestamp,
                 'data': item.payloadJson,
-                'clientVersion': item.clientVersion ?? 0,
               })
           .toList();
 
       // Attempt sync with exponential backoff retry
-      Map<String, dynamic>? result;
+      dynamic result;
       int retryCount = 0;
 
       while (retryCount < _maxRetries && result == null) {
@@ -226,7 +225,9 @@ class SyncEngine extends ChangeNotifier {
       }
 
       // Process results with conflict handling
-      await _processsyncResults(result as List, items);
+      if (result is List) {
+        await _processSyncResults(result, items);
+      }
 
       _state = _state.copyWith(
         isSyncing: false,
@@ -246,7 +247,7 @@ class SyncEngine extends ChangeNotifier {
   }
 
   /// Process sync results and handle conflicts
-  Future<void> _processyncResults(
+  Future<void> _processSyncResults(
     List<dynamic> results,
     List<SyncQueueItem> originalItems,
   ) async {
@@ -271,7 +272,8 @@ class SyncEngine extends ChangeNotifier {
 
       Map<String, dynamic> localPayload = {};
       try {
-        localPayload = jsonDecode(queuedItem.payloadJson) as Map<String, dynamic>;
+        localPayload =
+            jsonDecode(queuedItem.payloadJson) as Map<String, dynamic>;
       } catch (_) {}
 
       final localRecordId = localPayload['id'] as String? ?? queueId;
@@ -291,11 +293,12 @@ class SyncEngine extends ChangeNotifier {
           detectedAt: DateTime.now(),
         );
 
-        await db.insertConflict(conflict);
+        _conflicts.add(conflict);
         conflicts.add(conflict);
 
         if (kDebugMode) {
-          print('Sync conflict detected: ${conflict.conflictType} - ${conflict.error}');
+          print(
+              'Sync conflict detected: ${conflict.conflictType} - ${conflict.error}');
         }
       } else if (status == 'error') {
         // Non-conflict error - log and skip
@@ -309,7 +312,7 @@ class SyncEngine extends ChangeNotifier {
     // Update state with conflicts
     if (conflicts.isNotEmpty) {
       _state = _state.copyWith(
-        conflictCount: await db.getConflictCount(),
+        conflictCount: _conflicts.length,
         recentConflicts: conflicts,
       );
       notifyListeners();
@@ -330,11 +333,27 @@ class SyncEngine extends ChangeNotifier {
       });
 
       // Mark conflict as resolved locally
-      await db.markConflictResolved(conflictQueueId, strategy);
+      final conflictIndex = _conflicts.indexWhere(
+        (conflict) => conflict.queueId == conflictQueueId,
+      );
+      if (conflictIndex >= 0) {
+        final conflict = _conflicts[conflictIndex];
+        _conflicts[conflictIndex] = SyncConflict(
+          queueId: conflict.queueId,
+          entityType: conflict.entityType,
+          conflictType: conflict.conflictType,
+          error: conflict.error,
+          detectedAt: conflict.detectedAt,
+          resolved: true,
+        );
+      }
 
       // If client strategy, re-queue the item for retry
       if (strategy == 'client') {
-        final conflict = await db.getConflict(conflictQueueId);
+        final conflict = _conflicts.cast<SyncConflict?>().firstWhere(
+              (item) => item?.queueId == conflictQueueId,
+              orElse: () => null,
+            );
         if (conflict != null) {
           // Re-insert to queue for retry
           // (implementation depends on your DB schema)
@@ -353,7 +372,7 @@ class SyncEngine extends ChangeNotifier {
 
   /// Get all unresolved conflicts
   Future<List<SyncConflict>> getUnresolvedConflicts() async {
-    return await db.getUnresolvedConflicts();
+    return _conflicts.where((conflict) => !conflict.resolved).toList();
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/providers/business_providers.dart';
 import '../../../core/database/app_database.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -66,7 +67,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   void _showAddEditProductDialog([LocalProductData? existing]) {
     final isEditing = existing != null;
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final catCtrl = TextEditingController(text: existing?.category ?? 'Agro');
+    final verticalCategories = ref.read(productCategoriesProvider);
+    final defaultCategory =
+        verticalCategories.isNotEmpty ? verticalCategories.first : 'General';
+    final catCtrl =
+        TextEditingController(text: existing?.category ?? defaultCategory);
     final costCtrl = TextEditingController(
         text: existing != null ? existing.costPrice.toInt().toString() : '');
     final sellCtrl = TextEditingController(
@@ -127,14 +132,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: _presetCategories.contains(catCtrl.text)
+                      initialValue: [
+                        ...verticalCategories,
+                        ..._presetCategories,
+                      ].contains(catCtrl.text)
                           ? catCtrl.text
                           : null,
                       decoration:
                           InputDecoration(labelText: '${ref.tr('category')} *'),
                       hint: catCtrl.text.isNotEmpty ? Text(catCtrl.text) : null,
                       items: [
-                        ..._presetCategories.map(
+                        ...{
+                          ...verticalCategories,
+                          ..._presetCategories,
+                        }.map(
                           (category) => DropdownMenuItem(
                             value: category,
                             child: Text(category),
@@ -493,10 +504,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final products = ref.watch(productsProvider);
     final session = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final verticalCategories = ref.watch(productCategoriesProvider);
 
     final categories = [
       'All',
       ...{
+        ...verticalCategories,
         ..._presetCategories,
         ...products.map((product) => product.category.trim()),
       }.where((category) => category.isNotEmpty),

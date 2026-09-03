@@ -382,10 +382,66 @@ const businessVerticals = [
 ];
 
 /// Get business vertical by ID
-BusinessVertical businessVerticalFor(String id) => businessVerticals.firstWhere(
-      (vertical) => vertical.id == id,
-      orElse: () => businessVerticals[0],
-    );
+BusinessVertical businessVerticalFor(String id) {
+  if (id == 'retail' || id == 'other' || id == 'unknown') {
+    return _legacyRetailFallback;
+  }
+
+  final canonicalId = canonicalBusinessVerticalId(id);
+  return businessVerticals.firstWhere(
+    (vertical) => vertical.id == canonicalId,
+    orElse: () => _legacyRetailFallback,
+  );
+}
+
+const _legacyRetailFallback = BusinessVertical(
+  id: 'retail',
+  name: 'Retail / Shop',
+  description: 'Sell products and manage stock',
+  fullDescription: 'Legacy retail business configuration.',
+  icon: Icons.storefront_rounded,
+  salesLabel: 'Sales',
+  stockLabel: 'Inventory',
+  customerLabel: 'Customers',
+  enabledFeatures: {'inventory', 'credit', 'suppliers', 'sms'},
+  category: 'Retail & Commerce',
+  examples: ['Shop'],
+);
+
+String canonicalBusinessVerticalId(String? id) {
+  switch (id) {
+    case 'retail':
+    case 'wholesale':
+      return 'wholesale_retail';
+    case 'restaurant':
+      return 'food_hospitality';
+    case 'salon':
+    case 'services':
+      return 'personal_services';
+    case 'clinic':
+      return 'health';
+    case 'wholesale_retail':
+    case 'food_hospitality':
+    case 'agriculture':
+    case 'manufacturing':
+    case 'automotive':
+    case 'personal_services':
+    case 'construction':
+    case 'transport_logistics':
+    case 'ict_digital':
+    case 'real_estate':
+    case 'financial_services':
+    case 'health':
+    case 'education':
+    case 'arts_entertainment':
+      return id!;
+    case 'other':
+    case null:
+      return 'wholesale_retail';
+    default:
+      return 'wholesale_retail';
+  }
+}
 
 /// Get all verticals by category
 List<BusinessVertical> businessVerticalsByCategory(String category) =>

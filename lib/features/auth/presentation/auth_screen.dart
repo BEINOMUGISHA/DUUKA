@@ -64,7 +64,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _obscurePin = true;
   bool _isLoading = false;
   String? _errorMessage;
-  String _businessVertical = 'retail';
+  String _businessVertical = 'wholesale_retail';
 
   @override
   void dispose() {

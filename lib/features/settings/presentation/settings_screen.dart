@@ -28,7 +28,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ownerNameCtrl = TextEditingController(text: session?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: session?.phone ?? '');
     final tinCtrl = TextEditingController(text: session?.tin ?? '');
-    var selectedVertical = session?.businessVertical ?? 'retail';
+    var selectedVertical =
+        canonicalBusinessVerticalId(session?.businessVertical);
 
     showDialog(
       context: context,
