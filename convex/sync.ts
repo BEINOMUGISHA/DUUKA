@@ -8,6 +8,7 @@ export const processBatchOfflineSync = mutation({
     businessId: v.id("businesses"),
     userId: v.id("users"),
     deviceId: v.string(),
+    syncBatchId: v.optional(v.string()),
     payloads: v.array(
       v.object({
         queueId: v.string(),
@@ -19,6 +20,21 @@ export const processBatchOfflineSync = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    if (args.syncBatchId) {
+      const existingBatch = await ctx.db
+        .query("syncBatches")
+        .withIndex("by_unique_batch", (q) =>
+          q.eq("businessId", args.businessId)
+            .eq("deviceId", args.deviceId)
+            .eq("syncBatchId", args.syncBatchId!)
+        )
+        .first();
+
+      if (existingBatch) {
+        return existingBatch.results;
+      }
+    }
+
     const results: Array<{ queueId: string; status: "success" | "conflict" | "error"; serverId?: string; error?: string }> = [];
 
     for (const item of args.payloads) {
@@ -311,6 +327,16 @@ export const processBatchOfflineSync = mutation({
       } catch (err: any) {
         results.push({ queueId: item.queueId, status: "error", error: err?.message ?? "Unknown error" });
       }
+    }
+
+    if (args.syncBatchId) {
+      await ctx.db.insert("syncBatches", {
+        businessId: args.businessId,
+        deviceId: args.deviceId,
+        syncBatchId: args.syncBatchId,
+        results,
+        processedAt: Date.now(),
+      });
     }
 
     return results;

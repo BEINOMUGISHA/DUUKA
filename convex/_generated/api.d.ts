@@ -18,9 +18,11 @@ import type * as payments from "../payments.js";
 import type * as products from "../products.js";
 import type * as reports from "../reports.js";
 import type * as sales from "../sales.js";
+import type * as schema_v2 from "../schema_v2.js";
 import type * as sms from "../sms.js";
 import type * as suppliers from "../suppliers.js";
 import type * as sync from "../sync.js";
+import type * as sync_v2 from "../sync_v2.js";
 import type * as system from "../system.js";
 import type * as transactions from "../transactions.js";
 
@@ -41,9 +43,11 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   reports: typeof reports;
   sales: typeof sales;
+  schema_v2: typeof schema_v2;
   sms: typeof sms;
   suppliers: typeof suppliers;
   sync: typeof sync;
+  sync_v2: typeof sync_v2;
   system: typeof system;
   transactions: typeof transactions;
 }>;

@@ -117,7 +117,7 @@ async function processProductSync(
 ) {
   const existing = await ctx.db
     .query("products")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", parsed.id))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", parsed.id))
     .first();
 
   if (existing) {
@@ -195,7 +195,7 @@ async function processCustomerSync(
 ) {
   const existing = await ctx.db
     .query("customers")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", parsed.id))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", parsed.id))
     .first();
 
   if (existing) {
@@ -265,7 +265,7 @@ async function processSaleSync(
   // 1. IDEMPOTENCY: Check if sale already synced by offlineId
   const existing = await ctx.db
     .query("sales")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", item.queueId))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", item.queueId))
     .first();
 
   if (existing) {
@@ -303,7 +303,7 @@ async function processSaleSync(
 
     const customers = await ctx.db
       .query("customers")
-      .withIndex("by_business_and_phone", (q) =>
+      .withIndex("by_business_and_phone", (q: any) =>
         q.eq("businessId", args.businessId).eq("phone", normalizedPhone)
       )
       .first();
@@ -380,7 +380,7 @@ async function processSaleSync(
   for (const it of items) {
     const prod = await ctx.db
       .query("products")
-      .withIndex("by_business_and_sku", (q) =>
+      .withIndex("by_business_and_sku", (q: any) =>
         q.eq("businessId", args.businessId).eq("sku", it.sku ?? "")
       )
       .first();
@@ -464,7 +464,7 @@ async function processTransactionSync(
   // IDEMPOTENCY: Check if already synced
   const existing = await ctx.db
     .query("transactions")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", item.queueId))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", item.queueId))
     .first();
 
   if (existing) {
@@ -510,7 +510,7 @@ async function processCustomerPaymentSync(
   // IDEMPOTENCY: Check if already synced
   const existing = await ctx.db
     .query("payments")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", item.queueId))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", item.queueId))
     .first();
 
   if (existing) {
@@ -568,7 +568,7 @@ async function processStockAdjustmentSync(
   // IDEMPOTENCY: Check if already synced
   const existing = await ctx.db
     .query("stockMovements")
-    .withIndex("by_offline_id", (q) => q.eq("offlineId", item.queueId))
+    .withIndex("by_offline_id", (q: any) => q.eq("offlineId", item.queueId))
     .first();
 
   if (existing) {
@@ -659,9 +659,13 @@ export const resolveConflict = mutation({
     // Log conflict for manual review
     await ctx.db.insert("syncConflicts", {
       businessId: args.businessId,
-      entityId: args.entityId,
-      resolvedStrategy: args.strategy,
+      queueId: String(args.entityId),
+      entityType: "unknown",
+      conflictType: "resolved",
+      error: "Conflict resolved by client",
+      resolutionStrategy: args.strategy,
       resolvedAt: Date.now(),
+      detectedAt: Date.now(),
     });
 
     return {

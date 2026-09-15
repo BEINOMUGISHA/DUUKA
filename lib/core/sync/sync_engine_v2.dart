@@ -85,6 +85,7 @@ class SyncEngine extends ChangeNotifier {
   final List<SyncConflict> _conflicts = [];
   SyncState get state => _state;
   bool get isSyncing => _state.isSyncing;
+  bool get isOffline => _state.lastError != null;
   int get pendingCount => _state.pendingCount;
   int get conflictCount => _state.conflictCount;
 

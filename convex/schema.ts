@@ -430,5 +430,38 @@ export default defineSchema({
     .index("by_supplier", ["supplierId"])
     .index("by_business_and_status", ["businessId", "status"])
     .index("by_business_and_created", ["businessId", "createdAt"]),
+
+  // Idempotency cache for retried offline sync batches.
+  syncBatches: defineTable({
+    businessId: v.id("businesses"),
+    deviceId: v.string(),
+    syncBatchId: v.string(),
+    results: v.array(v.object({
+      queueId: v.string(),
+      status: v.string(),
+      serverId: v.optional(v.string()),
+      error: v.optional(v.string()),
+      conflictType: v.optional(v.string()),
+    })),
+    processedAt: v.number(),
+  })
+    .index("by_unique_batch", ["businessId", "deviceId", "syncBatchId"])
+    .index("by_device", ["businessId", "deviceId", "processedAt"]),
+
+  syncConflicts: defineTable({
+    businessId: v.id("businesses"),
+    queueId: v.string(),
+    entityType: v.string(),
+    conflictType: v.string(),
+    error: v.string(),
+    clientData: v.optional(v.string()),
+    serverData: v.optional(v.string()),
+    resolutionStrategy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
+    detectedAt: v.number(),
+  })
+    .index("by_business", ["businessId"])
+    .index("by_resolved", ["resolvedAt"])
+    .index("by_entity", ["queueId"]),
 });
 

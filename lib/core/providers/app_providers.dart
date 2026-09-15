@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/app_database.dart';
 import '../network/convex_client.dart';
-import '../sync/sync_engine.dart';
+import '../sync/sync_engine_v2.dart';
 import '../localization/translations.dart';
 
 // User & Business Session Model
